@@ -15,12 +15,12 @@ export function Logo({ className, light = false }: { className?: string; light?:
 export function LogoMark({ className }: { className?: string }) {
   return (
     <svg viewBox="0 0 32 32" className={className} aria-hidden role="img">
-      <rect x="1" y="1" width="30" height="30" rx="9" fill="#141a57" />
-      <path
-        d="M16 6l6 6h-4v14h-4V12h-4l6-6z"
-        fill="#ff9500"
-        transform="rotate(90 16 16)"
-      />
+      <circle cx="16" cy="16" r="15" fill="#16224d" />
+      {/* route : marquages centraux */}
+      <rect x="15.1" y="22" width="1.8" height="3.4" rx="0.9" fill="#ffffff" opacity="0.9" />
+      <rect x="15.2" y="18" width="1.6" height="2.6" rx="0.8" fill="#ffffff" opacity="0.6" />
+      {/* flèche orange "sens unique" */}
+      <path d="M16 5.5 L22.5 13 H18.6 V21 H13.4 V13 H9.5 Z" fill="#f07d1a" />
     </svg>
   );
 }

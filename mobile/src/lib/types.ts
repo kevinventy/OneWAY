@@ -8,8 +8,11 @@ export interface User {
   id: string; // Firebase Auth uid
   role: Role;
   name: string;
+  /** Identifiant de connexion (nom d'utilisateur). Pas besoin d'email réel. */
+  identifiant: string;
+  /** Email synthétique `identifiant@oneway.app` utilisé en interne par Firebase. */
   email: string;
-  phone: string;
+  phone?: string;
   companyName?: string;
   city?: string;
   carrierId?: string;

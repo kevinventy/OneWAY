@@ -21,23 +21,27 @@ const PW = 'oneway123';
 const now = Date.now();
 const days = (n: number) => now + n * 86400000;
 
-async function ensureUser(uid: string, email: string, profile: Record<string, unknown>) {
+// Identifiant → email synthétique (cohérent avec l'app : pas d'email réel).
+const synthEmail = (identifiant: string) => `${identifiant.toLowerCase().replace(/[^a-z0-9._-]+/g, '')}@oneway.app`;
+
+async function ensureUser(uid: string, identifiant: string, profile: Record<string, unknown>) {
+  const email = synthEmail(identifiant);
   try {
     await auth.getUser(uid);
   } catch {
     await auth.createUser({ uid, email, password: PW, displayName: profile.name as string });
   }
-  await db.collection('users').doc(uid).set({ id: uid, email, ...profile }, { merge: true });
+  await db.collection('users').doc(uid).set({ id: uid, identifiant, email, ...profile }, { merge: true });
 }
 
 async function main() {
-  console.log('→ Comptes…');
-  await ensureUser('u_admin', 'admin@oneway.mg', { role: 'ADMIN', name: 'Admin ONE WAY', phone: '+261340000000', companyName: 'One Way SARL', city: 'Antananarivo', kycStatus: 'VERIFIED', rating: 0, ratingCount: 0, premium: true, avatarColor: '#1d3df5', createdAt: now });
-  await ensureUser('u_ship1', 'chargeur@oneway.mg', { role: 'SHIPPER', name: 'Hery Rakoto', phone: '+261341111111', companyName: 'Société ABC Import', city: 'Antananarivo', kycStatus: 'VERIFIED', rating: 4.8, ratingCount: 12, premium: true, avatarColor: '#16a34a', createdAt: now });
-  await ensureUser('u_ship2', 'marie@boutique.mg', { role: 'SHIPPER', name: 'Marie Rakoto', phone: '+261342222222', companyName: 'Marie Boutique', city: 'Antananarivo', kycStatus: 'VERIFIED', rating: 4.6, ratingCount: 7, premium: false, avatarColor: '#e11d48', createdAt: now });
-  await ensureUser('u_car1', 'transporteur@oneway.mg', { role: 'CARRIER', name: 'Jean Randria', phone: '+261343333333', companyName: 'Trans Express Mada', city: 'Antananarivo', kycStatus: 'VERIFIED', rating: 4.9, ratingCount: 34, premium: true, avatarColor: '#1d3df5', createdAt: now });
-  await ensureUser('u_car2', 'fitateza@oneway.mg', { role: 'CARRIER', name: 'Naina Rabe', phone: '+261344444444', companyName: 'Fitateza Logistique', city: 'Toamasina', kycStatus: 'VERIFIED', rating: 4.7, ratingCount: 21, premium: false, avatarColor: '#0891b2', createdAt: now });
-  await ensureUser('u_drv1', 'chauffeur@oneway.mg', { role: 'DRIVER', name: 'Rivo Be', phone: '+261346666666', city: 'Antananarivo', carrierId: 'u_car1', kycStatus: 'VERIFIED', rating: 4.8, ratingCount: 18, premium: false, avatarColor: '#ca8a04', createdAt: now });
+  console.log('→ Comptes… (identifiant / mot de passe : oneway123)');
+  await ensureUser('u_admin', 'admin', { role: 'ADMIN', name: 'Admin ONE WAY', phone: '+261340000000', companyName: 'One Way SARL', city: 'Antananarivo', kycStatus: 'VERIFIED', rating: 0, ratingCount: 0, premium: true, avatarColor: '#1d3df5', createdAt: now });
+  await ensureUser('u_ship1', 'chargeur', { role: 'SHIPPER', name: 'Hery Rakoto', phone: '+261341111111', companyName: 'Société ABC Import', city: 'Antananarivo', kycStatus: 'VERIFIED', rating: 4.8, ratingCount: 12, premium: true, avatarColor: '#16a34a', createdAt: now });
+  await ensureUser('u_ship2', 'marie', { role: 'SHIPPER', name: 'Marie Rakoto', phone: '+261342222222', companyName: 'Marie Boutique', city: 'Antananarivo', kycStatus: 'VERIFIED', rating: 4.6, ratingCount: 7, premium: false, avatarColor: '#e11d48', createdAt: now });
+  await ensureUser('u_car1', 'transporteur', { role: 'CARRIER', name: 'Jean Randria', phone: '+261343333333', companyName: 'Trans Express Mada', city: 'Antananarivo', kycStatus: 'VERIFIED', rating: 4.9, ratingCount: 34, premium: true, avatarColor: '#1d3df5', createdAt: now });
+  await ensureUser('u_car2', 'fitateza', { role: 'CARRIER', name: 'Naina Rabe', phone: '+261344444444', companyName: 'Fitateza Logistique', city: 'Toamasina', kycStatus: 'VERIFIED', rating: 4.7, ratingCount: 21, premium: false, avatarColor: '#0891b2', createdAt: now });
+  await ensureUser('u_drv1', 'chauffeur', { role: 'DRIVER', name: 'Rivo Be', phone: '+261346666666', city: 'Antananarivo', carrierId: 'u_car1', kycStatus: 'VERIFIED', rating: 4.8, ratingCount: 18, premium: false, avatarColor: '#ca8a04', createdAt: now });
 
   console.log('→ Véhicules & chauffeurs…');
   await db.collection('vehicles').doc('v1').set({ id: 'v1', carrierId: 'u_car1', type: 'CAMION_5T', name: 'Isuzu NQR', plate: '1234 TBB', capacityKg: 5000, refrigerated: false, available: true, lat: -18.8792, lng: 47.5079 });

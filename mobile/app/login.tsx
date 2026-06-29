@@ -9,16 +9,20 @@ import { colors } from '@/theme';
 export default function Login() {
   const router = useRouter();
   const { login } = useAuth();
-  const [email, setEmail] = useState('');
+  const [identifiant, setIdentifiant] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
 
   async function submit() {
     setError('');
+    if (!identifiant.trim() || !password) {
+      setError('Renseignez votre identifiant et votre mot de passe.');
+      return;
+    }
     setLoading(true);
     try {
-      await login(email, password);
+      await login(identifiant, password);
       router.replace('/(app)/home');
     } catch (e: any) {
       setError(humanError(e?.code) ?? 'Connexion impossible');
@@ -34,8 +38,8 @@ export default function Login() {
         <Text style={styles.sub}>Ravi de vous revoir sur ONE WAY.</Text>
 
         <View style={{ marginTop: 24 }}>
-          <Field label="Email">
-            <Input value={email} onChangeText={setEmail} autoCapitalize="none" keyboardType="email-address" placeholder="vous@email.mg" />
+          <Field label="Identifiant">
+            <Input value={identifiant} onChangeText={setIdentifiant} autoCapitalize="none" placeholder="votre nom d'utilisateur" />
           </Field>
           <Field label="Mot de passe">
             <Input value={password} onChangeText={setPassword} secureTextEntry placeholder="••••••••" />
@@ -44,6 +48,12 @@ export default function Login() {
           <Button title="Se connecter" onPress={submit} loading={loading} style={{ marginTop: 6 }} />
           <Button title="Créer un compte" variant="ghost" onPress={() => router.replace('/register')} style={{ marginTop: 8 }} />
         </View>
+
+        <View style={styles.hint}>
+          <Text style={styles.hintText}>
+            💡 Première utilisation ? Aucun compte n'existe encore — touchez « Créer un compte ».
+          </Text>
+        </View>
       </ScrollView>
     </KeyboardAvoidingView>
   );
@@ -51,13 +61,15 @@ export default function Login() {
 
 export function humanError(code?: string): string | undefined {
   switch (code) {
-    case 'auth/invalid-email': return 'Email invalide';
+    case 'auth/invalid-email': return 'Identifiant invalide';
     case 'auth/user-not-found':
     case 'auth/wrong-password':
-    case 'auth/invalid-credential': return 'Email ou mot de passe incorrect';
-    case 'auth/email-already-in-use': return 'Un compte existe déjà avec cet email';
+    case 'auth/invalid-credential': return 'Identifiant ou mot de passe incorrect';
+    case 'auth/email-already-in-use': return 'Cet identifiant est déjà pris';
     case 'auth/weak-password': return 'Mot de passe trop faible (6 caractères min.)';
-    case 'auth/network-request-failed': return 'Problème réseau';
+    case 'auth/network-request-failed': return 'Problème réseau — vérifiez votre connexion';
+    case 'auth/configuration-not-found':
+    case 'auth/operation-not-allowed': return 'Connexion par e-mail/mot de passe non activée dans Firebase';
     default: return undefined;
   }
 }
@@ -67,4 +79,6 @@ const styles = StyleSheet.create({
   title: { fontSize: 26, fontWeight: '800', color: colors.ink, marginTop: 24 },
   sub: { color: colors.inkMuted, marginTop: 4 },
   error: { color: colors.red, marginBottom: 10 },
+  hint: { marginTop: 24, backgroundColor: colors.brand50, borderRadius: 12, padding: 12 },
+  hintText: { color: colors.brand700, fontSize: 13, lineHeight: 19 },
 });

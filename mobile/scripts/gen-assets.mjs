@@ -4,8 +4,9 @@ import { deflateSync } from 'node:zlib';
 import { mkdirSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 
-const BRAND = [20, 26, 87];
-const AMBER = [255, 149, 0];
+const BRAND = [22, 34, 77]; // #16224d (marine du logo)
+const AMBER = [240, 125, 26]; // #f07d1a (orange du logo)
+const WHITE = [255, 255, 255];
 const SS = 4;
 
 const CRC = (() => { const t = new Uint32Array(256); for (let n = 0; n < 256; n++) { let c = n; for (let k = 0; k < 8; k++) c = c & 1 ? 0xedb88320 ^ (c >>> 1) : c >>> 1; t[n] = c >>> 0; } return t; })();
@@ -18,13 +19,17 @@ function png(w, h, rgba) {
   for (let y = 0; y < h; y++) { raw[y * (stride + 1)] = 0; rgba.copy(raw, y * (stride + 1) + 1, y * stride, y * stride + stride); }
   return Buffer.concat([sig, chunk('IHDR', ihdr), chunk('IDAT', deflateSync(raw, { level: 9 })), chunk('IEND', Buffer.alloc(0))]);
 }
-function sample(nx, ny, { transparentBg, safe }) {
-  const m = safe ? 0.66 : 1;
+function sample(nx, ny, { transparentBg, safe, road }) {
+  const m = safe ? 0.66 : 0.82;
   const cx = 0.5; const ax = (nx - cx) / m + cx; const ay = (ny - 0.5) / m + 0.5;
-  const apexY = 0.24, baseY = 0.52, headHalf = 0.24; let inArrow = false;
+  const apexY = 0.2, baseY = 0.5, headHalf = 0.24; let inArrow = false;
   if (ay >= apexY && ay <= baseY) { const hw = ((ay - apexY) / (baseY - apexY)) * headHalf; if (ax >= cx - hw && ax <= cx + hw) inArrow = true; }
-  if (ay > baseY && ay <= 0.8 && ax >= 0.42 && ax <= 0.58) inArrow = true;
+  if (ay > baseY && ay <= 0.74 && ax >= 0.43 && ax <= 0.57) inArrow = true;
   if (inArrow) return [...AMBER, 255];
+  // Route : marquages blancs sous la flèche (icône pleine seulement).
+  if (road && nx >= 0.475 && nx <= 0.525) {
+    if ((ny >= 0.79 && ny <= 0.85) || (ny >= 0.88 && ny <= 0.93)) return [...WHITE, 235];
+  }
   return transparentBg ? [0, 0, 0, 0] : [...BRAND, 255];
 }
 function render(size, opts) {
@@ -37,8 +42,8 @@ function render(size, opts) {
 
 const dir = join(process.cwd(), 'assets');
 mkdirSync(dir, { recursive: true });
-writeFileSync(join(dir, 'icon.png'), render(1024, { transparentBg: false, safe: true }));
+writeFileSync(join(dir, 'icon.png'), render(1024, { transparentBg: false, road: true }));
 writeFileSync(join(dir, 'adaptive-icon.png'), render(1024, { transparentBg: true, safe: true }));
 writeFileSync(join(dir, 'splash-icon.png'), render(512, { transparentBg: true, safe: true }));
-writeFileSync(join(dir, 'favicon.png'), render(48, { transparentBg: false, safe: true }));
+writeFileSync(join(dir, 'favicon.png'), render(48, { transparentBg: false }));
 console.log('✓ Assets Expo générés dans mobile/assets/ (icon, adaptive-icon, splash-icon, favicon)');

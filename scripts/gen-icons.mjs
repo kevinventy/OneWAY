@@ -5,8 +5,8 @@ import { deflateSync } from 'node:zlib';
 import { mkdirSync, writeFileSync, existsSync } from 'node:fs';
 import { join } from 'node:path';
 
-const BRAND = [20, 26, 87]; // #141a57
-const AMBER = [255, 149, 0]; // #ff9500
+const BRAND = [22, 34, 77]; // #16224d (marine du logo)
+const AMBER = [240, 125, 26]; // #f07d1a (orange du logo)
 const SS = 4; // supersampling factor for anti-aliasing
 
 // CRC32 (PNG)

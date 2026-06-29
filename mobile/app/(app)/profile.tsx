@@ -37,8 +37,8 @@ export default function Profile() {
           </View>
         </View>
         <View style={styles.info}>
-          <Row icon="mail-outline" text={user.email} />
-          <Row icon="call-outline" text={user.phone} />
+          <Row icon="person-outline" text={`@${user.identifiant ?? user.name}`} />
+          {user.phone ? <Row icon="call-outline" text={user.phone} /> : null}
           {user.city ? <Row icon="location-outline" text={user.city} /> : null}
           <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
             <Ionicons name="shield-checkmark-outline" size={16} color={colors.inkMuted} />
