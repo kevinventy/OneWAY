@@ -38,6 +38,7 @@ export function Calculator({ embedded = false }: { embedded?: boolean }) {
   const [night, setNight] = useState(false);
   const [ruralRoad, setRuralRoad] = useState(false);
   const [insurance, setInsurance] = useState(true);
+  const [roundTrip, setRoundTrip] = useState(true);
   const [vat, setVat] = useState(false);
   const [discount, setDiscount] = useState(0);
   const [manualDistance, setManualDistance] = useState<number | null>(null);
@@ -59,10 +60,11 @@ export function Calculator({ embedded = false }: { embedded?: boolean }) {
         night,
         ruralRoad,
         insurance,
+        roundTrip,
         discountPct: discount,
         vat,
       }),
-    [distance, vehicle, cargo, weight, declaredValue, handlingPickup, handlingDelivery, express, night, ruralRoad, insurance, discount, vat],
+    [distance, vehicle, cargo, weight, declaredValue, handlingPickup, handlingDelivery, express, night, ruralRoad, insurance, roundTrip, discount, vat],
   );
 
   const suggested = suggestVehicle(weight);
@@ -142,6 +144,7 @@ export function Calculator({ embedded = false }: { embedded?: boolean }) {
           <div className="grid gap-2 sm:grid-cols-2">
             <Toggle label="Manutention chargement" checked={handlingPickup} onChange={setHandlingPickup} />
             <Toggle label="Manutention déchargement" checked={handlingDelivery} onChange={setHandlingDelivery} />
+            <Toggle label="Aller-retour (véhicule revient)" checked={roundTrip} onChange={setRoundTrip} />
             <Toggle label="Service express (+30 %)" checked={express} onChange={setExpress} />
             <Toggle label="Livraison de nuit (+20 %)" checked={night} onChange={setNight} />
             <Toggle label="Pistes / zones rurales (+15 %)" checked={ruralRoad} onChange={setRuralRoad} />
@@ -167,7 +170,7 @@ export function Calculator({ embedded = false }: { embedded?: boolean }) {
             <p className="text-xs text-brand-200">Total estimé TTC</p>
             <p className="text-3xl font-extrabold">{money(quote.totalTTC)}</p>
             <p className="mt-1 text-xs text-brand-200">
-              {distance} km · {money(quote.pricePerKm)}/km · {quote.meta.vehicleLabel}
+              {distance} km {quote.meta.roundTrip ? `aller-retour (${quote.meta.billedDistanceKm} km facturés)` : 'aller simple'} · {quote.meta.vehicleLabel}
             </p>
           </div>
           <div className="divide-y divide-slate-100 p-4 text-sm">

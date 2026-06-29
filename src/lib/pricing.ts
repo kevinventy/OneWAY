@@ -2,13 +2,14 @@
  * ONE WAY pricing engine — a faithful port of the Excel
  * "CALCULATEUR DE PRIX RAPIDE" sheet.
  *
- * Decomposition (all amounts in Ariary):
+ * Decomposition (all amounts in Ariary) — le trajet se fait en ALLER-RETOUR :
  *   frais_km     = distance × tarif/km (hors carburant) × (1 + surcharge_véhicule) × coeff_marchandise × (1 + situations)
  *   carburant    = distance × (conso L/100 ÷ 100) × prix_litre × (pistes ? 1,10 : 1)   ← selon le type de transport
+ *   retour_vide  = (frais_km + carburant) × taux_retour            ← repositionnement véhicule (aller-retour)
  *   forfait      = forfait de base du véhicule
  *   manutention  = (chargement ? rate×forfait : 0) + (déchargement ? rate×forfait : 0)
  *   assurance    = taux_assurance × valeur_déclarée
- *   frais_divers = taux_divers × frais_km
+ *   frais_divers = taux_divers × (frais_km + retour_vide)
  *   ──────────────────────────────────────────────
  *   sous_total_HT      = somme des lignes ci-dessus
  *   base_imposable     = sous_total_HT × (1 − remise%)
@@ -40,6 +41,8 @@ export interface QuoteInput {
   night?: boolean;
   ruralRoad?: boolean;
   insurance?: boolean;
+  /** Aller-retour (le véhicule revient). Par défaut true. */
+  roundTrip?: boolean;
   discountPct?: number; // 0..100
   vat?: boolean;
 }
@@ -67,10 +70,13 @@ export interface QuoteResult {
     vehicleLabel: string;
     cargoLabel: string;
     coefficient: number;
-    /** Carburant : litres estimés, prix au litre et type (gasoil/essence). */
+    /** Carburant : litres estimés (aller-retour), prix au litre et type. */
     fuelLitres: number;
     fuelPricePerL: number;
     fuelType: 'DIESEL' | 'ESSENCE';
+    /** Aller-retour appliqué et distance facturée (km parcourus). */
+    roundTrip: boolean;
+    billedDistanceKm: number;
   };
 }
 
@@ -101,24 +107,36 @@ export function computeQuote(input: QuoteInput, commissionRate = 0.12): QuoteRes
   // marchandise — c'est une dépense réelle, pas une majoration commerciale.)
   const fuelPricePerL = FUEL_PRICES[v.fuelType];
   const fuelFactor = 1 + (input.ruralRoad ? 0.1 : 0);
-  const fuelLitres = (distance * v.fuelConsumption) / 100 * fuelFactor;
-  const carburant = round(fuelLitres * fuelPricePerL);
+  const fuelLitresAller = (distance * v.fuelConsumption) / 100 * fuelFactor;
+  const carburant = round(fuelLitresAller * fuelPricePerL);
+
+  // Aller-retour : le véhicule repart (souvent à vide). On facture le trajet
+  // retour au prix de l'aller (haulage + carburant) × taux de retour.
+  const roundTrip = input.roundTrip ?? d.roundTripDefault;
+  const retourVide = roundTrip ? round((fraisKm + carburant) * d.returnLegRate) : 0;
+  const tripFactor = roundTrip ? 1 + d.returnLegRate : 1;
 
   const forfait = v.baseFee;
   const manutentionPickup = input.handlingPickup ? round(v.baseFee * d.handlingRate) : 0;
   const manutentionDelivery = input.handlingDelivery ? round(v.baseFee * d.handlingRate) : 0;
   const assurance = input.insurance ? round((input.declaredValue || 0) * d.insuranceRate) : 0;
-  const fraisDivers = round(fraisKm * d.miscFeesRate);
+  const fraisDivers = round((fraisKm + retourVide) * d.miscFeesRate);
 
   const lines: QuoteLine[] = [
-    { key: 'km', label: 'Frais kilométriques (hors carburant)', amount: fraisKm },
+    { key: 'km', label: 'Frais kilométriques aller (hors carburant)', amount: fraisKm },
     {
       key: 'carburant',
-      label: `Carburant (${v.fuelType === 'ESSENCE' ? 'essence' : 'gasoil'} · ${v.fuelConsumption} L/100 km)`,
+      label: `Carburant aller (${v.fuelType === 'ESSENCE' ? 'essence' : 'gasoil'} · ${v.fuelConsumption} L/100 km)`,
       amount: carburant,
     },
-    { key: 'forfait', label: 'Forfait de base véhicule', amount: forfait },
   ];
+  if (retourVide)
+    lines.push({
+      key: 'retour',
+      label: `Retour véhicule à vide (repositionnement, ${Math.round(d.returnLegRate * 100)} %)`,
+      amount: retourVide,
+    });
+  lines.push({ key: 'forfait', label: 'Forfait de base véhicule', amount: forfait });
   if (manutentionPickup) lines.push({ key: 'man_charg', label: 'Manutention chargement', amount: manutentionPickup });
   if (manutentionDelivery) lines.push({ key: 'man_dech', label: 'Manutention déchargement', amount: manutentionDelivery });
   if (assurance) lines.push({ key: 'assurance', label: 'Assurance marchandise (0,5 %)', amount: assurance });
@@ -149,9 +167,11 @@ export function computeQuote(input: QuoteInput, commissionRate = 0.12): QuoteRes
       vehicleLabel: v.label,
       cargoLabel: cargo.label,
       coefficient: cargo.coefficient,
-      fuelLitres: Math.round(fuelLitres),
+      fuelLitres: Math.round(fuelLitresAller * tripFactor),
       fuelPricePerL,
       fuelType: v.fuelType,
+      roundTrip,
+      billedDistanceKm: Math.round(distance * tripFactor),
     },
   };
 }

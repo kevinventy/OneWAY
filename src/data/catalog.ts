@@ -143,7 +143,29 @@ export const PRICING_DEFAULTS = {
   currency: 'MGA' as const,
   quoteValidityDays: 30,
   freeWaitingHours: 2,
+  // Aller-retour : le véhicule doit revenir à son point de départ. Le trajet
+  // retour (souvent à vide) est facturé au prix de l'aller × ce coefficient.
+  // 0,7 = retour à vide standard (carburant + usure + conducteur, partiellement
+  // compensé par un éventuel fret retour). Mettre 1 pour facturer le retour
+  // plein, 0 pour un aller simple.
+  roundTripDefault: true,
+  returnLegRate: 0.7,
 };
+
+/**
+ * Prestations annexes proposées par ONE WAY (transport · livraison · suivi
+ * digital). Servent à enrichir le devis ; montants indicatifs en Ariary.
+ */
+export const EXTRA_SERVICES = [
+  { key: 'ARRIMAGE', label: 'Arrimage / sanglage / bâchage', unit: 'forfait', price: 25_000, emoji: '🪢' },
+  { key: 'EMBALLAGE', label: 'Emballage / palettisation', unit: 'palette', price: 20_000, emoji: '📦' },
+  { key: 'SUIVI_GPS', label: 'Suivi GPS temps réel (plateforme ONE WAY)', unit: 'forfait', price: 15_000, emoji: '📡' },
+  { key: 'DOUANE', label: 'Accompagnement douane / portuaire', unit: 'dossier', price: 50_000, emoji: '🛃' },
+  { key: 'GARDIENNAGE', label: 'Gardiennage / stationnement de nuit', unit: 'nuit', price: 30_000, emoji: '🌙' },
+  { key: 'ATTENTE', label: "Heure d'attente (>2h offert)", unit: 'heure', price: 20_000, emoji: '⏱️' },
+  { key: 'ESCORTE', label: 'Escorte / convoi exceptionnel', unit: 'forfait', price: 120_000, emoji: '🚨' },
+  { key: 'ADMIN', label: 'Frais administratifs / documentation', unit: 'dossier', price: 15_000, emoji: '🗂️' },
+] as const;
 
 /** Marketplace economics. */
 export const MARKETPLACE = {

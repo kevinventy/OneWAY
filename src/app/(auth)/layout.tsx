@@ -1,6 +1,6 @@
 import Link from 'next/link';
 import { redirect } from 'next/navigation';
-import { Logo } from '@/components/brand/Logo';
+import { Logo, LogoFull } from '@/components/brand/Logo';
 import { getCurrentUser } from '@/lib/auth';
 import { Radio, ShieldCheck, Star } from 'lucide-react';
 
@@ -34,9 +34,9 @@ export default async function AuthLayout({ children }: { children: React.ReactNo
       {/* Form panel */}
       <div className="flex flex-col items-center justify-center bg-slate-50 p-6">
         <div className="w-full max-w-md">
-          <div className="mb-6 lg:hidden">
+          <div className="mb-6 flex justify-center lg:hidden">
             <Link href="/">
-              <Logo />
+              <LogoFull className="h-24 w-auto" />
             </Link>
           </div>
           {children}
