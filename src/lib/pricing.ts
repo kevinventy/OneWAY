@@ -3,7 +3,8 @@
  * "CALCULATEUR DE PRIX RAPIDE" sheet.
  *
  * Decomposition (all amounts in Ariary):
- *   frais_km     = distance × tarif/km × (1 + surcharge_véhicule) × coeff_marchandise × (1 + situations)
+ *   frais_km     = distance × tarif/km (hors carburant) × (1 + surcharge_véhicule) × coeff_marchandise × (1 + situations)
+ *   carburant    = distance × (conso L/100 ÷ 100) × prix_litre × (pistes ? 1,10 : 1)   ← selon le type de transport
  *   forfait      = forfait de base du véhicule
  *   manutention  = (chargement ? rate×forfait : 0) + (déchargement ? rate×forfait : 0)
  *   assurance    = taux_assurance × valeur_déclarée
@@ -17,6 +18,7 @@
 
 import {
   CARGO_TYPES,
+  FUEL_PRICES,
   PRICING_DEFAULTS,
   SITUATION_SURCHARGES,
   VEHICLE_TYPES,
@@ -61,7 +63,15 @@ export interface QuoteResult {
   /** Suggested marketplace commission for this job. */
   commission: number;
   currency: 'MGA';
-  meta: { vehicleLabel: string; cargoLabel: string; coefficient: number };
+  meta: {
+    vehicleLabel: string;
+    cargoLabel: string;
+    coefficient: number;
+    /** Carburant : litres estimés, prix au litre et type (gasoil/essence). */
+    fuelLitres: number;
+    fuelPricePerL: number;
+    fuelType: 'DIESEL' | 'ESSENCE';
+  };
 }
 
 function round(n: number): number {
@@ -84,6 +94,16 @@ export function computeQuote(input: QuoteInput, commissionRate = 0.12): QuoteRes
   const fraisKm = round(
     distance * v.ratePerKm * (1 + v.surcharge) * cargo.coefficient * (1 + situationFactor),
   );
+
+  // Carburant explicite, selon le type de transport : consommation propre au
+  // véhicule × prix courant du gasoil/essence. Les pistes dégradées majorent la
+  // consommation de 10 %. (Le carburant n'est pas soumis au coefficient
+  // marchandise — c'est une dépense réelle, pas une majoration commerciale.)
+  const fuelPricePerL = FUEL_PRICES[v.fuelType];
+  const fuelFactor = 1 + (input.ruralRoad ? 0.1 : 0);
+  const fuelLitres = (distance * v.fuelConsumption) / 100 * fuelFactor;
+  const carburant = round(fuelLitres * fuelPricePerL);
+
   const forfait = v.baseFee;
   const manutentionPickup = input.handlingPickup ? round(v.baseFee * d.handlingRate) : 0;
   const manutentionDelivery = input.handlingDelivery ? round(v.baseFee * d.handlingRate) : 0;
@@ -91,7 +111,12 @@ export function computeQuote(input: QuoteInput, commissionRate = 0.12): QuoteRes
   const fraisDivers = round(fraisKm * d.miscFeesRate);
 
   const lines: QuoteLine[] = [
-    { key: 'km', label: 'Frais kilométriques', amount: fraisKm },
+    { key: 'km', label: 'Frais kilométriques (hors carburant)', amount: fraisKm },
+    {
+      key: 'carburant',
+      label: `Carburant (${v.fuelType === 'ESSENCE' ? 'essence' : 'gasoil'} · ${v.fuelConsumption} L/100 km)`,
+      amount: carburant,
+    },
     { key: 'forfait', label: 'Forfait de base véhicule', amount: forfait },
   ];
   if (manutentionPickup) lines.push({ key: 'man_charg', label: 'Manutention chargement', amount: manutentionPickup });
@@ -120,7 +145,14 @@ export function computeQuote(input: QuoteInput, commissionRate = 0.12): QuoteRes
     pricePerKm,
     commission: round(totalTTC * commissionRate),
     currency: 'MGA',
-    meta: { vehicleLabel: v.label, cargoLabel: cargo.label, coefficient: cargo.coefficient },
+    meta: {
+      vehicleLabel: v.label,
+      cargoLabel: cargo.label,
+      coefficient: cargo.coefficient,
+      fuelLitres: Math.round(fuelLitres),
+      fuelPricePerL,
+      fuelType: v.fuelType,
+    },
   };
 }
 

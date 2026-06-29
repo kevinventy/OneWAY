@@ -5,6 +5,11 @@
  * "COEFFICIENTS DE MAJORATION" sheets of OneWay_Devis_Transport.xlsx.
  * Kept in code so the live price calculator and the printed quote stay in sync.
  *
+ * Modèle de prix rectifié : le tarif kilométrique est « hors carburant » et le
+ * carburant est une ligne explicite, calculée à partir de la consommation
+ * propre à chaque type de transport et du prix courant du gasoil/essence
+ * (cf. FUEL_PRICES). Régénérer l'Excel : `python3 scripts/gen-devis-transport.py`.
+ *
  * Amounts are in Ariary (MGA).
  */
 
@@ -20,6 +25,18 @@ export type VehicleTypeKey =
   | 'CONTENEUR_20'
   | 'CONTENEUR_40';
 
+export type FuelKey = 'DIESEL' | 'ESSENCE';
+
+/**
+ * Prix du carburant à la pompe (Ariary / litre) — Madagascar, paramétrable.
+ * Modifiable par l'admin lorsque le cours évolue : tous les frais de carburant
+ * sont recalculés automatiquement à partir de ces deux valeurs.
+ */
+export const FUEL_PRICES: Record<FuelKey, number> = {
+  DIESEL: 4_900, // gasoil
+  ESSENCE: 5_100, // sans plomb / super
+};
+
 export interface VehicleType {
   /** 1..10 calculator index, matching the Excel "Type véhicule (1→10)". */
   index: number;
@@ -27,8 +44,12 @@ export interface VehicleType {
   label: string;
   capacityLabel: string;
   maxKg: number;
-  /** Kilometric rate (Ar/km). */
+  /** Kilometric haulage rate (Ar/km), **carburant exclu** (usure, pneus, conducteur, marge). */
   ratePerKm: number;
+  /** Carburant utilisé par ce véhicule. */
+  fuelType: FuelKey;
+  /** Consommation moyenne (litres / 100 km) — base du calcul carburant par type de transport. */
+  fuelConsumption: number;
   /** Fixed pickup / handling base fee (Ar). */
   baseFee: number;
   /** Vehicle-class surcharge over the reference rate. */
@@ -37,18 +58,26 @@ export interface VehicleType {
   emoji: string;
 }
 
+// Tarifs rectifiés : le kilométrique est désormais « hors carburant » et le
+// carburant est facturé séparément en fonction de la consommation propre à
+// chaque type de transport (un semi-remorque brûle ~12× plus qu'une moto).
 export const VEHICLE_TYPES: VehicleType[] = [
-  { index: 1, key: 'MOTO', label: 'Moto-taxi / Tricycle', capacityLabel: '< 200 kg', maxKg: 200, ratePerKm: 800, baseFee: 15_000, surcharge: 0, emoji: '🛵' },
-  { index: 2, key: 'CAMIONNETTE', label: 'Camionnette légère', capacityLabel: '200 – 800 kg', maxKg: 800, ratePerKm: 1_500, baseFee: 30_000, surcharge: 0.1, emoji: '🚐' },
-  { index: 3, key: 'CAMION_3T', label: 'Camion 3 tonnes', capacityLabel: '800 kg – 3 T', maxKg: 3_000, ratePerKm: 2_500, baseFee: 60_000, surcharge: 0.15, emoji: '🚚' },
-  { index: 4, key: 'CAMION_5T', label: 'Camion 5 tonnes', capacityLabel: '3 T – 5 T', maxKg: 5_000, ratePerKm: 3_500, baseFee: 100_000, surcharge: 0.2, emoji: '🚚' },
-  { index: 5, key: 'CAMION_10T', label: 'Camion 10 tonnes', capacityLabel: '5 T – 10 T', maxKg: 10_000, ratePerKm: 5_000, baseFee: 180_000, surcharge: 0.25, emoji: '🚛' },
-  { index: 6, key: 'SEMI_20T', label: 'Semi-remorque 20 T', capacityLabel: '10 T – 20 T', maxKg: 20_000, ratePerKm: 7_000, baseFee: 300_000, surcharge: 0.3, emoji: '🚛' },
-  { index: 7, key: 'FRIGO_5T', label: 'Camion frigorifique 5 T', capacityLabel: '3 T – 5 T frigo', maxKg: 5_000, ratePerKm: 4_500, baseFee: 150_000, surcharge: 0.2, refrigerated: true, emoji: '❄️' },
-  { index: 8, key: 'BENNE_15T', label: 'Camion benne', capacityLabel: "Jusqu'à 15 T", maxKg: 15_000, ratePerKm: 5_500, baseFee: 200_000, surcharge: 0.25, emoji: '🚜' },
-  { index: 9, key: 'CONTENEUR_20', label: 'Conteneur 20 pieds', capacityLabel: 'Max 24 T', maxKg: 24_000, ratePerKm: 6_000, baseFee: 250_000, surcharge: 0.35, emoji: '📦' },
-  { index: 10, key: 'CONTENEUR_40', label: 'Conteneur 40 pieds', capacityLabel: 'Max 28 T', maxKg: 28_000, ratePerKm: 8_000, baseFee: 400_000, surcharge: 0.4, emoji: '📦' },
+  { index: 1, key: 'MOTO', label: 'Moto-taxi / Tricycle', capacityLabel: '< 200 kg', maxKg: 200, ratePerKm: 800, fuelType: 'ESSENCE', fuelConsumption: 3, baseFee: 15_000, surcharge: 0, emoji: '🛵' },
+  { index: 2, key: 'CAMIONNETTE', label: 'Camionnette légère', capacityLabel: '200 – 800 kg', maxKg: 800, ratePerKm: 1_200, fuelType: 'DIESEL', fuelConsumption: 10, baseFee: 30_000, surcharge: 0.1, emoji: '🚐' },
+  { index: 3, key: 'CAMION_3T', label: 'Camion 3 tonnes', capacityLabel: '800 kg – 3 T', maxKg: 3_000, ratePerKm: 1_900, fuelType: 'DIESEL', fuelConsumption: 18, baseFee: 60_000, surcharge: 0.15, emoji: '🚚' },
+  { index: 4, key: 'CAMION_5T', label: 'Camion 5 tonnes', capacityLabel: '3 T – 5 T', maxKg: 5_000, ratePerKm: 2_800, fuelType: 'DIESEL', fuelConsumption: 25, baseFee: 100_000, surcharge: 0.2, emoji: '🚚' },
+  { index: 5, key: 'CAMION_10T', label: 'Camion 10 tonnes', capacityLabel: '5 T – 10 T', maxKg: 10_000, ratePerKm: 3_900, fuelType: 'DIESEL', fuelConsumption: 32, baseFee: 180_000, surcharge: 0.25, emoji: '🚛' },
+  { index: 6, key: 'SEMI_20T', label: 'Semi-remorque 20 T', capacityLabel: '10 T – 20 T', maxKg: 20_000, ratePerKm: 5_600, fuelType: 'DIESEL', fuelConsumption: 38, baseFee: 300_000, surcharge: 0.3, emoji: '🚛' },
+  { index: 7, key: 'FRIGO_5T', label: 'Camion frigorifique 5 T', capacityLabel: '3 T – 5 T frigo', maxKg: 5_000, ratePerKm: 3_800, fuelType: 'DIESEL', fuelConsumption: 28, baseFee: 150_000, surcharge: 0.2, refrigerated: true, emoji: '❄️' },
+  { index: 8, key: 'BENNE_15T', label: 'Camion benne', capacityLabel: "Jusqu'à 15 T", maxKg: 15_000, ratePerKm: 4_300, fuelType: 'DIESEL', fuelConsumption: 35, baseFee: 200_000, surcharge: 0.25, emoji: '🚜' },
+  { index: 9, key: 'CONTENEUR_20', label: 'Conteneur 20 pieds', capacityLabel: 'Max 24 T', maxKg: 24_000, ratePerKm: 4_600, fuelType: 'DIESEL', fuelConsumption: 38, baseFee: 250_000, surcharge: 0.35, emoji: '📦' },
+  { index: 10, key: 'CONTENEUR_40', label: 'Conteneur 40 pieds', capacityLabel: 'Max 28 T', maxKg: 28_000, ratePerKm: 6_300, fuelType: 'DIESEL', fuelConsumption: 45, baseFee: 400_000, surcharge: 0.4, emoji: '📦' },
 ];
+
+/** Coût carburant (Ar/km) pour un véhicule donné, au prix courant de la pompe. */
+export function fuelCostPerKm(v: VehicleType): number {
+  return (v.fuelConsumption / 100) * FUEL_PRICES[v.fuelType];
+}
 
 export function vehicleByKey(key: VehicleTypeKey): VehicleType {
   return VEHICLE_TYPES.find((v) => v.key === key) ?? VEHICLE_TYPES[2];

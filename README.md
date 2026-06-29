@@ -84,7 +84,7 @@ native React Native (Expo SDK 52 + expo-router)** avec backend **Firebase**
 | **Chat** | Messagerie chargeur ↔ transporteur |
 | **KYC & flotte** | Vérification admin, gestion véhicules & chauffeurs |
 | **Back-office** | KPIs, GMV/revenus, graphiques, utilisateurs, KYC |
-| **Calculateur public** | Grille tarifaire ONE WAY (issue de l'Excel `OneWay_Devis_Transport`) |
+| **Calculateur public** | Grille tarifaire ONE WAY (issue de l'Excel `OneWay_Devis_Transport`) — **carburant calculé par type de transport** |
 
 ---
 
