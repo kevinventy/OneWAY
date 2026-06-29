@@ -65,6 +65,9 @@ jobs:
       - name: Build release APK (JS embarqué, signé debug)
         run: |
           chmod +x android/gradlew
+          # Augmente le heap Gradle (la valeur par défaut d'Expo cause un OutOfMemoryError
+          # sur le build RN release) ; la dernière clé écrase celle générée par prebuild.
+          echo "org.gradle.jvmargs=-Xmx6144m -XX:MaxMetaspaceSize=1024m -XX:+UseParallelGC" >> android/gradle.properties
           cd android && ./gradlew assembleRelease --no-daemon --stacktrace
 
       - name: Upload APK artifact
