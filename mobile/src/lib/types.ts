@@ -127,6 +127,8 @@ export interface Shipment {
   trackingCode: string;
   /** Dispatch : course assignée par l'admin et acceptée (ou non) par le chauffeur. */
   accepted?: boolean;
+  /** Preuve de livraison : signature du destinataire (tracé SVG). */
+  signature?: string;
   currentLat?: number;
   currentLng?: number;
   progress: number;

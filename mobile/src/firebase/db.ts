@@ -283,6 +283,31 @@ export async function advanceShipment(shipment: Shipment, by: string, opts?: { s
   await batch.commit();
 }
 
+// ── Incidents ─────────────────────────────────────────────────────────────
+
+export async function reportIncident(shipment: Shipment, by: string, opts: { note: string; photoUrl?: string; lat?: number; lng?: number }): Promise<void> {
+  const batch = writeBatch(firestore);
+  const tref = doc(col('tracking'));
+  batch.set(tref, stripUndefined({
+    id: tref.id, shipmentId: shipment.id, status: shipment.status,
+    label: `⚠️ Incident : ${opts.note}`, photoUrl: opts.photoUrl, lat: opts.lat, lng: opts.lng,
+    by, createdAt: Date.now(),
+  }));
+  const admins = await getDocs(query(col('users'), where('role', '==', 'ADMIN')));
+  admins.forEach((a) => {
+    const n = doc(col('notifications'));
+    batch.set(n, { id: n.id, userId: a.id, type: 'INCIDENT', read: false, title: '⚠️ Incident signalé', body: `${shipment.reference} : ${opts.note}`, href: `/tracking/${shipment.id}`, createdAt: Date.now() });
+  });
+  const sn = doc(col('notifications'));
+  batch.set(sn, { id: sn.id, userId: shipment.shipperId, type: 'INCIDENT', read: false, title: 'Incident sur votre expédition', body: opts.note, href: `/tracking/${shipment.id}`, createdAt: Date.now() });
+  await batch.commit();
+}
+
+/** Enregistre la signature de livraison sur la course. */
+export async function saveSignature(shipmentId: string, signature: string): Promise<void> {
+  await updateDoc(doc(firestore, 'shipments', shipmentId), { signature });
+}
+
 // ── Reviews ───────────────────────────────────────────────────────────────
 
 export async function leaveReview(shipment: Shipment, fromUserId: string, toUserId: string, rating: number, comment?: string): Promise<void> {

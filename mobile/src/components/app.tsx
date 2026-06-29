@@ -2,6 +2,7 @@ import React from 'react';
 import { View, Text, Pressable, StyleSheet } from 'react-native';
 import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Card, Badge, Avatar } from './ui';
 import { LogoMark } from './Logo';
 import { FREIGHT_STATUS, SHIPMENT_STATUS, URGENCY } from '@/lib/labels';
@@ -12,8 +13,9 @@ import type { Freight, Shipment } from '@/lib/types';
 
 export function AppHeader({ name, color, unread }: { name: string; color: string; unread: number }) {
   const router = useRouter();
+  const insets = useSafeAreaInsets();
   return (
-    <View style={styles.header}>
+    <View style={[styles.header, { paddingTop: insets.top + 10 }]}>
       <LogoMark size={30} />
       <Text style={styles.brand}>ONE<Text style={{ color: colors.amber500 }}> WAY</Text></Text>
       <View style={{ flex: 1 }} />

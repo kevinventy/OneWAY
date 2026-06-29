@@ -51,6 +51,28 @@ Crée 6 comptes (mot de passe **`oneway123`**) : `chargeur@`, `transporteur@`,
 `chauffeur@`, `marie@boutique.mg`, `fitateza@`, `admin@oneway.mg`, plus un fret
 de démonstration avec offres.
 
+## 4 bis. (Optionnel) Storage pour les photos
+
+Les photos géolocalisées (chargement/déchargement, incidents) sont **uploadées
+vers Firebase Storage** ; sans Storage configuré, l'app retombe sur l'image
+locale (visible sur l'appareil). Pour activer l'upload cross-appareils :
+
+1. **Build → Storage → Commencer** (mode test pour démarrer).
+2. Onglet **Règles** :
+
+```
+rules_version = '2';
+service firebase.storage {
+  match /b/{bucket}/o {
+    match /{allPaths=**} { allow read, write: if request.auth != null; }
+  }
+}
+```
+
+> Mode hors-ligne : le SDK JS Firebase met en cache les écoutes en mémoire et
+> met les écritures en file d'attente pendant la session. La persistance disque
+> complète nécessite `@react-native-firebase` (natif) — voir roadmap.
+
 ## 5. Lancer l'app
 
 ```
