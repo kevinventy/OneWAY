@@ -1,0 +1,24 @@
+<!doctype html>
+<html lang="fr">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1" />
+    <title>ONE WAY</title>
+    <style>
+      html, body { margin: 0; height: 100%; background: #141a57; color: #fff;
+        font-family: system-ui, sans-serif; display: grid; place-items: center; text-align: center; }
+      .dot { width: 14px; height: 14px; border-radius: 50%; background: #ff9500;
+        animation: pulse 1.2s ease-in-out infinite; margin: 16px auto 0; }
+      @keyframes pulse { 0%,100% { opacity: 1 } 50% { opacity: .3 } }
+    </style>
+  </head>
+  <body>
+    <!-- Fallback affiché si l'URL distante n'est pas joignable.
+         En fonctionnement normal, Capacitor charge server.url (la PWA déployée). -->
+    <div>
+      <h1>ONE WAY</h1>
+      <p>Chargement…</p>
+      <div class="dot"></div>
+    </div>
+  </body>
+</html>

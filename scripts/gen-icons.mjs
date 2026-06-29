@@ -2,7 +2,7 @@
 // Draws the brand mark: deep-blue rounded square + amber "one way" up-arrow.
 // Output: public/icons/*.png
 import { deflateSync } from 'node:zlib';
-import { mkdirSync, writeFileSync } from 'node:fs';
+import { mkdirSync, writeFileSync, existsSync } from 'node:fs';
 import { join } from 'node:path';
 
 const BRAND = [20, 26, 87]; // #141a57
@@ -52,13 +52,18 @@ function encodePNG(width, height, rgba) {
 }
 
 // Returns [r,g,b,a] for a point in normalized [0,1] coords.
-function sample(nx, ny, { rounded, safe }) {
+function sample(nx, ny, { rounded, safe, circle, transparentBg }) {
   // Rounded-rect mask (transparent corners) for "any" icons.
   if (rounded) {
     const r = 0.20;
     const dx = Math.max(r - nx, nx - (1 - r), 0);
     const dy = Math.max(r - ny, ny - (1 - r), 0);
     if (dx * dx + dy * dy > r * r) return [0, 0, 0, 0];
+  }
+  // Circular mask (Android round launcher icon).
+  if (circle) {
+    const dx = nx - 0.5, dy = ny - 0.5;
+    if (dx * dx + dy * dy > 0.5 * 0.5) return [0, 0, 0, 0];
   }
   // Arrow geometry — scale down for maskable safe zone.
   const m = safe ? 0.72 : 1; // shrink arrow within safe area
@@ -72,7 +77,8 @@ function sample(nx, ny, { rounded, safe }) {
     if (ax >= cx - hw && ax <= cx + hw) inArrow = true;
   }
   if (ay > baseY && ay <= 0.80 && ax >= 0.42 && ax <= 0.58) inArrow = true;
-  return inArrow ? [...AMBER, 255] : [...BRAND, 255];
+  if (inArrow) return [...AMBER, 255];
+  return transparentBg ? [0, 0, 0, 0] : [...BRAND, 255];
 }
 
 function render(size, opts) {
@@ -105,6 +111,7 @@ function render(size, opts) {
   return encodePNG(size, size, out);
 }
 
+// ── Web / PWA icons ──────────────────────────────────────────────────────
 const dir = join(process.cwd(), 'public', 'icons');
 mkdirSync(dir, { recursive: true });
 const files = [
@@ -116,6 +123,28 @@ const files = [
 ];
 for (const [name, buf] of files) {
   writeFileSync(join(dir, name), buf);
-  console.log(`✓ ${name} (${buf.length} bytes)`);
+  console.log(`✓ public/icons/${name} (${buf.length} bytes)`);
 }
-console.log('Icônes générées dans public/icons/');
+
+// ── Android launcher icons (Capacitor project, if present) ───────────────
+const androidRes = join(process.cwd(), 'android', 'app', 'src', 'main', 'res');
+if (existsSync(androidRes)) {
+  // density -> [legacy launcher px, adaptive foreground px]
+  const densities = {
+    'mipmap-mdpi': [48, 108],
+    'mipmap-hdpi': [72, 162],
+    'mipmap-xhdpi': [96, 216],
+    'mipmap-xxhdpi': [144, 324],
+    'mipmap-xxxhdpi': [192, 432],
+  };
+  for (const [d, [legacy, fg]] of Object.entries(densities)) {
+    const base = join(androidRes, d);
+    if (!existsSync(base)) continue;
+    writeFileSync(join(base, 'ic_launcher.png'), render(legacy, { rounded: true }));
+    writeFileSync(join(base, 'ic_launcher_round.png'), render(legacy, { circle: true }));
+    writeFileSync(join(base, 'ic_launcher_foreground.png'), render(fg, { transparentBg: true, safe: true }));
+  }
+  console.log('✓ Icônes de lanceur Android régénérées (android/.../res/mipmap-*)');
+}
+
+console.log('Terminé.');

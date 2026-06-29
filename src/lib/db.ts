@@ -1,5 +1,6 @@
 import 'server-only';
 import fs from 'node:fs';
+import os from 'node:os';
 import path from 'node:path';
 import type { DB } from './types';
 import { buildSeed } from './seed';
@@ -14,7 +15,27 @@ import { buildSeed } from './seed';
  * it for Prisma + PostgreSQL without changing any route handler.
  */
 
-const DATA_DIR = path.join(process.cwd(), '.data');
+/**
+ * Resolve a writable data directory.
+ *  - `ONEWAY_DATA_DIR` if set (recommended on persistent hosts).
+ *  - otherwise `<cwd>/.data` (local dev).
+ *  - serverless/read-only FS (e.g. Vercel) → falls back to the OS temp dir,
+ *    so the demo still runs (data is reseeded per cold start; use PostgreSQL
+ *    for durable production storage — see prisma/schema.prisma).
+ */
+function resolveDataDir(): string {
+  if (process.env.ONEWAY_DATA_DIR) return process.env.ONEWAY_DATA_DIR;
+  const local = path.join(process.cwd(), '.data');
+  try {
+    fs.mkdirSync(local, { recursive: true });
+    fs.accessSync(local, fs.constants.W_OK);
+    return local;
+  } catch {
+    return path.join(os.tmpdir(), 'oneway-data');
+  }
+}
+
+const DATA_DIR = resolveDataDir();
 const DATA_FILE = path.join(DATA_DIR, 'oneway.json');
 
 let cache: DB | null = null;
