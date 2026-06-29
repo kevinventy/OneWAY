@@ -15,6 +15,7 @@ import {
 } from 'lucide-react';
 import { PublicNav } from '@/components/marketing/PublicNav';
 import { Logo } from '@/components/brand/Logo';
+import { InstallButton } from '@/components/pwa/InstallButton';
 import { RouteMap } from '@/components/map/RouteMap';
 import { VEHICLE_TYPES, SUBSCRIPTION_PLANS, MARKETPLACE } from '@/data/catalog';
 import { KNOWN_ROUTES, findCity } from '@/lib/geo';
@@ -48,6 +49,7 @@ export default function LandingPage() {
               <Link href="/register?role=CARRIER" className="btn bg-white/10 text-white hover:bg-white/20 text-base">
                 <Truck size={18} /> Je transporte
               </Link>
+              <InstallButton />
             </div>
             <div className="mt-8 flex flex-wrap items-center gap-x-6 gap-y-2 text-sm text-brand-100">
               <span className="flex items-center gap-1.5"><ShieldCheck size={16} className="text-amber-400" /> Paiement sécurisé</span>

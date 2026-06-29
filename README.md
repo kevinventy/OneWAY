@@ -83,6 +83,32 @@ La base de démonstration est **seedée automatiquement** au premier lancement
 
 ---
 
+## 📱 Installation mobile (PWA)
+
+ONE WAY est une **Progressive Web App installable** : pas besoin du Play Store.
+Une fois l'app servie en **HTTPS** (voir déploiement ci-dessous), elle s'ajoute
+à l'écran d'accueil et s'ouvre en plein écran, comme une app native.
+
+- **Android (Chrome)** : menu ⋮ → *« Installer l'application »* / *« Ajouter à
+  l'écran d'accueil »* (ou le bouton **« Installer l'app »** affiché sur l'accueil).
+- **iOS (Safari)** : bouton *Partager* → *« Sur l'écran d'accueil »*.
+
+Inclus : `manifest.webmanifest`, service worker (`public/sw.js`, cache + repli
+hors-ligne sur `/offline`), icônes (`public/icons/`, régénérables via
+`node scripts/gen-icons.mjs`).
+
+> **Pourquoi pas de fichier `.apk` ?** Un APK natif nécessite le SDK Android +
+> un backend déployé. La PWA offre la même expérience « app installée » sans
+> passer par un store. Pour générer un vrai APK plus tard, on peut envelopper
+> la PWA déployée avec **Capacitor** ou une **Trusted Web Activity** (Bubblewrap)
+> — voir [`docs/07-roadmap.md`](docs/07-roadmap.md).
+
+### Déploiement (pour installer sur un vrai téléphone)
+
+Le plus simple : **Vercel** (`vercel` ou import du dépôt GitHub). En production,
+remplacez la couche de données démo par PostgreSQL + Prisma
+(`prisma/schema.prisma`) et définissez `AUTH_SECRET` + `DATABASE_URL`.
+
 ## 📚 Documentation produit & technique
 
 Tout est dans [`docs/`](docs/) :
