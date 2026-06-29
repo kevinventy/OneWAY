@@ -1,0 +1,373 @@
+// ─────────────────────────────────────────────────────────────────────────
+// ONE WAY — Schéma de base de données (PRODUCTION)
+//
+// ⚠️  Ce fichier est le schéma CANONIQUE de référence pour la production
+// (PostgreSQL + Prisma). L'application de démonstration de ce dépôt utilise
+// une couche JSON sans dépendance native (src/lib/db.ts) afin de tourner
+// partout sans serveur de base de données ; les entités ci-dessous reflètent
+// exactement les types de src/lib/types.ts.
+//
+// Mise en production :
+//   1. DATABASE_URL="postgresql://..."  (Neon / Supabase / RDS)
+//   2. npx prisma migrate dev --name init
+//   3. Remplacer src/lib/db.ts par un client Prisma (l'API ne change pas).
+// ─────────────────────────────────────────────────────────────────────────
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum Role {
+  SHIPPER
+  CARRIER
+  DRIVER
+  ADMIN
+}
+
+enum KycStatus {
+  NONE
+  PENDING
+  VERIFIED
+  REJECTED
+}
+
+enum FreightStatus {
+  DRAFT
+  PUBLISHED
+  ASSIGNED
+  IN_TRANSIT
+  DELIVERED
+  CANCELLED
+}
+
+enum PricingMode {
+  FIXED
+  AUCTION
+}
+
+enum Urgency {
+  STANDARD
+  EXPRESS
+  FLEXIBLE
+}
+
+enum BidStatus {
+  PENDING
+  ACCEPTED
+  REJECTED
+  WITHDRAWN
+}
+
+enum ShipmentStatus {
+  ASSIGNED
+  EN_ROUTE_PICKUP
+  AT_PICKUP
+  LOADED
+  IN_TRANSIT
+  AT_DELIVERY
+  DELIVERED
+  CANCELLED
+}
+
+enum DocumentType {
+  QUOTE
+  BL
+  INVOICE
+  POD
+  CERTIFICATE
+}
+
+enum PaymentMethod {
+  MVOLA
+  ORANGE_MONEY
+  AIRTEL_MONEY
+  WAVE
+  CARD
+  TRANSFER
+  CASH
+}
+
+enum TxStatus {
+  PENDING
+  ESCROW
+  RELEASED
+  REFUNDED
+  FAILED
+}
+
+model User {
+  id          String    @id @default(cuid())
+  role        Role
+  name        String
+  email       String    @unique
+  phone       String    @unique
+  password    String
+  companyName String?
+  city        String?
+  kycStatus   KycStatus @default(NONE)
+  rating      Float     @default(0)
+  ratingCount Int       @default(0)
+  premium     Boolean   @default(false)
+  createdAt   DateTime  @default(now())
+
+  // Carrier relations
+  carrierId      String?
+  carrier        User?   @relation("CarrierDrivers", fields: [carrierId], references: [id])
+  drivers        User[]  @relation("CarrierDrivers")
+  vehicles       Vehicle[]
+  driverProfiles Driver[]
+
+  // Marketplace relations
+  freights         Freight[]      @relation("ShipperFreights")
+  bids             Bid[]
+  shipmentsShipper Shipment[]     @relation("ShipmentShipper")
+  shipmentsCarrier Shipment[]     @relation("ShipmentCarrier")
+  reviewsGiven     Review[]       @relation("ReviewAuthor")
+  reviewsReceived  Review[]       @relation("ReviewTarget")
+  kycDocuments     KycDocument[]
+  notifications    Notification[]
+  subscriptions    Subscription[]
+
+  @@index([role])
+  @@index([city])
+}
+
+model Vehicle {
+  id           String   @id @default(cuid())
+  carrier      User     @relation(fields: [carrierId], references: [id])
+  carrierId    String
+  type         String   // VehicleTypeKey
+  name         String
+  plate        String
+  capacityKg   Int
+  refrigerated Boolean  @default(false)
+  available    Boolean  @default(true)
+  lat          Float?
+  lng          Float?
+  drivers      Driver[]
+
+  @@index([carrierId])
+}
+
+model Driver {
+  id            String     @id @default(cuid())
+  carrier       User       @relation(fields: [carrierId], references: [id])
+  carrierId     String
+  account       User?      @relation("CarrierDrivers", fields: [userId], references: [id])
+  userId        String?
+  name          String
+  phone         String
+  licenseNumber String
+  status        String     @default("AVAILABLE")
+  vehicle       Vehicle?   @relation(fields: [vehicleId], references: [id])
+  vehicleId     String?
+  shipments     Shipment[]
+
+  @@index([carrierId])
+}
+
+model Freight {
+  id            String        @id @default(cuid())
+  reference     String        @unique
+  shipper       User          @relation("ShipperFreights", fields: [shipperId], references: [id])
+  shipperId     String
+  title         String
+  cargoType     String
+  weightKg      Int
+  volumeM3      Float?
+  dimensions    String?
+  photos        String[]
+  // Pickup
+  pickupAddress String
+  pickupCity    String
+  pickupLat     Float
+  pickupLng     Float
+  // Delivery
+  deliveryAddress String
+  deliveryCity    String
+  deliveryLat     Float
+  deliveryLng     Float
+  pickupDate    DateTime
+  deliveryDate  DateTime?
+  urgency       Urgency       @default(STANDARD)
+  pricingMode   PricingMode   @default(FIXED)
+  vehicleType   String
+  declaredValue Int?
+  insurance     Boolean       @default(false)
+  distanceKm    Float
+  durationH     Float
+  budget        Int
+  status        FreightStatus @default(PUBLISHED)
+  createdAt     DateTime      @default(now())
+
+  bids      Bid[]
+  shipment  Shipment?
+  documents Document[]
+
+  @@index([status])
+  @@index([shipperId])
+  @@index([vehicleType])
+}
+
+model Bid {
+  id        String    @id @default(cuid())
+  freight   Freight   @relation(fields: [freightId], references: [id])
+  freightId String
+  carrier   User      @relation(fields: [carrierId], references: [id])
+  carrierId String
+  amount    Int
+  etaHours  Float
+  message   String?
+  vehicleId String?
+  status    BidStatus @default(PENDING)
+  createdAt DateTime  @default(now())
+
+  @@unique([freightId, carrierId])
+  @@index([freightId])
+}
+
+model Shipment {
+  id           String         @id @default(cuid())
+  reference    String         @unique
+  freight      Freight        @relation(fields: [freightId], references: [id])
+  freightId    String         @unique
+  shipper      User           @relation("ShipmentShipper", fields: [shipperId], references: [id])
+  shipperId    String
+  carrier      User           @relation("ShipmentCarrier", fields: [carrierId], references: [id])
+  carrierId    String
+  driver       Driver?        @relation(fields: [driverId], references: [id])
+  driverId     String?
+  vehicleId    String?
+  bidId        String?
+  price        Int
+  commission   Int
+  status       ShipmentStatus @default(ASSIGNED)
+  trackingCode String         @unique
+  currentLat   Float?
+  currentLng   Float?
+  progress     Float          @default(0)
+  createdAt    DateTime       @default(now())
+  deliveredAt  DateTime?
+
+  events       TrackingEvent[]
+  documents    Document[]
+  reviews      Review[]
+  transactions Transaction[]
+
+  @@index([carrierId])
+  @@index([shipperId])
+  @@index([status])
+}
+
+model TrackingEvent {
+  id         String         @id @default(cuid())
+  shipment   Shipment       @relation(fields: [shipmentId], references: [id])
+  shipmentId String
+  status     ShipmentStatus
+  label      String
+  lat        Float?
+  lng        Float?
+  note       String?
+  photoUrl   String?
+  by         String
+  createdAt  DateTime       @default(now())
+
+  @@index([shipmentId])
+}
+
+model Document {
+  id         String       @id @default(cuid())
+  shipment   Shipment?    @relation(fields: [shipmentId], references: [id])
+  shipmentId String?
+  freight    Freight?     @relation(fields: [freightId], references: [id])
+  freightId  String?
+  type       DocumentType
+  reference  String       @unique
+  title      String
+  url        String?
+  createdAt  DateTime     @default(now())
+}
+
+model Message {
+  id         String   @id @default(cuid())
+  threadId   String // freightId or shipmentId
+  fromUserId String
+  toUserId   String
+  body       String
+  read       Boolean  @default(false)
+  createdAt  DateTime @default(now())
+
+  @@index([threadId])
+}
+
+model Review {
+  id         String   @id @default(cuid())
+  shipment   Shipment @relation(fields: [shipmentId], references: [id])
+  shipmentId String
+  author     User     @relation("ReviewAuthor", fields: [fromUserId], references: [id])
+  fromUserId String
+  target     User     @relation("ReviewTarget", fields: [toUserId], references: [id])
+  toUserId   String
+  rating     Int
+  comment    String?
+  createdAt  DateTime @default(now())
+
+  @@index([toUserId])
+}
+
+model Transaction {
+  id         String        @id @default(cuid())
+  reference  String        @unique
+  shipment   Shipment      @relation(fields: [shipmentId], references: [id])
+  shipmentId String
+  payerId    String
+  payeeId    String
+  amount     Int
+  commission Int
+  method     PaymentMethod
+  status     TxStatus      @default(PENDING)
+  createdAt  DateTime      @default(now())
+
+  @@index([payeeId])
+}
+
+model KycDocument {
+  id        String    @id @default(cuid())
+  user      User      @relation(fields: [userId], references: [id])
+  userId    String
+  type      String
+  reference String
+  status    KycStatus @default(PENDING)
+  createdAt DateTime  @default(now())
+
+  @@index([userId])
+}
+
+model Notification {
+  id        String   @id @default(cuid())
+  user      User     @relation(fields: [userId], references: [id])
+  userId    String
+  type      String
+  title     String
+  body      String
+  read      Boolean  @default(false)
+  href      String?
+  createdAt DateTime @default(now())
+
+  @@index([userId])
+}
+
+model Subscription {
+  id        String   @id @default(cuid())
+  user      User     @relation(fields: [userId], references: [id])
+  userId    String
+  plan      String // FREE | CARRIER_PRO | SHIPPER_BUSINESS
+  status    String   @default("ACTIVE")
+  startedAt DateTime @default(now())
+  renewsAt  DateTime?
+}
