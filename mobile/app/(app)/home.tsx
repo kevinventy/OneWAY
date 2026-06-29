@@ -3,21 +3,28 @@ import { View, Text, ScrollView, StyleSheet, RefreshControl } from 'react-native
 import { useRouter } from 'expo-router';
 import { useAuth } from '@/store/auth';
 import { AppHeader, FreightCard, ShipmentCard } from '@/components/app';
-import { Button, EmptyState, SectionTitle, Stat } from '@/components/ui';
+import { Button, EmptyState, SectionTitle, Stat, Badge, Avatar, Card } from '@/components/ui';
 import {
   subscribeOpenFreights,
   subscribeShipperFreights,
   subscribeShipperShipments,
   subscribeCarrierShipments,
   subscribeDriverShipments,
+  subscribeAllShipments,
+  subscribeAllFreights,
+  subscribeDrivers,
   subscribeBids,
   subscribeNotifications,
   getDriverByUser,
   getFreight,
+  acceptMission,
+  refuseMission,
 } from '@/firebase/db';
 import { money, quickEstimateLabel } from '@/lib/uihelpers';
+import { moneyCompact } from '@/lib/format';
+import { SHIPMENT_STATUS } from '@/lib/labels';
 import { colors } from '@/theme';
-import type { Bid, Freight, Shipment } from '@/lib/types';
+import type { Bid, Driver, Freight, Shipment } from '@/lib/types';
 
 export default function Home() {
   const { user } = useAuth();
@@ -202,10 +209,10 @@ function DriverHome() {
       <Text style={styles.muted}>Vos missions de transport</Text>
       <SectionTitle>Missions en cours</SectionTitle>
       {active.length === 0 ? (
-        <EmptyState icon="map-outline" title="Aucune mission active" description="Votre transporteur vous affectera des missions ici." />
+        <EmptyState icon="map-outline" title="Aucune mission active" description="L'admin vous affectera des courses ici." />
       ) : (
         active.map((s) => freightById[s.freightId] && (
-          <ShipmentCard key={s.id} shipment={s} freight={freightById[s.freightId]} onPress={() => router.push(`/(app)/tracking/${s.id}`)} subtitle="Appuyez pour piloter la mission" />
+          <DriverMissionItem key={s.id} shipment={s} freight={freightById[s.freightId]} driverUserId={user!.id} />
         ))
       )}
     </ScrollView>
@@ -213,16 +220,112 @@ function DriverHome() {
 }
 
 function AdminHome() {
+  const router = useRouter();
+  const [freights, setFreights] = useState<Freight[]>([]);
+  const [shipments, setShipments] = useState<Shipment[]>([]);
+  const [drivers, setDrivers] = useState<Driver[]>([]);
+
+  useEffect(() => {
+    const u1 = subscribeAllFreights(setFreights);
+    const u2 = subscribeAllShipments(setShipments);
+    const u3 = subscribeDrivers(setDrivers);
+    return () => { u1(); u2(); u3(); };
+  }, []);
+
+  const pending = freights.filter((f) => f.status === 'PUBLISHED');
+  const active = shipments.filter((s) => !['DELIVERED', 'CANCELLED'].includes(s.status));
+  const delivered = shipments.filter((s) => s.status === 'DELIVERED');
+  const ca = shipments.filter((s) => s.status !== 'CANCELLED').reduce((sum, s) => sum + s.price, 0);
+  const onTime = delivered.length; // proxy ponctualité (à affiner avec délais réels)
+  const freightById: Record<string, Freight> = {};
+  freights.forEach((f) => (freightById[f.id] = f));
+
   return (
     <ScrollView contentContainerStyle={styles.scroll}>
-      <Text style={styles.greet}>Back-office</Text>
-      <EmptyState icon="desktop-outline" title="Administration sur le web" description="Le back-office complet (KPIs, KYC, utilisateurs) est disponible sur la version web de ONE WAY." />
+      <Text style={styles.greet}>Dispatch ONE WAY</Text>
+      <Text style={styles.muted}>Assignez les courses et pilotez la flotte</Text>
+
+      <View style={styles.statRow}>
+        <Stat label="CA (Ar)" value={moneyCompact(ca)} tone="green" />
+        <Stat label="Courses actives" value={active.length} tone="amber" />
+      </View>
+      <View style={styles.statRow}>
+        <Stat label="À assigner" value={pending.length} tone="red" />
+        <Stat label="Livrées" value={delivered.length} tone="blue" />
+        <Stat label="Chauffeurs" value={drivers.length} />
+      </View>
+
+      <SectionTitle>Demandes à assigner ({pending.length})</SectionTitle>
+      {pending.length === 0 ? (
+        <EmptyState icon="checkmark-done-outline" title="Aucune demande en attente" description="Toutes les demandes clients sont assignées." />
+      ) : (
+        pending.map((f) => (
+          <FreightCard key={f.id} freight={f} onPress={() => router.push(`/(app)/assign/${f.id}`)} right={<Badge tone="amber">Assigner →</Badge>} />
+        ))
+      )}
+
+      <SectionTitle>Courses en cours ({active.length})</SectionTitle>
+      {active.length === 0 ? (
+        <Card style={{ padding: 14 }}><Text style={styles.muted}>Aucune course active.</Text></Card>
+      ) : (
+        active.map((s) => freightById[s.freightId] && (
+          <ShipmentCard key={s.id} shipment={s} freight={freightById[s.freightId]} onPress={() => router.push(`/(app)/tracking/${s.id}`)} subtitle={s.accepted ? `Code · ${s.trackingCode}` : '⏳ En attente d’acceptation chauffeur'} />
+        ))
+      )}
+
+      <SectionTitle>Flotte — chauffeurs ({drivers.length})</SectionTitle>
+      {drivers.length === 0 ? (
+        <Card style={{ padding: 14 }}><Text style={styles.muted}>Aucun chauffeur. Ajoutez-en via le seed (FIREBASE_SETUP.md) ou la console.</Text></Card>
+      ) : (
+        drivers.map((d) => (
+          <Card key={d.id} style={styles.driverRow}>
+            <Avatar name={d.name} size={36} />
+            <View style={{ flex: 1 }}>
+              <Text style={styles.driverName}>{d.name}</Text>
+              <Text style={styles.muted}>Permis {d.licenseNumber}</Text>
+            </View>
+            <Badge tone={d.status === 'AVAILABLE' ? 'green' : d.status === 'ON_MISSION' ? 'amber' : 'slate'}>
+              {d.status === 'AVAILABLE' ? 'Disponible' : d.status === 'ON_MISSION' ? 'En mission' : 'Hors ligne'}
+            </Badge>
+          </Card>
+        ))
+      )}
     </ScrollView>
+  );
+}
+
+function DriverMissionItem({ shipment, freight, driverUserId }: { shipment: Shipment; freight: Freight; driverUserId: string }) {
+  const router = useRouter();
+  const [loading, setLoading] = useState<'accept' | 'refuse' | null>(null);
+  const pending = !shipment.accepted;
+
+  async function accept() {
+    setLoading('accept');
+    try { await acceptMission(shipment, driverUserId); router.push(`/(app)/tracking/${shipment.id}`); }
+    finally { setLoading(null); }
+  }
+  async function refuse() {
+    setLoading('refuse');
+    try { await refuseMission(shipment, driverUserId); } finally { setLoading(null); }
+  }
+
+  return (
+    <View>
+      <ShipmentCard shipment={shipment} freight={freight} onPress={() => router.push(`/(app)/tracking/${shipment.id}`)} subtitle={pending ? '🆕 Nouvelle course — à accepter' : 'Appuyez pour piloter la mission'} />
+      {pending && (
+        <View style={{ flexDirection: 'row', gap: 10, marginTop: -2, marginBottom: 12 }}>
+          <Button title="Refuser" variant="outline" icon="close" onPress={refuse} loading={loading === 'refuse'} style={{ flex: 1 }} />
+          <Button title="Accepter" variant="accent" icon="checkmark" onPress={accept} loading={loading === 'accept'} style={{ flex: 1 }} />
+        </View>
+      )}
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
   scroll: { padding: 16, paddingBottom: 40, gap: 4 },
+  driverRow: { flexDirection: 'row', alignItems: 'center', gap: 12, padding: 12, marginBottom: 8 },
+  driverName: { fontWeight: '700', color: colors.ink },
   greetRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 },
   greet: { fontSize: 22, fontWeight: '800', color: colors.ink },
   muted: { color: colors.inkMuted, marginBottom: 8 },

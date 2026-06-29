@@ -125,6 +125,8 @@ export interface Shipment {
   commission: number;
   status: ShipmentStatus;
   trackingCode: string;
+  /** Dispatch : course assignée par l'admin et acceptée (ou non) par le chauffeur. */
+  accepted?: boolean;
   currentLat?: number;
   currentLng?: number;
   progress: number;

@@ -21,6 +21,7 @@ import { MARKETPLACE } from '@/data/catalog';
 import { STATUS_FLOW, STATUS_LABEL } from '@/lib/flow';
 import type {
   Bid,
+  Driver,
   Freight,
   Shipment,
   ShipmentStatus,
@@ -159,7 +160,7 @@ export async function acceptBid(freight: Freight, bid: Bid): Promise<Shipment> {
   const shipment: Shipment = {
     id: sref.id, reference: `EXP-${pad(seq)}`, freightId: freight.id, shipperId: freight.shipperId,
     carrierId: bid.carrierId, driverId: driver?.id, vehicleId: bid.vehicleId ?? driver?.data()?.vehicleId,
-    bidId: bid.id, price: bid.amount, commission, status: 'ASSIGNED', trackingCode: code(),
+    bidId: bid.id, price: bid.amount, commission, status: 'ASSIGNED', accepted: true, trackingCode: code(),
     currentLat: freight.pickup.lat, currentLng: freight.pickup.lng, progress: 0, createdAt: Date.now(),
   };
   batch.set(sref, stripUndefined(shipment));
@@ -180,6 +181,69 @@ export async function acceptBid(freight: Freight, bid: Bid): Promise<Shipment> {
 
   await batch.commit();
   return shipment;
+}
+
+// ── Dispatch (admin assigne une course à un chauffeur) ────────────────────
+
+export async function assignToDriver(freight: Freight, driver: Driver): Promise<Shipment> {
+  const seq = await nextSeq('shipment');
+  const txSeq = await nextSeq('transaction');
+  const carrier = await getUser(driver.carrierId);
+  const price = freight.budget;
+  const commission = Math.round(price * commissionRateFor(carrier));
+  const batch = writeBatch(firestore);
+
+  batch.update(doc(firestore, 'freights', freight.id), { status: 'ASSIGNED' });
+
+  const sref = doc(col('shipments'));
+  const shipment: Shipment = {
+    id: sref.id, reference: `EXP-${pad(seq)}`, freightId: freight.id, shipperId: freight.shipperId,
+    carrierId: driver.carrierId, driverId: driver.id, vehicleId: driver.vehicleId,
+    price, commission, status: 'ASSIGNED', accepted: false, trackingCode: code(),
+    currentLat: freight.pickup.lat, currentLng: freight.pickup.lng, progress: 0, createdAt: Date.now(),
+  };
+  batch.set(sref, stripUndefined(shipment));
+  batch.update(doc(firestore, 'drivers', driver.id), { status: 'ON_MISSION' });
+
+  const tref = doc(col('tracking'));
+  batch.set(tref, { id: tref.id, shipmentId: sref.id, status: 'ASSIGNED', label: `Course assignée à ${driver.name}`, by: 'admin', createdAt: Date.now() });
+
+  const xref = doc(col('transactions'));
+  batch.set(xref, { id: xref.id, reference: `PAY-${pad(txSeq)}`, shipmentId: sref.id, payerId: freight.shipperId, payeeId: driver.carrierId, amount: price, commission, method: 'MVOLA', status: 'ESCROW', createdAt: Date.now() });
+
+  if (driver.userId) {
+    const nref = doc(col('notifications'));
+    batch.set(nref, { id: nref.id, userId: driver.userId, type: 'MISSION', read: false, title: 'Nouvelle course 🚚', body: `${freight.pickup.city} → ${freight.delivery.city}. Acceptez ou refusez.`, href: `/tracking/${sref.id}`, createdAt: Date.now() });
+  }
+  const snref = doc(col('notifications'));
+  batch.set(snref, { id: snref.id, userId: freight.shipperId, type: 'MISSION', read: false, title: 'Demande prise en charge', body: `${freight.reference} assignée à un chauffeur.`, href: `/tracking/${sref.id}`, createdAt: Date.now() });
+
+  await batch.commit();
+  return shipment;
+}
+
+/** Le chauffeur accepte la course assignée → démarre vers le chargement. */
+export async function acceptMission(shipment: Shipment, by: string): Promise<void> {
+  await updateDoc(doc(firestore, 'shipments', shipment.id), { accepted: true });
+  await advanceShipment({ ...shipment, accepted: true }, by, { status: 'EN_ROUTE_PICKUP' });
+}
+
+/** Le chauffeur refuse : la demande retourne en attente d'assignation. */
+export async function refuseMission(shipment: Shipment, by: string): Promise<void> {
+  const batch = writeBatch(firestore);
+  batch.update(doc(firestore, 'shipments', shipment.id), { status: 'CANCELLED', accepted: false });
+  batch.update(doc(firestore, 'freights', shipment.freightId), { status: 'PUBLISHED' });
+  if (shipment.driverId) batch.update(doc(firestore, 'drivers', shipment.driverId), { status: 'AVAILABLE' });
+  const txs = await getDocs(query(col('transactions'), where('shipmentId', '==', shipment.id)));
+  txs.forEach((d) => batch.update(d.ref, { status: 'REFUNDED' }));
+  const tref = doc(col('tracking'));
+  batch.set(tref, { id: tref.id, shipmentId: shipment.id, status: 'CANCELLED', label: 'Course refusée par le chauffeur', by, createdAt: Date.now() });
+  const admins = await getDocs(query(col('users'), where('role', '==', 'ADMIN')));
+  admins.forEach((a) => {
+    const nref = doc(col('notifications'));
+    batch.set(nref, { id: nref.id, userId: a.id, type: 'MISSION', read: false, title: 'Course refusée', body: `${shipment.reference} à réassigner.`, href: '/home', createdAt: Date.now() });
+  });
+  await batch.commit();
 }
 
 // ── Shipment lifecycle ────────────────────────────────────────────────────
@@ -292,6 +356,21 @@ export const subscribeTracking = (shipmentId: string, cb: (t: TrackingEvent[]) =
 
 export const subscribeNotifications = (uid: string, cb: (n: any[]) => void) =>
   subscribe<any>('notifications', [where('userId', '==', uid)], (rows) => cb(rows.sort((a, b) => b.createdAt - a.createdAt)));
+
+/** Admin : toutes les courses, tous les chauffeurs (dispatch & stats). */
+export const subscribeAllShipments = (cb: (s: Shipment[]) => void) =>
+  subscribe<Shipment>('shipments', [], (rows) => cb(rows.sort((a, b) => b.createdAt - a.createdAt)));
+
+export const subscribeAllFreights = (cb: (f: Freight[]) => void) =>
+  subscribe<Freight>('freights', [], (rows) => cb(rows.sort((a, b) => b.createdAt - a.createdAt)));
+
+export const subscribeDrivers = (cb: (d: Driver[]) => void) =>
+  subscribe<Driver>('drivers', [], (rows) => cb(rows));
+
+export async function getDrivers(): Promise<Driver[]> {
+  const s = await getDocs(col('drivers'));
+  return s.docs.map((d) => d.data() as Driver);
+}
 
 export function subscribeDoc<T>(name: string, id: string, cb: (row: T | null) => void) {
   return onSnapshot(doc(firestore, name, id), (snap) => cb(snap.exists() ? (snap.data() as T) : null));
