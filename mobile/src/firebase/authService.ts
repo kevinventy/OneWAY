@@ -51,7 +51,14 @@ export async function register(input: RegisterInput): Promise<User> {
   };
   const clean: Record<string, unknown> = {};
   for (const [k, v] of Object.entries(profile)) if (v !== undefined && v !== '') clean[k] = v;
-  await setDoc(doc(firestore, 'users', uid), clean);
+  try {
+    await setDoc(doc(firestore, 'users', uid), clean);
+  } catch (err) {
+    // Profil non écrit (ex. règles Firestore verrouillées) : on supprime le
+    // compte Auth orphelin pour permettre un nouvel essai propre.
+    await cred.user.delete().catch(() => {});
+    throw err;
+  }
   return profile;
 }
 

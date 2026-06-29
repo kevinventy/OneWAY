@@ -25,7 +25,7 @@ export default function Login() {
       await login(identifiant, password);
       router.replace('/(app)/home');
     } catch (e: any) {
-      setError(humanError(e?.code) ?? 'Connexion impossible');
+      setError(describeError(e));
       setLoading(false);
     }
   }
@@ -59,19 +59,29 @@ export default function Login() {
   );
 }
 
-export function humanError(code?: string): string | undefined {
-  switch (code) {
-    case 'auth/invalid-email': return 'Identifiant invalide';
-    case 'auth/user-not-found':
-    case 'auth/wrong-password':
-    case 'auth/invalid-credential': return 'Identifiant ou mot de passe incorrect';
-    case 'auth/email-already-in-use': return 'Cet identifiant est déjà pris';
-    case 'auth/weak-password': return 'Mot de passe trop faible (6 caractères min.)';
-    case 'auth/network-request-failed': return 'Problème réseau — vérifiez votre connexion';
-    case 'auth/configuration-not-found':
-    case 'auth/operation-not-allowed': return 'Connexion par e-mail/mot de passe non activée dans Firebase';
-    default: return undefined;
-  }
+const ERROR_MAP: Record<string, string> = {
+  'auth/invalid-email': 'Identifiant invalide',
+  'auth/user-not-found': 'Identifiant ou mot de passe incorrect',
+  'auth/wrong-password': 'Identifiant ou mot de passe incorrect',
+  'auth/invalid-credential': 'Identifiant ou mot de passe incorrect',
+  'auth/email-already-in-use': 'Cet identifiant est déjà pris',
+  'auth/weak-password': 'Mot de passe trop faible (6 caractères min.)',
+  'auth/network-request-failed': 'Problème réseau — vérifiez votre connexion',
+  'auth/operation-not-allowed': 'Activez « E-mail/Mot de passe » dans Firebase → Authentication → Sign-in method.',
+  'auth/admin-restricted-operation': 'Activez « E-mail/Mot de passe » dans Firebase → Authentication → Sign-in method.',
+  'auth/configuration-not-found': 'Authentication non configuré dans Firebase (activez E-mail/Mot de passe).',
+  'auth/api-key-not-valid': 'Clé API Firebase invalide — vérifiez la Variable EXPO_PUBLIC_FIREBASE_API_KEY.',
+  'auth/invalid-api-key': 'Clé API Firebase invalide — vérifiez la Variable EXPO_PUBLIC_FIREBASE_API_KEY.',
+  'permission-denied': 'Firestore bloque l’écriture. Passez la base en « mode test » ou déployez les règles (mobile/firestore.rules).',
+  'unavailable': 'Firestore indisponible — réessayez dans un instant.',
+};
+
+/** Message clair pour l'utilisateur ; affiche le code brut si inconnu (diagnostic). */
+export function describeError(e: any): string {
+  const code: string | undefined = e?.code;
+  if (code && ERROR_MAP[code]) return ERROR_MAP[code];
+  const raw = code || e?.message || 'inconnue';
+  return `Erreur : ${raw}`;
 }
 
 const styles = StyleSheet.create({

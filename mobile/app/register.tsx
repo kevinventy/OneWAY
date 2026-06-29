@@ -5,7 +5,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { useAuth } from '@/store/auth';
 import { Button, Field, Input } from '@/components/ui';
 import { Logo } from '@/components/Logo';
-import { humanError } from './login';
+import { describeError } from './login';
 import { colors, radius } from '@/theme';
 
 type Role = 'SHIPPER' | 'CARRIER';
@@ -39,7 +39,7 @@ export default function Register() {
       });
       router.replace('/(app)/home');
     } catch (e: any) {
-      setError(humanError(e?.code) ?? 'Inscription impossible');
+      setError(describeError(e));
       setLoading(false);
     }
   }
