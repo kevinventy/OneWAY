@@ -49,12 +49,12 @@
     "extra": {
       "router": { "origin": false },
       "firebase": {
-        "apiKey": "",
-        "authDomain": "",
-        "projectId": "",
-        "storageBucket": "",
-        "messagingSenderId": "",
-        "appId": ""
+        "apiKey": "AIzaSyCWxVofx8do9JzZrs2b8ywx-ZKQy-cqclw",
+        "authDomain": "oneway-77f85.firebaseapp.com",
+        "projectId": "oneway-77f85",
+        "storageBucket": "oneway-77f85.firebasestorage.app",
+        "messagingSenderId": "365501423696",
+        "appId": "1:365501423696:web:06ba6663b14ecae1b1f155"
       }
     }
   }

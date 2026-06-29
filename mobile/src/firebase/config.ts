@@ -17,13 +17,16 @@ import Constants from 'expo-constants';
  */
 const extra = (Constants.expoConfig?.extra?.firebase ?? {}) as Partial<FirebaseOptions>;
 
+// La config embarquée (app.json → extra.firebase) est prioritaire sur les
+// variables d'environnement, afin que les valeurs committées (sûres car
+// publiques) priment sur d'éventuelles Variables de dépôt erronées.
 const firebaseConfig: FirebaseOptions = {
-  apiKey: process.env.EXPO_PUBLIC_FIREBASE_API_KEY || extra.apiKey || '',
-  authDomain: process.env.EXPO_PUBLIC_FIREBASE_AUTH_DOMAIN || extra.authDomain || '',
-  projectId: process.env.EXPO_PUBLIC_FIREBASE_PROJECT_ID || extra.projectId || '',
-  storageBucket: process.env.EXPO_PUBLIC_FIREBASE_STORAGE_BUCKET || extra.storageBucket || '',
-  messagingSenderId: process.env.EXPO_PUBLIC_FIREBASE_MESSAGING_SENDER_ID || extra.messagingSenderId || '',
-  appId: process.env.EXPO_PUBLIC_FIREBASE_APP_ID || extra.appId || '',
+  apiKey: extra.apiKey || process.env.EXPO_PUBLIC_FIREBASE_API_KEY || '',
+  authDomain: extra.authDomain || process.env.EXPO_PUBLIC_FIREBASE_AUTH_DOMAIN || '',
+  projectId: extra.projectId || process.env.EXPO_PUBLIC_FIREBASE_PROJECT_ID || '',
+  storageBucket: extra.storageBucket || process.env.EXPO_PUBLIC_FIREBASE_STORAGE_BUCKET || '',
+  messagingSenderId: extra.messagingSenderId || process.env.EXPO_PUBLIC_FIREBASE_MESSAGING_SENDER_ID || '',
+  appId: extra.appId || process.env.EXPO_PUBLIC_FIREBASE_APP_ID || '',
 };
 
 /** True once real Firebase keys are provided. */
