@@ -15,6 +15,41 @@ machine à états de livraison, moteur de prix ONE WAY).
 
 ---
 
+## 📲 Obtenir l'app (sans rien installer)
+
+ONE WAY se compose de deux choses : un **site web** (l'application complète) et une **app Android** (un APK qui ouvre simplement votre site web déployé). Voici comment obtenir les deux en quelques clics, sans rien installer sur votre machine.
+
+### 1. Déployer le web en 1 clic (Vercel)
+
+Cliquez sur le bouton ci-dessous : Vercel clone le dépôt sur votre compte, vous demande la variable `AUTH_SECRET`, puis met l'application en ligne automatiquement.
+
+[![Deploy with Vercel](https://vercel.com/button)](https://vercel.com/new/clone?repository-url=https://github.com/kevinventy/OneWAY/tree/claude/freight-marketplace-app-ymffso&env=AUTH_SECRET&envDescription=Secret%20de%20session%20(32%2B%20caract%C3%A8res)&project-name=oneway&repository-name=oneway)
+
+- **`AUTH_SECRET`** (obligatoire) : une chaîne aléatoire d'au moins 32 caractères, qui sert à signer les sessions. Générez-la par exemple avec `openssl rand -base64 32`.
+- **`DATABASE_URL`** (facultatif) : sans base de données, l'app tourne en **mode démo** (les données de démonstration sont réinitialisées à chaque démarrage à froid). C'est parfait pour tester.
+
+À la fin, Vercel vous donne une URL du type `https://oneway-xxxx.vercel.app` : **c'est votre app**. Notez-la, elle sert à l'étape 3.
+
+### 2. Récupérer l'APK Android
+
+Vous n'avez **rien à compiler** : l'APK est construit automatiquement par GitHub Actions (workflow **« Android APK »**). Pour le télécharger :
+
+- Ouvrez l'onglet **Actions** du dépôt → choisissez le **dernier run** du workflow *Android APK* → en bas de la page, section **Artifacts**, téléchargez **`oneway-apk`**.
+- *(Alternative)* Si le workflow a été lancé manuellement, l'APK est aussi publié dans l'onglet **Releases** du dépôt.
+
+Décompressez l'archive, transférez le fichier `.apk` sur votre téléphone Android et installez-le (autorisez les « sources inconnues » si demandé).
+
+### 3. Faire pointer l'APK vers VOTRE app déployée
+
+Par défaut l'APK ouvre l'URL de démonstration. Pour qu'il ouvre **votre** déploiement Vercel (l'URL de l'étape 1), deux options :
+
+- **Option simple (au lancement)** : allez dans **Actions → Android APK → Run workflow**, et saisissez votre URL Vercel dans le champ **`app_url`**. L'APK généré pointera vers cette URL.
+- **Option permanente (variable de dépôt)** : allez dans **Settings → Secrets and variables → Actions → onglet Variables**, créez une variable nommée **`ONEWAY_APP_URL`** avec votre URL Vercel comme valeur. Puis relancez le workflow. Tous les futurs APK pointeront automatiquement vers votre app.
+
+> 🔎 Détails techniques (build CI, Capacitor, Postgres) : voir **[`DEPLOY.md`](DEPLOY.md)**.
+
+---
+
 ## ✨ Fonctionnalités (MVP livré)
 
 | Domaine | Détail |
