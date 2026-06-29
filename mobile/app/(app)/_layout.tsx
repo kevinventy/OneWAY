@@ -1,0 +1,36 @@
+import { Stack, Redirect } from 'expo-router';
+import { ActivityIndicator, View } from 'react-native';
+import { useAuth } from '@/store/auth';
+import { colors } from '@/theme';
+
+export default function AppLayout() {
+  const { user, loading, configured } = useAuth();
+
+  if (configured && loading) {
+    return (
+      <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center', backgroundColor: colors.bg }}>
+        <ActivityIndicator color={colors.brand600} size="large" />
+      </View>
+    );
+  }
+  if (!user) return <Redirect href="/welcome" />;
+
+  return (
+    <Stack
+      screenOptions={{
+        headerStyle: { backgroundColor: colors.white },
+        headerTintColor: colors.ink,
+        headerTitleStyle: { fontWeight: '800' },
+        headerShadowVisible: false,
+        contentStyle: { backgroundColor: colors.bg },
+      }}
+    >
+      <Stack.Screen name="home" options={{ headerShown: false }} />
+      <Stack.Screen name="new-freight" options={{ title: 'Publier un fret' }} />
+      <Stack.Screen name="freight/[id]" options={{ title: 'Annonce' }} />
+      <Stack.Screen name="tracking/[id]" options={{ title: 'Suivi' }} />
+      <Stack.Screen name="notifications" options={{ title: 'Notifications' }} />
+      <Stack.Screen name="profile" options={{ title: 'Mon compte' }} />
+    </Stack>
+  );
+}

@@ -48,6 +48,24 @@ Par défaut l'APK ouvre l'URL de démonstration. Pour qu'il ouvre **votre** dép
 
 > 🔎 Détails techniques (build CI, Capacitor, Postgres) : voir **[`DEPLOY.md`](DEPLOY.md)**.
 
+### App mobile native (Expo + Firebase)
+
+En plus de la PWA, le dossier **[`mobile/`](mobile/)** contient une **vraie app
+native React Native (Expo SDK 52 + expo-router)** avec backend **Firebase**
+(Auth + Firestore temps réel), réutilisant tout le domaine métier.
+
+- **APK natif** : compilé automatiquement par GitHub Actions (workflow
+  **« Expo APK »**) via `expo prebuild` + Gradle → artefact `oneway-expo-apk`
+  (onglet *Actions*) ou *Releases*.
+- **Configuration** : créez un projet Firebase et renseignez vos clés —
+  voir **[`mobile/FIREBASE_SETUP.md`](mobile/FIREBASE_SETUP.md)**. Pour que l'APK
+  CI soit fonctionnel, ajoutez les *Variables* de dépôt `EXPO_PUBLIC_FIREBASE_*`.
+- Détails : **[`mobile/README.md`](mobile/README.md)**.
+
+> Deux saveurs d'app Android sont fournies : **Capacitor** (enrobe la PWA web,
+> ci-dessus) et **Expo** (app native + Firebase, `mobile/`). Choisissez selon
+> votre besoin — l'app Expo est la voie « 100 % mobile native ».
+
 ---
 
 ## ✨ Fonctionnalités (MVP livré)

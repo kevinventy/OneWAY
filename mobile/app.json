@@ -1,0 +1,57 @@
+{
+  "expo": {
+    "name": "ONE WAY",
+    "slug": "oneway",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "scheme": "oneway",
+    "userInterfaceStyle": "light",
+    "newArchEnabled": true,
+    "icon": "./assets/icon.png",
+    "splash": {
+      "image": "./assets/splash-icon.png",
+      "backgroundColor": "#141a57",
+      "resizeMode": "contain"
+    },
+    "assetBundlePatterns": ["**/*"],
+    "ios": {
+      "supportsTablet": true,
+      "bundleIdentifier": "mg.oneway.app"
+    },
+    "android": {
+      "package": "mg.oneway.app",
+      "adaptiveIcon": {
+        "foregroundImage": "./assets/adaptive-icon.png",
+        "backgroundColor": "#141a57"
+      },
+      "permissions": ["ACCESS_FINE_LOCATION", "ACCESS_COARSE_LOCATION", "CAMERA"]
+    },
+    "web": {
+      "bundler": "metro",
+      "output": "single",
+      "favicon": "./assets/favicon.png"
+    },
+    "plugins": [
+      "expo-router",
+      [
+        "expo-location",
+        { "locationAlwaysAndWhenInUsePermission": "ONE WAY utilise votre position pour le suivi des livraisons." }
+      ],
+      [
+        "expo-image-picker",
+        { "photosPermission": "ONE WAY accède à vos photos pour les preuves de chargement/livraison." }
+      ]
+    ],
+    "extra": {
+      "router": { "origin": false },
+      "firebase": {
+        "apiKey": "",
+        "authDomain": "",
+        "projectId": "",
+        "storageBucket": "",
+        "messagingSenderId": "",
+        "appId": ""
+      }
+    }
+  }
+}
