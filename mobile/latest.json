@@ -1,6 +1,6 @@
 {
-  "version": "1.0.2",
-  "versionCode": 3,
+  "version": "1.0.3",
+  "versionCode": 4,
   "apkUrl": "https://github.com/kevinventy/OneWAY/releases/latest/download/app-release.apk",
-  "notes": "Nouvel emblème ONE WAY (logo + icône Android), calcul rapide des prix pour le gérant, enregistrement du mot de passe, confirmation avant de quitter et correctifs."
+  "notes": "Calcul rapide aligné sur la grille tarifaire officielle ONE WAY (carburant gazole/essence, retour à vide 70 %)."
 }

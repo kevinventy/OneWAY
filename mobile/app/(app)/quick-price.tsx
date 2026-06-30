@@ -111,8 +111,8 @@ export default function QuickPrice() {
         </Card>
 
         <Text style={styles.note}>
-          ℹ️ Estimation indicative selon la grille tarifaire ONE WAY. Le carburant et le coût de retour à vide
-          sont approchés (gazole ~5 000 Ar/L) ; ajustez le prix final selon l’état des routes et la négociation.
+          ℹ️ Calcul basé sur la grille tarifaire officielle ONE WAY (gazole 4 900 Ar/L, essence 5 100 Ar/L,
+          retour à vide 70 %). Ajustez le prix final selon l’état des routes et la négociation.
         </Text>
       </ScrollView>
     </KeyboardAvoidingView>

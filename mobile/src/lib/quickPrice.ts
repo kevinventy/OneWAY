@@ -1,48 +1,54 @@
 /**
  * Calculateur de prix RAPIDE — ONE WAY (espace gérant).
  *
- * Reproduit la feuille Excel « 🧮 Calculateur Rapide » (Calcul_rapide.xlsx).
- * La grille tarifaire (tarif/km hors carburant, forfait de base, majoration)
- * provient telle quelle de la feuille « ⚙️ Paramètres » du classeur de devis
- * ONE WAY.
- *
- * Deux paramètres du classeur d'origine ne figurent pas dans le fichier fourni
- * et sont donc estimés ici, à partir de coûts gazole réalistes à Madagascar
- * (~5 000 Ar/L) et des consommations moyennes par classe de véhicule :
- *   - `fuelPerKm`  : carburant aller (Ar/km)
- *   - `repositioningFactor` : retour à vide ≈ part du coût roulant aller
- * Ils sont ajustables ci-dessous si le gérant dispose de chiffres précis.
+ * Port fidèle de la feuille « 🧮 Calculateur Rapide » du classeur officiel
+ * OneWay_Devis_Transport.xlsm. Toutes les valeurs proviennent de sa feuille
+ * « ⚙️ Paramètres » (grille tarifaire, prix du carburant, coefficient de
+ * retour à vide) — plus aucune estimation.
  */
 
+/** Prix du carburant (⚙️ Paramètres) — modifiable selon le cours. */
+export const FUEL_PRICES = { diesel: 4900, essence: 5100 } as const; // Ar / litre
+
+type FuelKind = keyof typeof FUEL_PRICES;
+
 export interface QuickVehicle {
-  index: number; // 1..10, comme la colonne « Type véhicule (1→10) » du tableur
+  index: number; // 1..10 (colonne « Type véhicule 1→10 » du tableur)
   key: string;
   label: string;
   capacity: string;
   ratePerKm: number; // D : frais kilométriques aller, hors carburant (Ar/km)
-  fuelPerKm: number; // F : carburant aller (Ar/km) — estimé
+  consoPer100: number; // E : consommation (L/100 km)
+  fuel: FuelKind; // type de carburant
+  fuelPerKm: number; // F : carburant aller (Ar/km) = conso/100 × prix carburant
   baseFee: number; // G : forfait de base véhicule (Ar)
   surcharge: number; // H : majoration de classe (fraction)
   emoji: string;
 }
 
-/** Grille tarifaire ONE WAY (feuille « ⚙️ Paramètres », véhicules 1→10). */
-export const QUICK_VEHICLES: QuickVehicle[] = [
-  { index: 1, key: 'MOTO', label: 'Moto-taxi / Tricycle', capacity: '< 200 kg', ratePerKm: 180, fuelPerKm: 150, baseFee: 8_000, surcharge: 0, emoji: '🛵' },
-  { index: 2, key: 'CAMIONNETTE', label: 'Camionnette légère', capacity: '200–800 kg', ratePerKm: 250, fuelPerKm: 500, baseFee: 15_000, surcharge: 0.1, emoji: '🚐' },
-  { index: 3, key: 'CAMION_3T', label: 'Camion 3 tonnes', capacity: '800 kg–3 T', ratePerKm: 300, fuelPerKm: 900, baseFee: 20_000, surcharge: 0.15, emoji: '🚚' },
-  { index: 4, key: 'CAMION_5T', label: 'Camion 5 tonnes', capacity: '3–5 T', ratePerKm: 350, fuelPerKm: 1_250, baseFee: 25_000, surcharge: 0.2, emoji: '🚚' },
-  { index: 5, key: 'CAMION_10T', label: 'Camion 10 tonnes', capacity: '5–10 T', ratePerKm: 420, fuelPerKm: 1_600, baseFee: 35_000, surcharge: 0.25, emoji: '🚛' },
-  { index: 6, key: 'SEMI_20T', label: 'Semi-remorque 20 T', capacity: '10–20 T', ratePerKm: 520, fuelPerKm: 2_000, baseFee: 50_000, surcharge: 0.3, emoji: '🚛' },
-  { index: 7, key: 'FRIGO_5T', label: 'Camion frigorifique 5 T', capacity: '3–5 T frigo', ratePerKm: 450, fuelPerKm: 1_400, baseFee: 40_000, surcharge: 0.2, emoji: '❄️' },
-  { index: 8, key: 'BENNE_15T', label: 'Camion benne', capacity: "Jusqu'à 15 T", ratePerKm: 400, fuelPerKm: 1_500, baseFee: 30_000, surcharge: 0.15, emoji: '🚜' },
-  { index: 9, key: 'CONTENEUR_20', label: 'Conteneur 20 pieds', capacity: 'Max 24 T', ratePerKm: 600, fuelPerKm: 1_900, baseFee: 80_000, surcharge: 0.35, emoji: '📦' },
-  { index: 10, key: 'CONTENEUR_40', label: 'Conteneur 40 pieds', capacity: 'Max 28 T', ratePerKm: 750, fuelPerKm: 2_250, baseFee: 120_000, surcharge: 0.4, emoji: '📦' },
+/** Grille tarifaire ONE WAY (⚙️ Paramètres, véhicules 1→10). */
+const RAW_VEHICLES: Omit<QuickVehicle, 'fuelPerKm'>[] = [
+  { index: 1, key: 'MOTO', label: 'Moto-taxi / Tricycle', capacity: '< 200 kg', ratePerKm: 800, consoPer100: 3, fuel: 'essence', baseFee: 15_000, surcharge: 0, emoji: '🛵' },
+  { index: 2, key: 'CAMIONNETTE', label: 'Camionnette légère', capacity: '200–800 kg', ratePerKm: 1_200, consoPer100: 10, fuel: 'diesel', baseFee: 30_000, surcharge: 0.1, emoji: '🚐' },
+  { index: 3, key: 'CAMION_3T', label: 'Camion 3 tonnes', capacity: '800 kg–3 T', ratePerKm: 1_900, consoPer100: 18, fuel: 'diesel', baseFee: 60_000, surcharge: 0.15, emoji: '🚚' },
+  { index: 4, key: 'CAMION_5T', label: 'Camion 5 tonnes', capacity: '3–5 T', ratePerKm: 2_800, consoPer100: 25, fuel: 'diesel', baseFee: 100_000, surcharge: 0.2, emoji: '🚚' },
+  { index: 5, key: 'CAMION_10T', label: 'Camion 10 tonnes', capacity: '5–10 T', ratePerKm: 3_900, consoPer100: 32, fuel: 'diesel', baseFee: 180_000, surcharge: 0.25, emoji: '🚛' },
+  { index: 6, key: 'SEMI_20T', label: 'Semi-remorque 20 T', capacity: '10–20 T', ratePerKm: 5_600, consoPer100: 38, fuel: 'diesel', baseFee: 300_000, surcharge: 0.3, emoji: '🚛' },
+  { index: 7, key: 'FRIGO_5T', label: 'Camion frigorifique 5 T', capacity: '3–5 T frigo', ratePerKm: 3_800, consoPer100: 28, fuel: 'diesel', baseFee: 150_000, surcharge: 0.2, emoji: '❄️' },
+  { index: 8, key: 'BENNE_15T', label: 'Camion benne', capacity: "Jusqu'à 15 T", ratePerKm: 4_300, consoPer100: 35, fuel: 'diesel', baseFee: 200_000, surcharge: 0.25, emoji: '🚜' },
+  { index: 9, key: 'CONTENEUR_20', label: 'Conteneur 20 pieds', capacity: 'Max 24 T', ratePerKm: 4_600, consoPer100: 38, fuel: 'diesel', baseFee: 250_000, surcharge: 0.35, emoji: '📦' },
+  { index: 10, key: 'CONTENEUR_40', label: 'Conteneur 40 pieds', capacity: 'Max 28 T', ratePerKm: 6_300, consoPer100: 45, fuel: 'diesel', baseFee: 400_000, surcharge: 0.4, emoji: '📦' },
 ];
 
-/** Paramètres globaux du calcul (identiques au tableur). */
+/** Carburant/km recalculé à partir du prix du carburant (comme dans le tableur). */
+export const QUICK_VEHICLES: QuickVehicle[] = RAW_VEHICLES.map((v) => ({
+  ...v,
+  fuelPerKm: Math.round((v.consoPer100 / 100) * FUEL_PRICES[v.fuel]),
+}));
+
+/** Paramètres globaux du calcul (⚙️ Paramètres + formule du tableur). */
 export const QUICK_PARAMS = {
-  repositioningFactor: 0.5, // retour à vide ≈ 50 % du coût roulant aller (estimé)
+  repositioningFactor: 0.7, // C15 : retour à vide = 70 % du coût roulant aller
   handlingRate: 0.15, // manutention = 15 % du forfait, par opération
   insuranceRate: 0.005, // assurance = 0,5 % de la valeur déclarée
   miscFeesRate: 0.03, // frais divers (péages…) = 3 % (frais km + retour)
