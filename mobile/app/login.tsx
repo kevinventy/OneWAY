@@ -54,10 +54,29 @@ export default function Login() {
 
         <View style={{ marginTop: 24 }}>
           <Field label="Identifiant">
-            <Input value={identifiant} onChangeText={setIdentifiant} autoCapitalize="none" placeholder="votre nom d'utilisateur" />
+            <Input
+              value={identifiant}
+              onChangeText={setIdentifiant}
+              autoCapitalize="none"
+              autoComplete="username"
+              textContentType="username"
+              importantForAutofill="yes"
+              autoCorrect={false}
+              placeholder="votre nom d'utilisateur"
+            />
           </Field>
           <Field label="Mot de passe">
-            <Input value={password} onChangeText={setPassword} secureTextEntry placeholder="••••••••" />
+            <Input
+              value={password}
+              onChangeText={setPassword}
+              secureTextEntry
+              autoComplete="password"
+              textContentType="password"
+              importantForAutofill="yes"
+              onSubmitEditing={submit}
+              returnKeyType="go"
+              placeholder="••••••••"
+            />
           </Field>
           {error ? <Text style={styles.error}>{error}</Text> : null}
           <Button title="Se connecter" onPress={submit} loading={loading} style={{ marginTop: 6 }} />

@@ -60,6 +60,31 @@ export function roadLength(points: LatLng[]): number {
   return s;
 }
 
+/**
+ * Aplati une polyligne `[[lat,lng], …]` en `[lat, lng, lat, lng, …]`.
+ * Firestore **interdit les tableaux imbriqués** : on stocke donc la géométrie
+ * sous forme plate puis on la reconstitue à la lecture.
+ */
+export function flattenLatLng(points: LatLng[] | undefined | null): number[] {
+  const out: number[] = [];
+  if (!points) return out;
+  for (const p of points) {
+    if (Array.isArray(p) && p.length >= 2) out.push(p[0], p[1]);
+  }
+  return out;
+}
+
+/** Reconstitue une polyligne à partir d'un tableau plat (tolère l'ancien format imbriqué). */
+export function unflattenLatLng(flat: number[] | LatLng[] | undefined | null): LatLng[] {
+  if (!flat || flat.length === 0) return [];
+  // Compat : ancien format déjà imbriqué `[[lat,lng], …]`.
+  if (Array.isArray((flat as any[])[0])) return flat as LatLng[];
+  const nums = flat as number[];
+  const out: LatLng[] = [];
+  for (let i = 0; i + 1 < nums.length; i += 2) out.push([nums[i], nums[i + 1]]);
+  return out;
+}
+
 /** Position du véhicule à la fraction t (0..1) le long de la route. */
 export function pointAtProgress(points: LatLng[], t: number): LatLng {
   if (points.length === 0) return [-18.879, 47.508];

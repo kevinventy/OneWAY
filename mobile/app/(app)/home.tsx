@@ -13,12 +13,14 @@ import { getFavorites } from '@/lib/favorites';
 import { moneyCompact } from '@/lib/format';
 import { cargoByKey } from '@/data/catalog';
 import { SERVICES, COMPANY, telHref, whatsappHref, emailHref } from '@/data/company';
+import { useExitConfirm } from '@/lib/useExitConfirm';
 import { colors } from '@/theme';
 import type { Course, QuoteRequest } from '@/lib/types';
 
 export default function Home() {
   const { user } = useAuth();
   const [unread, setUnread] = useState(0);
+  useExitConfirm();
 
   useEffect(() => {
     if (!user) return;
@@ -74,6 +76,9 @@ function GerantHome() {
       <View style={{ flexDirection: 'row', gap: 10 }}>
         <Button title="Nouvelle course" icon="add-circle" onPress={() => router.push('/(app)/new-course')} style={{ flex: 1 }} />
         <Button title="Flotte" icon="car-outline" variant="outline" onPress={() => router.push('/(app)/fleet')} />
+      </View>
+      <View style={{ flexDirection: 'row', gap: 10, marginTop: 10 }}>
+        <Button title="Calcul rapide" icon="calculator" variant="accent" onPress={() => router.push('/(app)/quick-price')} style={{ flex: 1 }} />
       </View>
 
       <View style={styles.statRow}>

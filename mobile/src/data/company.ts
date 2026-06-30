@@ -20,5 +20,5 @@ export const emailHref = (email: string, subject?: string) =>
 export const SERVICES: { icon: string; title: string; desc: string }[] = [
   { icon: 'cube', title: 'Transport de marchandises', desc: 'Tous volumes, de la moto au semi-remorque, partout à Madagascar.' },
   { icon: 'rocket', title: 'Livraison express', desc: 'Délais maîtrisés sur les grands axes (RN2, RN7, RN4…).' },
-  { icon: 'navigate', title: 'Suivi digital temps réel', desc: 'Position du camion et kilomètres restants, en direct.' },
+  { icon: 'navigate', title: 'Suivi digital en temps réel', desc: 'Position du camion et kilomètres restants, en direct.' },
 ];

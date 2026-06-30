@@ -14,7 +14,7 @@ import {
 } from 'firebase/firestore';
 import { firestore } from './config';
 import { buildCourseRoute, findCity } from '@/lib/geo';
-import { pointAtProgress, type LatLng } from '@/data/roads';
+import { pointAtProgress, flattenLatLng, unflattenLatLng, type LatLng } from '@/data/roads';
 import { quickEstimate } from '@/lib/pricing';
 import { vehicleByKey, cargoByKey } from '@/data/catalog';
 import { STATUS_FLOW, STATUS_LABEL, nextStatus } from '@/lib/flow';
@@ -42,6 +42,23 @@ function clean<T extends Record<string, any>>(obj: T): T {
   const out: Record<string, any> = {};
   for (const [k, v] of Object.entries(obj)) if (v !== undefined) out[k] = v;
   return out as T;
+}
+
+/**
+ * Firestore **interdit les tableaux imbriqués** : `routeGeometry` (liste de
+ * `[lat,lng]`) est donc aplatie en `number[]` à l'écriture et reconstituée à la
+ * lecture. (Cause de l'erreur « nested arrays are not supported ».)
+ */
+function courseForWrite(course: Course): Record<string, any> {
+  return clean({ ...course, routeGeometry: flattenLatLng(course.routeGeometry) });
+}
+
+function courseFromDoc(data: any): Course {
+  return { ...data, routeGeometry: unflattenLatLng(data?.routeGeometry) } as Course;
+}
+
+function trackingFromDoc(data: any): PublicTracking {
+  return { ...data, routeGeometry: unflattenLatLng(data?.routeGeometry) } as PublicTracking;
 }
 
 async function nextSeq(name: string): Promise<number> {
@@ -100,7 +117,9 @@ async function syncTracking(course: Course, driver: Driver | null, appendEvent?:
     timeline = prev.exists() ? ((prev.data() as PublicTracking).timeline ?? []) : [];
     timeline = [...timeline, appendEvent];
   }
-  await setDoc(ref, buildTracking(course, driver, timeline));
+  const tracking = buildTracking(course, driver, timeline);
+  // Aplati la géométrie (tableaux imbriqués interdits par Firestore).
+  await setDoc(ref, clean({ ...tracking, routeGeometry: flattenLatLng(tracking.routeGeometry) }));
 }
 
 // ── Création d'une course (gérant) ─────────────────────────────────────────
@@ -142,7 +161,7 @@ export async function createCourse(gerant: User, input: NewCourseInput): Promise
     currentLng: input.pickup.lng,
     createdAt: Date.now(),
   };
-  await setDoc(ref, clean(course));
+  await setDoc(ref, courseForWrite(course));
   await syncTracking(course, null);
   await notify(gerant.id, { type: 'COURSE', title: 'Course créée', body: `${course.reference} · code ${course.code}`, href: `/(app)/course/${course.id}` });
   return course;
@@ -241,15 +260,15 @@ export async function getDriverByUser(uid: string): Promise<Driver | null> {
 
 // ── Subscriptions temps réel ───────────────────────────────────────────────
 
-function subscribe<T>(name: string, constraints: QueryConstraint[], cb: (rows: T[]) => void) {
-  return onSnapshot(query(col(name), ...constraints), (snap) => cb(snap.docs.map((d) => d.data() as T)));
+function subscribe<T>(name: string, constraints: QueryConstraint[], cb: (rows: T[]) => void, map?: (data: any) => T) {
+  return onSnapshot(query(col(name), ...constraints), (snap) => cb(snap.docs.map((d) => (map ? map(d.data()) : (d.data() as T)))));
 }
 
 export const subscribeOwnerCourses = (ownerId: string, cb: (c: Course[]) => void) =>
-  subscribe<Course>('courses', [where('ownerId', '==', ownerId)], (rows) => cb(rows.sort((a, b) => b.createdAt - a.createdAt)));
+  subscribe<Course>('courses', [where('ownerId', '==', ownerId)], (rows) => cb(rows.sort((a, b) => b.createdAt - a.createdAt)), courseFromDoc);
 
 export const subscribeDriverCourses = (driverUserId: string, cb: (c: Course[]) => void) =>
-  subscribe<Course>('courses', [where('driverUserId', '==', driverUserId)], (rows) => cb(rows.sort((a, b) => b.createdAt - a.createdAt)));
+  subscribe<Course>('courses', [where('driverUserId', '==', driverUserId)], (rows) => cb(rows.sort((a, b) => b.createdAt - a.createdAt)), courseFromDoc);
 
 export const subscribeOwnerVehicles = (ownerId: string, cb: (v: Vehicle[]) => void) =>
   subscribe<Vehicle>('vehicles', [where('ownerId', '==', ownerId)], cb);
@@ -265,7 +284,7 @@ export const subscribeNotifications = (uid: string, cb: (n: Notification[]) => v
 
 /** Courses d'un client (rattachées à son numéro de téléphone). */
 export const subscribeClientCourses = (phone: string, cb: (c: Course[]) => void) =>
-  subscribe<Course>('courses', [where('client.phone', '==', phone)], (rows) => cb(rows.sort((a, b) => b.createdAt - a.createdAt)));
+  subscribe<Course>('courses', [where('client.phone', '==', phone)], (rows) => cb(rows.sort((a, b) => b.createdAt - a.createdAt)), courseFromDoc);
 
 /** Demandes de devis en attente (vue gérant). */
 export const subscribeQuoteRequests = (cb: (q: QuoteRequest[]) => void) =>
@@ -287,22 +306,22 @@ export async function markQuoteHandled(id: string, status: 'TRAITEE' | 'REFUSEE'
 }
 
 export function subscribeCourse(id: string, cb: (c: Course | null) => void) {
-  return onSnapshot(doc(firestore, 'courses', id), (snap) => cb(snap.exists() ? (snap.data() as Course) : null));
+  return onSnapshot(doc(firestore, 'courses', id), (snap) => cb(snap.exists() ? courseFromDoc(snap.data()) : null));
 }
 
 /** Suivi public (par code), sans compte. */
 export function subscribePublicTracking(code: string, cb: (t: PublicTracking | null) => void) {
-  return onSnapshot(doc(firestore, 'tracking', code.trim().toUpperCase()), (snap) => cb(snap.exists() ? (snap.data() as PublicTracking) : null));
+  return onSnapshot(doc(firestore, 'tracking', code.trim().toUpperCase()), (snap) => cb(snap.exists() ? trackingFromDoc(snap.data()) : null));
 }
 
 export async function getPublicTracking(code: string): Promise<PublicTracking | null> {
   const snap = await getDoc(doc(firestore, 'tracking', code.trim().toUpperCase()));
-  return snap.exists() ? (snap.data() as PublicTracking) : null;
+  return snap.exists() ? trackingFromDoc(snap.data()) : null;
 }
 
 export async function getCourse(id: string): Promise<Course | null> {
   const snap = await getDoc(doc(firestore, 'courses', id));
-  return snap.exists() ? (snap.data() as Course) : null;
+  return snap.exists() ? courseFromDoc(snap.data()) : null;
 }
 
 export async function markNotificationsRead(uid: string): Promise<void> {

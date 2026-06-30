@@ -4,16 +4,18 @@ import { useAuth } from '@/store/auth';
 import { Button } from '@/components/ui';
 import { LogoMark } from '@/components/Logo';
 import { COMPANY } from '@/data/company';
+import { useExitConfirm } from '@/lib/useExitConfirm';
 import { colors } from '@/theme';
 
 export default function Welcome() {
   const router = useRouter();
   const { configured } = useAuth();
+  useExitConfirm();
 
   return (
     <ScrollView contentContainerStyle={styles.container}>
       <View style={styles.hero}>
-        <LogoMark size={88} />
+        <LogoMark size={104} badge />
         <Text style={styles.brand}>ONE WAY</Text>
         <Text style={styles.tagline}>Transport · Livraison · Suivi digital</Text>
         <Text style={styles.sub}>Votre marchandise, suivie en temps réel — Madagascar 🇲🇬</Text>

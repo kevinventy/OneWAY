@@ -73,17 +73,17 @@ export default function Register() {
           ))}
         </View>
 
-        <Field label="Nom complet"><Input value={form.name} onChangeText={set('name')} placeholder="Hery Rakoto" /></Field>
-        <Field label="Identifiant (nom d'utilisateur)"><Input value={form.identifiant} onChangeText={set('identifiant')} autoCapitalize="none" placeholder="ex : hery.rakoto" /></Field>
-        <Field label="Mot de passe"><Input value={form.password} onChangeText={set('password')} secureTextEntry placeholder="6 caractères minimum" /></Field>
-        <Field label="Confirmer le mot de passe"><Input value={form.confirm} onChangeText={set('confirm')} secureTextEntry placeholder="ressaisissez le mot de passe" /></Field>
+        <Field label="Nom complet"><Input value={form.name} onChangeText={set('name')} autoComplete="name" textContentType="name" placeholder="Hery Rakoto" /></Field>
+        <Field label="Identifiant (nom d'utilisateur)"><Input value={form.identifiant} onChangeText={set('identifiant')} autoCapitalize="none" autoCorrect={false} autoComplete="username" textContentType="username" placeholder="ex : hery.rakoto" /></Field>
+        <Field label="Mot de passe"><Input value={form.password} onChangeText={set('password')} secureTextEntry autoComplete="password-new" textContentType="newPassword" importantForAutofill="yes" placeholder="6 caractères minimum" /></Field>
+        <Field label="Confirmer le mot de passe"><Input value={form.confirm} onChangeText={set('confirm')} secureTextEntry autoComplete="password-new" textContentType="newPassword" importantForAutofill="yes" placeholder="ressaisissez le mot de passe" /></Field>
 
         {role === 'GERANT' && <Field label="Nom de l'entreprise"><Input value={form.companyName} onChangeText={set('companyName')} placeholder="One Way SARL" /></Field>}
         {role === 'CHAUFFEUR' && (
           <Field label="Code entreprise"><Input value={form.companyCode} onChangeText={(v) => set('companyCode')(v.toUpperCase())} autoCapitalize="characters" placeholder="donné par votre gérant (ex. OWAB12)" /></Field>
         )}
         <Field label={role === 'CLIENT' ? 'Téléphone' : 'Téléphone (facultatif)'}>
-          <Input value={form.phone} onChangeText={set('phone')} keyboardType="phone-pad" placeholder="+261…" />
+          <Input value={form.phone} onChangeText={set('phone')} keyboardType="phone-pad" autoComplete="tel" textContentType="telephoneNumber" placeholder="+261…" />
         </Field>
 
         {error ? <Text style={styles.error}>{error}</Text> : null}

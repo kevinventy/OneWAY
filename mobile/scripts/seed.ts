@@ -32,6 +32,8 @@ const ROUTES: Record<string, LL[]> = {
   antsirabe: [[-18.879, 47.508], [-19.0, 47.46], [-19.383, 47.417], [-19.6, 47.2], [-19.866, 47.033]],
   mahajanga: [[-18.879, 47.508], [-18.317, 47.117], [-17.3, 46.97], [-16.95, 46.833], [-16.3, 46.55], [-15.717, 46.317]],
 };
+// Firestore interdit les tableaux imbriqués : on stocke la géométrie à plat.
+const flatten = (p: LL[]): number[] => { const out: number[] = []; for (const [lat, lng] of p) out.push(lat, lng); return out; };
 const R = 6371, rad = (d: number) => (d * Math.PI) / 180;
 const dist = (a: LL, b: LL) => { const dLat = rad(b[0] - a[0]), dLng = rad(b[1] - a[1]); const h = Math.sin(dLat / 2) ** 2 + Math.cos(rad(a[0])) * Math.cos(rad(b[0])) * Math.sin(dLng / 2) ** 2; return 2 * R * Math.asin(Math.sqrt(h)); };
 const length = (p: LL[]) => { let s = 0; for (let i = 1; i < p.length; i++) s += dist(p[i - 1], p[i]); return Math.round(s); };
@@ -68,7 +70,7 @@ async function makeCourse(o: {
     vehicleType: o.vehicleType,
     pickup: { address: 'Analakely', city: from.city, lat: from.lat, lng: from.lng },
     delivery: { address: `${to.city} Centre`, city: to.city, lat: to.lat, lng: to.lng },
-    distanceKm, durationH: +(distanceKm / 55).toFixed(1), price: o.price, routeGeometry: geom,
+    distanceKm, durationH: +(distanceKm / 55).toFixed(1), price: o.price, routeGeometry: flatten(geom),
     driverId: o.driverId, driverUserId: o.driverUserId, vehicleId: o.vehicleId,
     status: o.status, progress: o.progress, currentLat: pos[0], currentLng: pos[1], createdAt: o.createdAt,
   };
@@ -81,7 +83,7 @@ async function makeCourse(o: {
     pickup: { city: from.city, lat: from.lat, lng: from.lng },
     delivery: { city: to.city, lat: to.lat, lng: to.lng },
     current: o.status === 'NOUVELLE' ? null : { lat: pos[0], lng: pos[1] },
-    routeGeometry: geom, cargoLabel: o.cargoLabel, weightKg: o.weightKg, vehicleLabel: o.vehicleLabel,
+    routeGeometry: flatten(geom), cargoLabel: o.cargoLabel, weightKg: o.weightKg, vehicleLabel: o.vehicleLabel,
     driverName: o.driverName, contactPhone: o.driverPhone,
     delivered: o.status === 'LIVREE', cancelled: false, updatedAt: now, timeline: o.timeline,
   }));
