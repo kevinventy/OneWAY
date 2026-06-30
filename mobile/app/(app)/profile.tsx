@@ -1,11 +1,9 @@
-import { View, Text, ScrollView, StyleSheet } from 'react-native';
+import { View, Text, ScrollView, StyleSheet, Share } from 'react-native';
 import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { useAuth } from '@/store/auth';
-import { Card, Button, Badge, Avatar, Stars } from '@/components/ui';
-import { ROLE_LABEL, KYC_LABEL } from '@/lib/labels';
-import { SUBSCRIPTION_PLANS } from '@/data/catalog';
-import { money } from '@/lib/format';
+import { Card, Button, Badge, Avatar } from '@/components/ui';
+import { ROLE_LABEL } from '@/lib/labels';
 import { colors } from '@/theme';
 
 export default function Profile() {
@@ -13,13 +11,14 @@ export default function Profile() {
   const router = useRouter();
   if (!user) return null;
 
-  const plans = SUBSCRIPTION_PLANS.filter(
-    (p) => p.key === 'FREE' || (user.role === 'CARRIER' && p.key === 'CARRIER_PRO') || (user.role === 'SHIPPER' && p.key === 'SHIPPER_BUSINESS'),
-  );
-
   async function doLogout() {
     await logout();
     router.replace('/welcome');
+  }
+
+  function shareCode() {
+    if (!user!.companyCode) return;
+    Share.share({ message: `Rejoignez ${user!.companyName ?? 'ONE WAY'} sur l'app ONE WAY avec le code entreprise : ${user!.companyCode}` });
   }
 
   return (
@@ -28,48 +27,25 @@ export default function Profile() {
         <View style={{ flexDirection: 'row', gap: 14, alignItems: 'center' }}>
           <Avatar name={user.companyName ?? user.name} color={user.avatarColor} size={56} />
           <View style={{ flex: 1 }}>
-            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
-              <Text style={styles.name}>{user.companyName ?? user.name}</Text>
-              {user.premium && <Badge tone="amber">Premium</Badge>}
+            <Text style={styles.name}>{user.companyName ?? user.name}</Text>
+            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, marginTop: 4 }}>
+              <Badge tone="blue">{ROLE_LABEL[user.role]}</Badge>
+              <Text style={styles.muted}>{user.name}</Text>
             </View>
-            <Text style={styles.muted}>{ROLE_LABEL[user.role]} · {user.name}</Text>
-            {user.ratingCount > 0 && <Stars value={user.rating} count={user.ratingCount} />}
           </View>
         </View>
         <View style={styles.info}>
-          <Row icon="person-outline" text={`@${user.identifiant ?? user.name}`} />
+          <Row icon="person-outline" text={`@${user.identifiant}`} />
           {user.phone ? <Row icon="call-outline" text={user.phone} /> : null}
-          {user.city ? <Row icon="location-outline" text={user.city} /> : null}
-          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
-            <Ionicons name="shield-checkmark-outline" size={16} color={colors.inkMuted} />
-            <Text style={styles.muted}>Vérification KYC :</Text>
-            <Badge tone={KYC_LABEL[user.kycStatus].tone}>{KYC_LABEL[user.kycStatus].label}</Badge>
-          </View>
         </View>
       </Card>
 
-      {user.role !== 'ADMIN' && (
-        <>
-          <Text style={styles.section}>Abonnement</Text>
-          {plans.map((p) => {
-            const current = (p.key === 'FREE' && !user.premium) || (user.premium && p.key !== 'FREE');
-            return (
-              <Card key={p.key} style={[styles.plan, current && { borderColor: colors.brand500, borderWidth: 2 }]}>
-                <View style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
-                  <Text style={styles.planName}>{p.name}</Text>
-                  {current && <Badge tone="blue">Actuel</Badge>}
-                </View>
-                <Text style={styles.planPrice}>{p.priceMonthly === 0 ? 'Gratuit' : `${money(p.priceMonthly)}/mois`}</Text>
-                {p.features.map((f) => (
-                  <View key={f} style={{ flexDirection: 'row', gap: 6, marginTop: 4 }}>
-                    <Ionicons name="checkmark-circle" size={15} color={colors.green} />
-                    <Text style={styles.muted}>{f}</Text>
-                  </View>
-                ))}
-              </Card>
-            );
-          })}
-        </>
+      {user.role === 'GERANT' && user.companyCode && (
+        <Card style={styles.codeCard}>
+          <Text style={styles.codeLabel}>Code entreprise (à donner aux chauffeurs)</Text>
+          <Text style={styles.code}>{user.companyCode}</Text>
+          <Button title="Partager le code" icon="share-social-outline" variant="outline" onPress={shareCode} style={{ marginTop: 10 }} />
+        </Card>
       )}
 
       <Button title="Se déconnecter" variant="outline" icon="log-out-outline" onPress={doLogout} style={{ marginTop: 18 }} />
@@ -91,8 +67,7 @@ const styles = StyleSheet.create({
   name: { fontSize: 18, fontWeight: '800', color: colors.ink },
   muted: { color: colors.inkMuted },
   info: { marginTop: 14, gap: 8 },
-  section: { fontSize: 16, fontWeight: '800', color: colors.ink, marginTop: 20, marginBottom: 8 },
-  plan: { padding: 14, marginBottom: 10 },
-  planName: { fontWeight: '800', color: colors.ink, fontSize: 15 },
-  planPrice: { fontSize: 20, fontWeight: '900', color: colors.ink, marginTop: 4 },
+  codeCard: { padding: 16, marginTop: 14, alignItems: 'center', borderColor: colors.brand100, borderWidth: 1 },
+  codeLabel: { color: colors.inkMuted, fontSize: 12, fontWeight: '600' },
+  code: { fontSize: 28, fontWeight: '900', color: colors.brand700, letterSpacing: 4, marginTop: 6 },
 });

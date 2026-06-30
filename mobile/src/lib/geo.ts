@@ -130,3 +130,41 @@ export function lerpPoint(
 ): { lat: number; lng: number } {
   return { lat: a.lat + (b.lat - a.lat) * t, lng: a.lng + (b.lng - a.lng) * t };
 }
+
+import { roadGeometry, roadLength, type LatLng } from '@/data/roads';
+
+export interface CourseRoute {
+  distanceKm: number;
+  durationH: number;
+  geometry: LatLng[];
+  source: 'road' | 'estimated';
+}
+
+/**
+ * Itinéraire d'une course : géométrie suivant les vrais axes RN quand
+ * disponible, sinon ligne directe. Distance = longueur réelle si connue.
+ */
+export function buildCourseRoute(
+  fromCity: string,
+  fromPoint: { lat: number; lng: number },
+  toCity: string,
+  toPoint: { lat: number; lng: number },
+): CourseRoute {
+  const geo = roadGeometry(fromCity, toCity, {
+    from: [fromPoint.lat, fromPoint.lng],
+    to: [toPoint.lat, toPoint.lng],
+  });
+  if (geo.length > 2) {
+    const distanceKm = Math.round(roadLength(geo));
+    const known = estimateRoute(fromCity, toCity);
+    const durationH = known.durationH || +(distanceKm / 55).toFixed(1);
+    return { distanceKm, durationH, geometry: geo, source: 'road' };
+  }
+  const est = estimateRoute(fromCity, toCity);
+  return {
+    distanceKm: est.distanceKm,
+    durationH: est.durationH,
+    geometry: geo.length === 2 ? geo : [[fromPoint.lat, fromPoint.lng], [toPoint.lat, toPoint.lng]],
+    source: 'estimated',
+  };
+}

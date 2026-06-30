@@ -3,7 +3,7 @@ import {
   signInWithEmailAndPassword,
   signOut,
 } from 'firebase/auth';
-import { doc, getDoc, setDoc } from 'firebase/firestore';
+import { collection, doc, getDoc, getDocs, query, setDoc, where } from 'firebase/firestore';
 import { auth, firestore } from './config';
 import type { Role, User } from '@/lib/types';
 
@@ -19,47 +19,80 @@ export function synthEmail(identifiant: string): string {
   return `${slug || 'user'}@oneway.app`;
 }
 
+/** Code entreprise court (partagé par le gérant à ses chauffeurs). */
+function genCompanyCode(): string {
+  return 'OW' + Math.random().toString(36).slice(2, 6).toUpperCase();
+}
+
 export interface RegisterInput {
-  role: Extract<Role, 'SHIPPER' | 'CARRIER'>;
+  role: Role;
   name: string;
   identifiant: string;
   password: string;
   phone?: string;
+  /** Gérant uniquement. */
   companyName?: string;
-  city?: string;
+  /** Chauffeur uniquement : code de l'entreprise à rejoindre. */
+  companyCode?: string;
 }
 
 export async function register(input: RegisterInput): Promise<User> {
+  if (input.role === 'CHAUFFEUR' && !(input.companyCode || '').trim()) {
+    throw new Error('Code entreprise requis');
+  }
   const email = synthEmail(input.identifiant);
   const cred = await createUserWithEmailAndPassword(auth, email, input.password);
   const uid = cred.user.uid;
-  const profile: User = {
-    id: uid,
-    role: input.role,
-    name: input.name,
-    identifiant: input.identifiant.trim(),
-    email,
-    phone: input.phone,
-    companyName: input.companyName,
-    city: input.city,
-    kycStatus: 'NONE',
-    rating: 0,
-    ratingCount: 0,
-    premium: false,
-    avatarColor: COLORS[Math.floor(Math.random() * COLORS.length)],
-    createdAt: Date.now(),
-  };
-  const clean: Record<string, unknown> = {};
-  for (const [k, v] of Object.entries(profile)) if (v !== undefined && v !== '') clean[k] = v;
+
   try {
+    // La résolution du code entreprise nécessite d'être authentifié (règles) →
+    // on le fait APRÈS la création du compte, et on nettoie en cas d'échec.
+    let ownerId: string | undefined;
+    if (input.role === 'CHAUFFEUR') {
+      ownerId = (await resolveCompanyOwner((input.companyCode || '').trim().toUpperCase())) || undefined;
+      if (!ownerId) throw new Error("Code entreprise introuvable. Demandez-le à votre gérant.");
+    }
+
+    const profile: User = {
+      id: uid,
+      role: input.role,
+      name: input.name,
+      identifiant: input.identifiant.trim(),
+      email,
+      phone: input.phone,
+      avatarColor: COLORS[Math.floor(Math.random() * COLORS.length)],
+      createdAt: Date.now(),
+      ...(input.role === 'GERANT'
+        ? { companyName: input.companyName, companyCode: genCompanyCode() }
+        : { ownerId }),
+    };
+
+    const clean: Record<string, unknown> = {};
+    for (const [k, v] of Object.entries(profile)) if (v !== undefined && v !== '') clean[k] = v;
     await setDoc(doc(firestore, 'users', uid), clean);
+
+    // Crée la fiche chauffeur rattachée au gérant (flotte).
+    if (input.role === 'CHAUFFEUR' && ownerId) {
+      const dref = doc(collection(firestore, 'drivers'));
+      await setDoc(dref, {
+        id: dref.id, ownerId, userId: uid,
+        name: profile.name, phone: profile.phone || '', licenseNumber: '', status: 'DISPONIBLE',
+      });
+    }
+    return profile;
   } catch (err) {
-    // Profil non écrit (ex. règles Firestore verrouillées) : on supprime le
-    // compte Auth orphelin pour permettre un nouvel essai propre.
+    // Code invalide ou règles verrouillées : on supprime le compte Auth orphelin.
     await cred.user.delete().catch(() => {});
     throw err;
   }
-  return profile;
+}
+
+/** Retourne l'uid du gérant possédant ce code entreprise, sinon null. */
+async function resolveCompanyOwner(code: string): Promise<string | null> {
+  const snap = await getDocs(
+    query(collection(firestore, 'users'), where('companyCode', '==', code)),
+  );
+  return snap.empty ? null : snap.docs[0].id;
 }
 
 export async function login(identifiant: string, password: string): Promise<void> {

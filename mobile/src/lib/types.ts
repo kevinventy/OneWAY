@@ -1,190 +1,133 @@
 import type { CargoTypeKey, VehicleTypeKey } from '@/data/catalog';
+import type { LatLng } from '@/data/roads';
 
-export type Role = 'SHIPPER' | 'CARRIER' | 'DRIVER' | 'ADMIN';
-export type KycStatus = 'NONE' | 'PENDING' | 'VERIFIED' | 'REJECTED';
+/** ONE WAY = l'app d'UN transporteur : gérant + chauffeurs (comptes), client public. */
+export type Role = 'GERANT' | 'CHAUFFEUR';
 
-/** App user profile (Firestore `users/{uid}`). Auth itself is Firebase Auth. */
+/** Profil app (Firestore `users/{uid}`). Auth = Firebase Auth (identifiant synthétique). */
 export interface User {
   id: string; // Firebase Auth uid
   role: Role;
   name: string;
-  /** Identifiant de connexion (nom d'utilisateur). Pas besoin d'email réel. */
   identifiant: string;
-  /** Email synthétique `identifiant@oneway.app` utilisé en interne par Firebase. */
-  email: string;
+  email: string; // synthétique `identifiant@oneway.app`
   phone?: string;
+  /** Gérant : nom de l'entreprise. */
   companyName?: string;
-  city?: string;
-  carrierId?: string;
-  kycStatus: KycStatus;
-  rating: number;
-  ratingCount: number;
-  premium: boolean;
+  /** Gérant : code à partager aux chauffeurs pour rejoindre l'entreprise. */
+  companyCode?: string;
+  /** Chauffeur : uid du gérant (entreprise) auquel il est rattaché. */
+  ownerId?: string;
   avatarColor: string;
   createdAt: number;
 }
 
 export interface Vehicle {
   id: string;
-  carrierId: string;
+  ownerId: string; // gérant
   type: VehicleTypeKey;
   name: string;
   plate: string;
   capacityKg: number;
-  refrigerated: boolean;
   available: boolean;
-  lat?: number;
-  lng?: number;
 }
 
 export interface Driver {
   id: string;
-  carrierId: string;
-  userId?: string;
+  ownerId: string; // gérant
+  userId?: string; // compte chauffeur lié
   name: string;
   phone: string;
   licenseNumber: string;
-  status: 'AVAILABLE' | 'ON_MISSION' | 'OFFLINE';
   vehicleId?: string;
+  status: 'DISPONIBLE' | 'EN_MISSION' | 'HORS_LIGNE';
 }
-
-export type FreightStatus = 'DRAFT' | 'PUBLISHED' | 'ASSIGNED' | 'IN_TRANSIT' | 'DELIVERED' | 'CANCELLED';
-export type Urgency = 'STANDARD' | 'EXPRESS' | 'FLEXIBLE';
-export type PricingMode = 'FIXED' | 'AUCTION';
 
 export interface GeoPoint {
   address: string;
   city: string;
   lat: number;
   lng: number;
-  contactName?: string;
-  contactPhone?: string;
 }
 
-export interface Freight {
+export type CourseStatus =
+  | 'NOUVELLE'
+  | 'ASSIGNEE'
+  | 'EN_ROUTE_RAMASSAGE'
+  | 'AU_CHARGEMENT'
+  | 'EN_ROUTE'
+  | 'ARRIVEE'
+  | 'LIVREE'
+  | 'ANNULEE';
+
+export interface Course {
   id: string;
-  reference: string;
-  shipperId: string;
-  title: string;
+  code: string; // code de suivi public (ex. OW7F3K2)
+  reference: string; // ex. OW-0042
+  ownerId: string; // gérant
+  companyName?: string;
+  client: { name: string; phone: string };
   cargoType: CargoTypeKey;
+  cargoDescription: string;
   weightKg: number;
-  volumeM3?: number;
-  dimensions?: string;
-  photos: string[];
+  vehicleType: VehicleTypeKey;
   pickup: GeoPoint;
   delivery: GeoPoint;
-  pickupDate: number;
-  deliveryDate?: number;
-  urgency: Urgency;
-  pricingMode: PricingMode;
-  vehicleType: VehicleTypeKey;
-  declaredValue?: number;
-  insurance: boolean;
   distanceKm: number;
   durationH: number;
-  budget: number;
-  status: FreightStatus;
-  createdAt: number;
-}
-
-export type BidStatus = 'PENDING' | 'ACCEPTED' | 'REJECTED' | 'WITHDRAWN';
-
-export interface Bid {
-  id: string;
-  freightId: string;
-  carrierId: string;
-  carrierName?: string;
-  amount: number;
-  etaHours: number;
-  message?: string;
-  vehicleId?: string;
-  status: BidStatus;
-  createdAt: number;
-}
-
-export type ShipmentStatus =
-  | 'ASSIGNED'
-  | 'EN_ROUTE_PICKUP'
-  | 'AT_PICKUP'
-  | 'LOADED'
-  | 'IN_TRANSIT'
-  | 'AT_DELIVERY'
-  | 'DELIVERED'
-  | 'CANCELLED';
-
-export interface Shipment {
-  id: string;
-  reference: string;
-  freightId: string;
-  shipperId: string;
-  carrierId: string;
-  driverId?: string;
-  vehicleId?: string;
-  bidId?: string;
   price: number;
-  commission: number;
-  status: ShipmentStatus;
-  trackingCode: string;
-  /** Dispatch : course assignée par l'admin et acceptée (ou non) par le chauffeur. */
-  accepted?: boolean;
-  /** Preuve de livraison : signature du destinataire (tracé SVG). */
-  signature?: string;
+  /** Géométrie de l'itinéraire (vrais axes RN) pour la carte. */
+  routeGeometry: LatLng[];
+  driverId?: string;
+  driverUserId?: string; // pour le cloisonnement côté règles/queries
+  vehicleId?: string;
+  status: CourseStatus;
+  progress: number; // 0..1
   currentLat?: number;
   currentLng?: number;
-  progress: number;
   createdAt: number;
+  assignedAt?: number;
   deliveredAt?: number;
+  cancelledAt?: number;
 }
 
 export interface TrackingEvent {
   id: string;
-  shipmentId: string;
-  status: ShipmentStatus;
+  courseId: string;
+  ownerId: string;
+  status: CourseStatus;
   label: string;
   lat?: number;
   lng?: number;
   note?: string;
-  photoUrl?: string;
   by: string;
   createdAt: number;
 }
 
-export type DocumentType = 'QUOTE' | 'BL' | 'INVOICE' | 'POD' | 'CERTIFICATE';
-
-export interface DocumentRecord {
-  id: string;
-  shipmentId?: string;
-  freightId?: string;
-  type: DocumentType;
+/** Doc public de suivi (`tracking/{code}`) — sanitisé, lisible sans compte. */
+export interface PublicTracking {
+  code: string;
   reference: string;
-  title: string;
-  createdAt: number;
-}
-
-export interface Review {
-  id: string;
-  shipmentId: string;
-  fromUserId: string;
-  toUserId: string;
-  rating: number;
-  comment?: string;
-  createdAt: number;
-}
-
-export type TxStatus = 'PENDING' | 'ESCROW' | 'RELEASED' | 'REFUNDED' | 'FAILED';
-export type PaymentMethod = 'MVOLA' | 'ORANGE_MONEY' | 'AIRTEL_MONEY' | 'WAVE' | 'CARD' | 'TRANSFER' | 'CASH';
-
-export interface Transaction {
-  id: string;
-  reference: string;
-  shipmentId: string;
-  payerId: string;
-  payeeId: string;
-  amount: number;
-  commission: number;
-  method: PaymentMethod;
-  status: TxStatus;
-  createdAt: number;
+  company: string;
+  status: CourseStatus;
+  statusLabel: string;
+  progress: number;
+  distanceKm: number;
+  kmRemaining: number;
+  durationH: number;
+  pickup: { city: string; lat: number; lng: number };
+  delivery: { city: string; lat: number; lng: number };
+  current: { lat: number; lng: number } | null;
+  routeGeometry: LatLng[];
+  cargoLabel: string;
+  weightKg: number;
+  vehicleLabel: string;
+  driverName?: string;
+  contactPhone?: string;
+  delivered: boolean;
+  cancelled: boolean;
+  updatedAt: number;
+  timeline: { status: CourseStatus; label: string; at: number }[];
 }
 
 export interface Notification {
@@ -196,4 +139,10 @@ export interface Notification {
   read: boolean;
   href?: string;
   createdAt: number;
+}
+
+/** Km restants selon l'avancement. */
+export function kmRemaining(course: Pick<Course, 'distanceKm' | 'progress' | 'status'>): number {
+  if (course.status === 'LIVREE') return 0;
+  return Math.max(0, Math.round(course.distanceKm * (1 - course.progress)));
 }

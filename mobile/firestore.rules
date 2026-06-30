@@ -1,48 +1,63 @@
 rules_version = '2';
 
-// Règles de sécurité ONE WAY (MVP). À durcir avant production (validation de
-// schéma, vérification des montants côté Cloud Functions pour le séquestre).
+// Règles ONE WAY — transporteur unique (gérant + chauffeurs, client public).
+// Cloisonnement : chaque utilisateur ne voit/agit que sur ses propres courses.
 service cloud.firestore {
   match /databases/{database}/documents {
 
-    function isSignedIn() { return request.auth != null; }
-    function isOwner(uid) { return isSignedIn() && request.auth.uid == uid; }
+    function signedIn() { return request.auth != null; }
+    function uid() { return request.auth.uid; }
 
-    // Profils : lecture par tout utilisateur connecté (réputation), écriture par le propriétaire.
-    match /users/{uid} {
-      allow read: if isSignedIn();
-      allow create: if isOwner(uid);
-      allow update: if isOwner(uid)
-        // l'utilisateur ne peut pas se promouvoir admin ni gonfler sa note
-        || (isSignedIn() && request.resource.data.diff(resource.data).affectedKeys()
-              .hasOnly(['rating', 'ratingCount']));
+    // Profils : lecture par tout connecté (résolution du code entreprise + noms),
+    // écriture uniquement par le propriétaire du compte.
+    match /users/{id} {
+      allow read: if signedIn();
+      allow create, update: if signedIn() && uid() == id;
     }
 
-    // Annonces de fret : lecture par tout connecté ; création/maj par le chargeur propriétaire.
-    match /freights/{id} {
-      allow read: if isSignedIn();
-      allow create: if isSignedIn() && request.resource.data.shipperId == request.auth.uid;
-      allow update: if isSignedIn(); // statut mis à jour lors de l'acceptation/avancement
+    // Courses : gérant propriétaire (lecture + écriture) ou chauffeur assigné
+    // (lecture + avancement d'étape). Aucune lecture croisée entre entreprises.
+    match /courses/{id} {
+      allow read: if signedIn() && (resource.data.ownerId == uid() || resource.data.driverUserId == uid());
+      allow create: if signedIn() && request.resource.data.ownerId == uid();
+      allow update: if signedIn() && (resource.data.ownerId == uid() || resource.data.driverUserId == uid());
+      allow delete: if false;
     }
 
-    // Offres : lecture par tout connecté ; un transporteur ne crée que ses propres offres.
-    match /bids/{id} {
-      allow read: if isSignedIn();
-      allow create: if isSignedIn() && request.resource.data.carrierId == request.auth.uid;
-      allow update: if isSignedIn();
+    // Chauffeurs : gérant propriétaire, ou le chauffeur sur sa propre fiche.
+    match /drivers/{id} {
+      allow read: if signedIn() && (resource.data.ownerId == uid() || resource.data.userId == uid());
+      allow create: if signedIn() && request.resource.data.userId == uid();
+      allow update: if signedIn() && (resource.data.ownerId == uid() || resource.data.userId == uid());
     }
 
-    // Expéditions, suivi, documents, transactions, avis, notifications : connecté.
-    match /shipments/{id}   { allow read, write: if isSignedIn(); }
-    match /tracking/{id}    { allow read, write: if isSignedIn(); }
-    match /documents/{id}   { allow read, write: if isSignedIn(); }
-    match /transactions/{id}{ allow read, write: if isSignedIn(); }
-    match /reviews/{id}     { allow read: if isSignedIn();
-                              allow create: if isSignedIn() && request.resource.data.fromUserId == request.auth.uid; }
-    match /notifications/{id}{ allow read, write: if isSignedIn(); }
-    match /vehicles/{id}    { allow read: if isSignedIn();
-                              allow write: if isSignedIn() && request.resource.data.carrierId == request.auth.uid; }
-    match /drivers/{id}     { allow read, write: if isSignedIn(); }
-    match /counters/{id}    { allow read, write: if isSignedIn(); }
+    // Véhicules : lecture par le gérant propriétaire ; mise à jour de la
+    // disponibilité par un participant connecté (chauffeur lors de la livraison).
+    match /vehicles/{id} {
+      allow read: if signedIn() && resource.data.ownerId == uid();
+      allow create: if signedIn() && request.resource.data.ownerId == uid();
+      allow update: if signedIn();
+    }
+
+    // Événements de suivi (interne).
+    match /events/{id} {
+      allow read, create: if signedIn();
+    }
+
+    // Notifications : lecture par le destinataire uniquement.
+    match /notifications/{id} {
+      allow read: if signedIn() && resource.data.userId == uid();
+      allow create: if signedIn();
+      allow update: if signedIn() && resource.data.userId == uid();
+    }
+
+    match /counters/{id} { allow read, write: if signedIn(); }
+
+    // Suivi PUBLIC par code : lisible sans compte (données sanitisées), écrit
+    // par l'app authentifiée. Aucune donnée sensible (ni prix, ni infos client).
+    match /tracking/{code} {
+      allow read: if true;
+      allow write: if signedIn();
+    }
   }
 }

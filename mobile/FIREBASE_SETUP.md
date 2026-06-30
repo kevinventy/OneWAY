@@ -63,9 +63,10 @@ export GOOGLE_APPLICATION_CREDENTIALS=./serviceAccount.json
 node --import tsx scripts/seed.ts
 ```
 
-Crée 6 comptes (mot de passe **`oneway123`**) : `chargeur@`, `transporteur@`,
-`chauffeur@`, `marie@boutique.mg`, `fitateza@`, `admin@oneway.mg`, plus un fret
-de démonstration avec offres.
+Crée le gérant **`gerant`**, les chauffeurs **`chauffeur`** et **`koto`**
+(identifiants, mot de passe **`oneway123`**), la flotte, et 3 courses de
+démonstration avec leur suivi public (codes **OWTOA01** en route, **OWANT02**
+livrée, **OWMAH03** à assigner). Code entreprise de démo : **OWDEMO**.
 
 ## 4 bis. (Optionnel) Storage pour les photos
 

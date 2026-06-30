@@ -26,10 +26,9 @@ export default function AppLayout() {
       }}
     >
       <Stack.Screen name="home" options={{ headerShown: false }} />
-      <Stack.Screen name="new-freight" options={{ title: 'Publier un fret' }} />
-      <Stack.Screen name="freight/[id]" options={{ title: 'Annonce' }} />
-      <Stack.Screen name="assign/[id]" options={{ title: 'Assigner une course' }} />
-      <Stack.Screen name="tracking/[id]" options={{ title: 'Suivi' }} />
+      <Stack.Screen name="new-course" options={{ title: 'Nouvelle course' }} />
+      <Stack.Screen name="course/[id]" options={{ title: 'Course' }} />
+      <Stack.Screen name="fleet" options={{ title: 'Ma flotte' }} />
       <Stack.Screen name="notifications" options={{ title: 'Notifications' }} />
       <Stack.Screen name="profile" options={{ title: 'Mon compte' }} />
     </Stack>
