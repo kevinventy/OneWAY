@@ -91,7 +91,7 @@ export function buildSeed(): DB {
   const toam = findCity('Toamasina')!;
   const fia = findCity('Fianarantsoa')!;
   const vehicles: Vehicle[] = [
-    { id: 'v1', carrierId: 'u_car1', type: 'CAMION_5T', name: 'Isuzu NQR', plate: '1234 TBB', capacityKg: 5000, refrigerated: false, available: true, lat: ta.lat, lng: ta.lng },
+    { id: 'v1', carrierId: 'u_car1', type: 'CAMION_5T', name: 'Isuzu NQR', plate: '1234 TBB', capacityKg: 5000, refrigerated: false, available: false, lat: ta.lat, lng: ta.lng },
     { id: 'v2', carrierId: 'u_car1', type: 'CAMION_3T', name: 'Mitsubishi Canter', plate: '5678 TBA', capacityKg: 3000, refrigerated: false, available: true, lat: ta.lat, lng: ta.lng },
     { id: 'v3', carrierId: 'u_car1', type: 'SEMI_20T', name: 'Volvo FH', plate: '9012 TBC', capacityKg: 20000, refrigerated: false, available: false, lat: ta.lat, lng: ta.lng },
     { id: 'v4', carrierId: 'u_car2', type: 'CAMION_10T', name: 'Renault Kerax', plate: '3456 TCA', capacityKg: 10000, refrigerated: false, available: false, lat: toam.lat, lng: toam.lng },
@@ -102,9 +102,9 @@ export function buildSeed(): DB {
 
   // ── Drivers ──────────────────────────────────────────────────────────
   const drivers: Driver[] = [
-    { id: 'd1', carrierId: 'u_car1', userId: 'u_drv1', name: 'Rivo Be', phone: '+261346666666', licenseNumber: 'PL-2019-00451', status: 'AVAILABLE', vehicleId: 'v1' },
+    { id: 'd1', carrierId: 'u_car1', userId: 'u_drv1', name: 'Rivo Be', phone: '+261346666666', licenseNumber: 'PL-2019-00451', status: 'ON_MISSION', vehicleId: 'v1' },
     { id: 'd2', carrierId: 'u_car1', userId: 'u_drv2', name: 'Koto Solo', phone: '+261347777777', licenseNumber: 'PL-2020-01122', status: 'AVAILABLE', vehicleId: 'v2' },
-    { id: 'd3', carrierId: 'u_car2', userId: 'u_drv3', name: 'Faly Nirina', phone: '+261348888888', licenseNumber: 'PL-2018-00987', status: 'ON_MISSION', vehicleId: 'v4' },
+    { id: 'd3', carrierId: 'u_car2', userId: 'u_drv3', name: 'Faly Nirina', phone: '+261348888888', licenseNumber: 'PL-2018-00987', status: 'AVAILABLE', vehicleId: 'v4' },
     { id: 'd4', carrierId: 'u_car3', name: 'Mamy Lalaina', phone: '+261349999999', licenseNumber: 'PL-2021-02233', status: 'AVAILABLE', vehicleId: 'v6' },
   ];
 
@@ -180,18 +180,18 @@ export function buildSeed(): DB {
     const pos = positionOnRoute(from, to, progress);
     const commission = Math.round(q.totalTTC * MARKETPLACE.commissionRate);
     shipments.push({
-      id: 's1', reference: 'EXP-0001', freightId: 'f3', shipperId: 'u_ship1', carrierId: 'u_car2',
-      driverId: 'd3', vehicleId: 'v4', price: q.totalTTC, commission, status: 'IN_TRANSIT',
+      id: 's1', reference: 'EXP-0001', freightId: 'f3', shipperId: 'u_ship1', carrierId: 'u_car1',
+      driverId: 'd1', vehicleId: 'v1', price: q.totalTTC, commission, status: 'IN_TRANSIT',
       trackingCode: 'OWMG3456', currentLat: pos.lat, currentLng: pos.lng, progress, createdAt: hoursAgo(11),
     });
     tracking.push(
-      { id: 't1', shipmentId: 's1', status: 'ASSIGNED', label: 'Mission attribuée à Fitateza Logistique', by: 'u_ship1', createdAt: hoursAgo(11) },
+      { id: 't1', shipmentId: 's1', status: 'ASSIGNED', label: 'Mission attribuée à Trans Express Mada', by: 'u_ship1', createdAt: hoursAgo(11) },
       { id: 't2', shipmentId: 's1', status: 'AT_PICKUP', label: 'Chauffeur au point de chargement', lat: from.lat, lng: from.lng, by: 'd3', createdAt: hoursAgo(10) },
       { id: 't3', shipmentId: 's1', status: 'LOADED', label: 'Chargement terminé (190 sacs)', lat: from.lat, lng: from.lng, note: '9 500 kg chargés', by: 'd3', createdAt: hoursAgo(9.5) },
       { id: 't4', shipmentId: 's1', status: 'IN_TRANSIT', label: 'En route vers Mahajanga', lat: pos.lat, lng: pos.lng, by: 'd3', createdAt: hoursAgo(4) },
     );
     transactions.push({
-      id: 'tx1', reference: 'PAY-0001', shipmentId: 's1', payerId: 'u_ship1', payeeId: 'u_car2',
+      id: 'tx1', reference: 'PAY-0001', shipmentId: 's1', payerId: 'u_ship1', payeeId: 'u_car1',
       amount: q.totalTTC, commission, method: 'MVOLA', status: 'ESCROW', createdAt: hoursAgo(11),
     });
   }

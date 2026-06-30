@@ -3,7 +3,8 @@ import { MapPin, Flag, Phone, Truck, CheckCircle2, Navigation } from 'lucide-rea
 import { GererNav } from '@/components/gerer/GererNav';
 import { LiveRefresh } from '@/components/app/LiveRefresh';
 import { Badge } from '@/components/ui';
-import { activeCourses, allCourses, type CourseView } from '@/lib/courses';
+import { getCurrentUser } from '@/lib/auth';
+import { driverCoursesByUser, type CourseView } from '@/lib/courses';
 import { advanceCourseAction } from '@/app/gerer/actions';
 import { SHIPMENT_STATUS } from '@/lib/labels';
 import { STATUS_ACTION } from '@/lib/flow';
@@ -11,18 +12,20 @@ import { km } from '@/lib/format';
 
 export const dynamic = 'force-dynamic';
 
-export default function ChauffeurPage() {
-  const active = activeCourses();
-  const delivered = allCourses().filter((c) => c.shipment.status === 'DELIVERED').slice(0, 4);
+export default async function ChauffeurPage() {
+  const user = await getCurrentUser();
+  const mine = user ? driverCoursesByUser(user.id) : [];
+  const active = mine.filter((c) => !['DELIVERED', 'CANCELLED'].includes(c.shipment.status));
+  const delivered = mine.filter((c) => c.shipment.status === 'DELIVERED').slice(0, 4);
 
   return (
     <div className="min-h-screen bg-slate-50">
-      <GererNav active="chauffeur" />
+      <GererNav active="chauffeur" user={user} />
       <LiveRefresh enabled={active.length > 0} />
 
       <div className="container-app max-w-2xl py-8">
         <h1 className="text-2xl font-bold text-ink">Mes missions</h1>
-        <p className="text-sm text-ink-muted">{active.length} mission(s) en cours.</p>
+        <p className="text-sm text-ink-muted">Bonjour {user?.name?.split(' ')[0] ?? ''} · {active.length} mission(s) en cours.</p>
 
         <div className="mt-6 space-y-4">
           {active.map((c) => (

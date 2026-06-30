@@ -3,21 +3,24 @@ import { Plus, Truck, CheckCircle2, Banknote, Users, MapPin, Flag, ArrowRight } 
 import { GererNav } from '@/components/gerer/GererNav';
 import { RouteMap } from '@/components/map/RouteMap';
 import { Badge } from '@/components/ui';
+import { getCurrentUser } from '@/lib/auth';
 import { allCourses, activeCourses, fleetStats, type CourseView } from '@/lib/courses';
 import { SHIPMENT_STATUS } from '@/lib/labels';
 import { money, moneyCompact, km } from '@/lib/format';
 
 export const dynamic = 'force-dynamic';
 
-export default function GererDashboard() {
-  const courses = allCourses();
-  const active = activeCourses();
-  const stats = fleetStats();
+export default async function GererDashboard() {
+  const user = await getCurrentUser();
+  const scope = user?.role === 'CARRIER' ? user.id : undefined;
+  const courses = allCourses(scope);
+  const active = activeCourses(scope);
+  const stats = fleetStats(scope);
   const featured = active[0];
 
   return (
     <div className="min-h-screen bg-slate-50">
-      <GererNav active="gerer" />
+      <GererNav active="gerer" user={user} />
 
       <div className="container-app py-8">
         <div className="flex flex-wrap items-center justify-between gap-3">

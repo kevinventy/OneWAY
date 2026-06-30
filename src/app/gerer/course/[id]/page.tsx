@@ -1,34 +1,39 @@
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
-import { ArrowLeft, Truck, Flag, MapPin, Phone, Radio, ExternalLink, CheckCircle2, Package } from 'lucide-react';
+import { ArrowLeft, Truck, Flag, MapPin, Phone, Radio, CheckCircle2, Package, Ban } from 'lucide-react';
 import { GererNav } from '@/components/gerer/GererNav';
 import { RouteMap } from '@/components/map/RouteMap';
 import { TrackingTimeline } from '@/components/app/TrackingTimeline';
 import { LiveRefresh } from '@/components/app/LiveRefresh';
+import { ShareTracking } from '@/components/gerer/ShareTracking';
 import { Badge } from '@/components/ui';
 import { courseById } from '@/lib/courses';
 import { trackingFor } from '@/lib/queries';
-import { advanceCourseAction } from '@/app/gerer/actions';
+import { getCurrentUser } from '@/lib/auth';
+import { advanceCourseAction, cancelCourseAction } from '@/app/gerer/actions';
 import { SHIPMENT_STATUS } from '@/lib/labels';
 import { STATUS_ACTION, nextStatus } from '@/lib/flow';
 import { money, km, duration } from '@/lib/format';
 
 export const dynamic = 'force-dynamic';
 
-export default function CourseDetail({ params }: { params: { id: string } }) {
+export default async function CourseDetail({ params }: { params: { id: string } }) {
+  const user = await getCurrentUser();
   const course = courseById(params.id);
   if (!course) notFound();
 
   const { shipment, freight, driverName, remainingKm, pct } = course;
   const events = trackingFor(shipment.id);
   const delivered = shipment.status === 'DELIVERED';
+  const cancelled = shipment.status === 'CANCELLED';
+  const active = !delivered && !cancelled;
   const next = nextStatus(shipment.status);
   const actionLabel = STATUS_ACTION[shipment.status];
 
   return (
     <div className="min-h-screen bg-slate-50">
-      <GererNav active="gerer" />
-      <LiveRefresh enabled={!delivered} />
+      <GererNav active="gerer" user={user} />
+      <LiveRefresh enabled={active} />
 
       <div className="container-app py-8">
         <Link href="/gerer" className="inline-flex items-center gap-1 text-sm text-ink-muted hover:text-ink">
@@ -55,19 +60,25 @@ export default function CourseDetail({ params }: { params: { id: string } }) {
               <RouteMap
                 from={{ ...freight.pickup, label: freight.pickup.city }}
                 to={{ ...freight.delivery, label: freight.delivery.city }}
-                current={!delivered ? { lat: shipment.currentLat!, lng: shipment.currentLng! } : null}
+                current={active ? { lat: shipment.currentLat!, lng: shipment.currentLng! } : null}
                 progress={shipment.progress}
                 className="aspect-[16/10] w-full rounded-none border-0"
               />
               <div className="grid grid-cols-3 divide-x divide-slate-100 border-t border-slate-100">
                 <Stat label="Distance" value={km(freight.distanceKm)} />
-                <Stat label="Km restants" value={delivered ? '0 km' : km(remainingKm)} highlight={!delivered} />
+                <Stat label="Km restants" value={delivered ? '0 km' : km(remainingKm)} highlight={active} />
                 <Stat label="Avancement" value={`${pct}%`} />
               </div>
             </div>
 
+            {cancelled && (
+              <div className="card flex items-center gap-2 p-4 text-sm font-medium text-rose-600">
+                <Ban size={16} /> Cette course a été annulée.
+              </div>
+            )}
+
             {/* Avancer la course */}
-            {!delivered && (
+            {active && (
               <div className="card flex flex-wrap items-center justify-between gap-3 p-5">
                 <div>
                   <p className="text-sm font-semibold text-ink">Faire avancer la course</p>
@@ -97,15 +108,10 @@ export default function CourseDetail({ params }: { params: { id: string } }) {
               <h2 className="mb-2 flex items-center gap-1.5 text-sm font-semibold text-ink-soft">
                 <Radio size={15} /> Suivi client
               </h2>
-              <p className="rounded-lg bg-slate-100 px-3 py-2 text-center text-lg font-bold tracking-wider text-ink">
-                {shipment.trackingCode}
-              </p>
-              <p className="mt-2 text-xs text-ink-muted">
+              <p className="mb-2 text-xs text-ink-muted">
                 Partagez ce code (ou le lien) au client par SMS / WhatsApp.
               </p>
-              <Link href={`/suivi/${shipment.trackingCode}`} className="btn-outline mt-2 w-full" target="_blank">
-                <ExternalLink size={15} /> Voir la page client
-              </Link>
+              <ShareTracking code={shipment.trackingCode} />
             </div>
 
             {/* Chauffeur & client */}
@@ -131,6 +137,16 @@ export default function CourseDetail({ params }: { params: { id: string } }) {
                 <span className="text-lg font-extrabold text-ink">{money(shipment.price)}</span>
               </div>
             </div>
+
+            {/* Annuler */}
+            {active && (
+              <form action={cancelCourseAction}>
+                <input type="hidden" name="shipmentId" value={shipment.id} />
+                <button type="submit" className="btn-ghost w-full text-rose-600">
+                  <Ban size={15} /> Annuler la course
+                </button>
+              </form>
+            )}
           </aside>
         </div>
       </div>

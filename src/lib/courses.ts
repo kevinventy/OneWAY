@@ -14,11 +14,19 @@ import type { Freight, Shipment, TrackingEvent } from './types';
  * C'est le cœur métier de l'app pour une entreprise qui transporte elle-même.
  */
 
-/** L'entreprise = le premier compte transporteur (One Way SARL). */
+/** L'entreprise par défaut = le premier compte transporteur. */
 function company() {
   const c = db().users.find((u) => u.role === 'CARRIER');
   if (!c) throw new Error('Aucun compte transporteur configuré');
   return c;
+}
+
+/** Id de l'entreprise du gérant connecté (CARRIER) ou, à défaut, la première. */
+export function resolveCompanyId(carrierId?: string): string {
+  if (carrierId && db().users.some((u) => u.id === carrierId && u.role === 'CARRIER')) {
+    return carrierId;
+  }
+  return company().id;
 }
 
 export interface NewCourseInput {
@@ -35,7 +43,8 @@ export interface NewCourseInput {
   declaredValue?: number;
 }
 
-export function createCourse(input: NewCourseInput): Shipment {
+export function createCourse(input: NewCourseInput, carrierId?: string): Shipment {
+  const companyId = resolveCompanyId(carrierId);
   const from = findCity(input.fromCity);
   const to = findCity(input.toCity);
   if (!from || !to) throw new Error('Ville de départ ou d’arrivée inconnue');
@@ -58,7 +67,7 @@ export function createCourse(input: NewCourseInput): Shipment {
   );
 
   return write((d) => {
-    const co = d.users.find((u) => u.role === 'CARRIER')!;
+    const co = d.users.find((u) => u.id === companyId)!;
     const driver = input.driverId ? d.drivers.find((dr) => dr.id === input.driverId) : undefined;
     const vehicle =
       d.vehicles.find((v) => v.carrierId === co.id && v.type === input.vehicleType) ??
@@ -164,21 +173,55 @@ function toView(s: Shipment): CourseView {
   };
 }
 
-/** Toutes les courses (les plus récentes d'abord). */
-export function allCourses(): CourseView[] {
+/** Courses de l'entreprise (les plus récentes d'abord). Filtre par carrierId si fourni. */
+export function allCourses(carrierId?: string): CourseView[] {
   return db()
     .shipments.slice()
+    .filter((s) => !carrierId || s.carrierId === carrierId)
     .sort((a, b) => b.createdAt.localeCompare(a.createdAt))
     .map(toView);
 }
 
-export function activeCourses(): CourseView[] {
-  return allCourses().filter((c) => !['DELIVERED', 'CANCELLED'].includes(c.shipment.status));
+export function activeCourses(carrierId?: string): CourseView[] {
+  return allCourses(carrierId).filter((c) => !['DELIVERED', 'CANCELLED'].includes(c.shipment.status));
 }
 
 export function courseById(id: string): CourseView | undefined {
   const s = db().shipments.find((x) => x.id === id);
   return s ? toView(s) : undefined;
+}
+
+/** Courses affectées au chauffeur (par son compte utilisateur). */
+export function driverCoursesByUser(userId: string): CourseView[] {
+  const driver = db().drivers.find((dr) => dr.userId === userId);
+  if (!driver) return [];
+  return db()
+    .shipments.filter((s) => s.driverId === driver.id)
+    .sort((a, b) => b.createdAt.localeCompare(a.createdAt))
+    .map(toView);
+}
+
+/** Annule une course (libère chauffeur/véhicule, journalise). */
+export function cancelCourse(shipmentId: string, by: string): void {
+  write((d) => {
+    const s = d.shipments.find((x) => x.id === shipmentId);
+    if (!s || s.status === 'DELIVERED' || s.status === 'CANCELLED') return;
+    s.status = 'CANCELLED';
+    const freight = d.freights.find((f) => f.id === s.freightId);
+    if (freight) freight.status = 'CANCELLED';
+    const driver = d.drivers.find((dr) => dr.id === s.driverId);
+    if (driver) driver.status = 'AVAILABLE';
+    const tx = d.transactions.find((t) => t.shipmentId === s.id);
+    if (tx) tx.status = 'REFUNDED';
+    d.tracking.push({
+      id: nanoId('t'),
+      shipmentId: s.id,
+      status: 'CANCELLED',
+      label: 'Course annulée',
+      by,
+      createdAt: new Date().toISOString(),
+    });
+  });
 }
 
 export interface FleetStats {
@@ -189,26 +232,30 @@ export interface FleetStats {
   drivers: { id: string; name: string; phone: string; status: string }[];
 }
 
-export function fleetStats(): FleetStats {
+export function fleetStats(carrierId?: string): FleetStats {
   const d = db();
-  const co = d.users.find((u) => u.role === 'CARRIER');
-  const shipments = d.shipments;
+  const coId = carrierId;
+  const shipments = d.shipments.filter((s) => !coId || s.carrierId === coId);
   return {
     active: shipments.filter((s) => !['DELIVERED', 'CANCELLED'].includes(s.status)).length,
     delivered: shipments.filter((s) => s.status === 'DELIVERED').length,
     total: shipments.length,
     revenue: shipments.filter((s) => s.status === 'DELIVERED').reduce((sum, s) => sum + s.price, 0),
     drivers: d.drivers
-      .filter((dr) => !co || dr.carrierId === co.id)
+      .filter((dr) => !coId || dr.carrierId === coId)
       .map((dr) => ({ id: dr.id, name: dr.name, phone: dr.phone, status: dr.status })),
   };
 }
 
-/** Liste des chauffeurs (pour le formulaire de création). */
-export function availableDrivers(): { id: string; name: string }[] {
+/** Liste des chauffeurs de l'entreprise (pour le formulaire de création). */
+export function availableDrivers(carrierId?: string): { id: string; name: string }[] {
   const d = db();
-  const co = d.users.find((u) => u.role === 'CARRIER');
-  return d.drivers
-    .filter((dr) => !co || dr.carrierId === co.id)
-    .map((dr) => ({ id: dr.id, name: dr.name }));
+  const coId = resolveCompanyId(carrierId);
+  return d.drivers.filter((dr) => dr.carrierId === coId).map((dr) => ({ id: dr.id, name: dr.name }));
+}
+
+/** Véhicules de l'entreprise. */
+export function companyVehicles(carrierId?: string) {
+  const coId = resolveCompanyId(carrierId);
+  return db().vehicles.filter((v) => v.carrierId === coId);
 }
