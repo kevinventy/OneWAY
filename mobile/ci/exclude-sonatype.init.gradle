@@ -1,0 +1,24 @@
+// Retire le dépôt oss.sonatype.org de la résolution Gradle.
+//
+// Ce dépôt (legacy Sonatype OSS) renvoie par intermittence des 504 Gateway
+// Time-out et est en cours de dépréciation. Quand il échoue, Gradle le
+// désactive et fait échouer toute la résolution. Tous les artefacts requis
+// (Fresco, kotlin-stdlib, etc.) sont disponibles sur Maven Central / Google,
+// donc on peut l'enlever sans risque pour fiabiliser le build CI.
+allprojects {
+    afterEvaluate { project ->
+        project.repositories.removeAll { repo ->
+            (repo instanceof MavenArtifactRepository) &&
+            (repo.url != null) &&
+            (repo.url.toString().contains('oss.sonatype.org'))
+        }
+    }
+}
+
+gradle.settingsEvaluated { settings ->
+    settings.pluginManagement.repositories.removeAll { repo ->
+        (repo instanceof MavenArtifactRepository) &&
+        (repo.url != null) &&
+        (repo.url.toString().contains('oss.sonatype.org'))
+    }
+}

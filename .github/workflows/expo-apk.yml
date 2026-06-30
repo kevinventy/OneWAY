@@ -74,7 +74,9 @@ jobs:
           # Augmente le heap Gradle (la valeur par défaut d'Expo cause un OutOfMemoryError
           # sur le build RN release) ; la dernière clé écrase celle générée par prebuild.
           echo "org.gradle.jvmargs=-Xmx6144m -XX:MaxMetaspaceSize=1024m -XX:+UseParallelGC" >> android/gradle.properties
-          cd android && ./gradlew assembleRelease --no-daemon --stacktrace
+          # Init script : retire oss.sonatype.org (504 intermittents) de la résolution.
+          INIT="$(pwd)/ci/exclude-sonatype.init.gradle"
+          cd android && ./gradlew assembleRelease --no-daemon --stacktrace --init-script "$INIT"
 
       - name: Upload APK artifact
         uses: actions/upload-artifact@v4
