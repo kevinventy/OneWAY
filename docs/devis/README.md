@@ -10,6 +10,7 @@ Classeur Excel de devis pour **One Way SARL** (transport · livraison · suivi d
 | `OneWay_Devis_Transport.base.xlsx` | Dernière source fournie (provenance) |
 | `../../scripts/devis-carburant-vehicule.py` | Étape 1 : carburant auto par véhicule + nettoyage |
 | `../../scripts/devis-montant-lettres.py` | Étape 2 : montant total en toutes lettres |
+| `../../scripts/devis-recu-paiement.py` | Étape 3 : feuille « Reçu de paiement » |
 | `../../scripts/ameliore-devis.py` | Utilitaire historique : ajout de désignations |
 
 ## ⚙️ Feuille masquée « Lettres »
@@ -25,6 +26,23 @@ alimente le montant en toutes lettres.
 - **⚙️ Paramètres** — tarifs de référence : prix carburant (gasoil / essence), grille kilométrique par véhicule (tarif/km, conso L/100km, carburant/km, forfait), routes de Madagascar, coefficients de majoration.
 - **🧮 Calculateur Rapide** — estimation automatique d'un prix.
 - **📊 Historique Devis** — suivi des devis et statistiques.
+- **🧾 Reçu de paiement** — quittance / facturation finale (voir ci-dessous).
+
+## 🧾 Reçu de paiement (quittance)
+
+Feuille reçu qui reprend **automatiquement** les infos du devis (n°, client,
+total TTC) et enregistre un encaissement :
+
+- **Nature du paiement** (liste déroulante) : *Acompte 50 % (à la commande)*,
+  *Solde 50 % (à la livraison)*, *Paiement intégral (100 %)* ou *Montant libre*.
+- **Mode de paiement** (liste déroulante) : MVola, Orange Money, Airtel Money,
+  Virement, Espèces.
+- Calcule le **montant reçu**, le **reste à payer** et le **statut**
+  (✅ SOLDÉ / ⏳ reste à payer), et écrit le **montant reçu en toutes lettres**
+  (Ariary), automatiquement.
+
+Il suffit de remplir le devis, puis de choisir la nature et le mode de paiement
+sur la feuille reçu : tout se calcule seul.
 
 ## Carburant automatique selon le véhicule
 
@@ -75,7 +93,11 @@ python3 scripts/devis-carburant-vehicule.py \
 
 # Étape 2 : ligne « montant en toutes lettres »
 python3 scripts/devis-montant-lettres.py \
-  /tmp/devis-etape1.xlsx docs/devis/OneWay_Devis_Transport.xlsx
+  /tmp/devis-etape1.xlsx /tmp/devis-etape2.xlsx
+
+# Étape 3 : feuille « Reçu de paiement »
+python3 scripts/devis-recu-paiement.py \
+  /tmp/devis-etape2.xlsx docs/devis/OneWay_Devis_Transport.xlsx
 ```
 
 > Tous les montants sont en Ariary (MGA).
