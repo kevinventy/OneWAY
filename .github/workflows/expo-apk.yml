@@ -62,6 +62,12 @@ jobs:
       - name: Expo prebuild (génère le projet android natif)
         run: npx expo prebuild --platform android --no-install
 
+      - name: Clé de signature stable (mise à jour installable par-dessus l'ancienne)
+        # Réutilise une clé debug fixe versionnée → toutes les APK partagent la
+        # même signature, donc Android accepte l'installation par-dessus sans
+        # devoir désinstaller (indispensable pour les mises à jour in-app).
+        run: cp credentials/debug.keystore android/app/debug.keystore
+
       - name: Build release APK (JS embarqué, signé debug)
         run: |
           chmod +x android/gradlew
