@@ -7,61 +7,52 @@ Classeur Excel de devis pour **One Way SARL** (transport · livraison · suivi d
 | Fichier | Rôle |
 |---|---|
 | `OneWay_Devis_Transport.xlsx` | **Devis final** (version améliorée — à utiliser) |
-| `OneWay_Devis_Transport.base.xlsx` | Version source v2 (provenance) |
-| `../../scripts/ameliore-devis.py` | Script de transformation (reproductible) |
+| `OneWay_Devis_Transport.base.xlsx` | Dernière source fournie (provenance) |
+| `../../scripts/devis-carburant-vehicule.py` | Transformation appliquée à la base (reproductible) |
+| `../../scripts/ameliore-devis.py` | Utilitaire historique : ajout de désignations |
 
 ## Feuilles
 
 - **📋 Devis Client** — devis imprimable (en-tête, infos client, paramètres transport, tableau des prestations, totaux, conditions, signatures).
-- **⚙️ Paramètres** — tarifs de référence : prix carburant, grille kilométrique par véhicule, routes principales de Madagascar, coefficients de majoration.
-- **🧮 Calculateur Rapide** — estimation automatique d'un prix à partir de la distance, du véhicule et des options.
-- **📊 Historique Devis** — suivi des devis émis et statistiques (taux de conversion, CA).
+- **⚙️ Paramètres** — tarifs de référence : prix carburant (gasoil / essence), grille kilométrique par véhicule (tarif/km, conso L/100km, carburant/km, forfait), routes de Madagascar, coefficients de majoration.
+- **🧮 Calculateur Rapide** — estimation automatique d'un prix.
+- **📊 Historique Devis** — suivi des devis et statistiques.
 
-## Améliorations apportées
+## Carburant automatique selon le véhicule
 
-### Désignations ajoutées au tableau des prestations (n° 18 à 33)
+Le champ **« Type de véhicule »** (cellule `C25`) est une **liste déroulante**
+(plage nommée `Vehicules` = grille des 10 véhicules de la feuille Paramètres).
+Quand on choisit un véhicule, le devis se recalcule tout seul :
 
-Le tableau passe de 17 à **33 désignations**. Les nouvelles lignes sont
-optionnelles (quantité 0 par défaut) et constituent un catalogue de services
-adapté au contexte malgache :
+- **Ligne transport** — tarif/km = tarif du véhicule sélectionné
+  (`INDEX/MATCH` sur la grille) ; quantité = distance aller (`C24`).
+- **Ligne carburant** — *« Carburant aller-retour (selon véhicule) »* :
+  - quantité = **litres de l'aller-retour** = `distance × 2 × conso(véhicule) / 100` ;
+  - prix au litre (**gasoil ou essence** selon le véhicule) déduit automatiquement
+    de la grille → le montant change dès qu'on change de véhicule.
 
-| N° | Désignation | Type | Unité | P.U. (Ar) |
-|---:|---|---|---|---:|
-| 18 | Frais de bac / traversée fluviale | Transport | traversée | 80 000 |
-| 19 | Ristournes / frais de barrière communale | Administratif | forfait | 25 000 |
-| 20 | Emballage / palettisation / film étirable | Conditionnement | forfait | 20 000 |
-| 21 | Hayon élévateur / transpalette (livraison) | Manutention | forfait | 25 000 |
-| 22 | Livraison à l'étage / portage manuel | Main d'œuvre | étage | 10 000 |
-| 23 | Stockage / entreposage temporaire | Logistique | jour | 20 000 |
-| 24 | Chauffeur supplémentaire (longue distance) | Main d'œuvre | jour | 50 000 |
-| 25 | Frais de mission chauffeur (nuitée + repas) | Frais | nuitée | 40 000 |
-| 26 | Point de chargement / livraison supplémentaire | Transport | point | 30 000 |
-| 27 | Relivraison (destinataire absent) | Transport | forfait | 35 000 |
-| 28 | Preuve de livraison numérique (photos + e-signature) | Digital | forfait | **offert** |
-| 29 | Encaissement à la livraison (Mobile Money / COD) | Financier | forfait | 15 000 |
-| 30 | Surestaries / immobilisation conteneur | Supplément | jour | 60 000 |
-| 31 | Empotage / dépotage conteneur | Main d'œuvre | forfait | 80 000 |
-| 32 | Nettoyage / désinfection caisse (denrées, animaux) | Entretien | forfait | 20 000 |
-| 33 | Supplément saison des pluies / piste dégradée | Supplément | forfait | 30 000 |
+> La ligne **« Retour véhicule à vide (repositionnement) »** a été supprimée :
+> le retour est désormais couvert par le carburant aller-retour.
 
-### Autres améliorations
+Pour faire varier les prix : modifiez le **prix du carburant** ou la **grille
+kilométrique** dans la feuille **⚙️ Paramètres** — tout le devis se met à jour.
 
+## Autres caractéristiques
+
+- Tableau des prestations à désignations multiples (numérotation `N°`
+  auto-incrémentée), lignes optionnelles à quantité 0.
 - Formules de totaux (SOUS-TOTAL, remise, base imposable, TVA, TTC) et zone
-  d'impression mises à jour automatiquement pour intégrer les nouvelles lignes.
-- Mise en forme (zébrure, polices, bordures, format Ariary, fusions) conservée à
-  l'identique ; la prestation digitale n° 28 est mise en avant comme le suivi GPS.
-- **Listes déroulantes** ajoutées : Oui/Non sur la TVA (Devis) et sur les options
-  du Calculateur, et choix guidé du type de véhicule (1 → 10).
+  d'impression recalculées automatiquement.
+- Listes déroulantes Oui/Non (TVA, options du Calculateur) et choix guidé du véhicule.
+- Mise en forme soignée conservée (zébrure, format Ariary, fusions) ; logo d'en-tête préservé.
 
 ## Régénérer le fichier
 
 ```bash
-python3 scripts/ameliore-devis.py \
+pip install openpyxl Pillow   # Pillow indispensable pour conserver le logo
+python3 scripts/devis-carburant-vehicule.py \
   docs/devis/OneWay_Devis_Transport.base.xlsx \
   docs/devis/OneWay_Devis_Transport.xlsx
 ```
 
-> Dépendances : `pip install openpyxl Pillow` (Pillow est indispensable pour
-> conserver le logo de l'en-tête). Tous les montants sont en Ariary (MGA) ;
-> ajustez le prix du carburant dans la feuille **⚙️ Paramètres** pour recalculer
-> automatiquement tous les frais de carburant.
+> Tous les montants sont en Ariary (MGA).
