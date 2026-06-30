@@ -67,9 +67,14 @@ export function RouteMap({
   const road = from && to ? roadBetween(from, to) : null;
   const roadPath = road ? pointsToPath2(road) : null;
 
-  // Position du véhicule : le long de la route si on la connaît, sinon `current`.
-  const vehicleGeo =
-    road && progress > 0 && progress < 1 ? pointAlongPath(road, progress) : current ?? null;
+  // Véhicule masqué une fois livré (progress 1). Sinon il suit la route (sur
+  // tout [0,1], pas seulement à l'intérieur) si on la connaît, sinon `current`.
+  const delivered = progress >= 1;
+  const vehicleGeo = delivered
+    ? null
+    : road
+      ? pointAlongPath(road, Math.min(1, Math.max(0, progress)))
+      : current ?? null;
   const c = vehicleGeo ? projectToMap(vehicleGeo) : null;
 
   return (
@@ -130,7 +135,15 @@ export function RouteMap({
         {/* Live vehicle */}
         {c && (
           <g>
-            <circle cx={c.x} cy={c.y} r="2.6" fill="#ff9500" opacity="0.25" className="animate-pulse-dot" />
+            <circle
+              cx={c.x}
+              cy={c.y}
+              r="2.6"
+              fill="#ff9500"
+              opacity="0.25"
+              className="animate-pulse-dot"
+              style={{ transformBox: 'fill-box', transformOrigin: 'center' }}
+            />
             <circle cx={c.x} cy={c.y} r="1.4" fill="#ff9500" stroke="white" strokeWidth="0.5" />
           </g>
         )}

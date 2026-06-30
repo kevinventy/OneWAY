@@ -15,7 +15,8 @@ import type {
   User,
   Vehicle,
 } from './types';
-import { estimateRoute, findCity, lerpPoint } from './geo';
+import { estimateRoute, findCity } from './geo';
+import { positionOnRoute } from './roads';
 import { computeQuote, quickEstimate } from './pricing';
 import { MARKETPLACE } from '@/data/catalog';
 
@@ -176,7 +177,7 @@ export function buildSeed(): DB {
     const from = findCity('Antananarivo')!;
     const to = findCity('Mahajanga')!;
     const progress = 0.45;
-    const pos = lerpPoint(from, to, progress);
+    const pos = positionOnRoute(from, to, progress);
     const commission = Math.round(q.totalTTC * MARKETPLACE.commissionRate);
     shipments.push({
       id: 's1', reference: 'EXP-0001', freightId: 'f3', shipperId: 'u_ship1', carrierId: 'u_car2',

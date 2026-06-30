@@ -1,6 +1,7 @@
 import 'server-only';
 import { db, write } from './db';
-import { estimateRoute, lerpPoint, findCity } from './geo';
+import { estimateRoute, findCity } from './geo';
+import { positionOnRoute } from './roads';
 import { computeQuote } from './pricing';
 import { MARKETPLACE } from '@/data/catalog';
 import { nanoId, sequenceRef } from './utils';
@@ -189,7 +190,7 @@ export function advanceShipment(params: {
     const idx = STATUS_FLOW.indexOf(nextStatus);
     const progress =
       nextStatus === 'DELIVERED' ? 1 : Math.min(0.95, Math.max(shipment.progress, idx / (STATUS_FLOW.length - 1)));
-    const pos = lerpPoint(freight.pickup, freight.delivery, progress);
+    const pos = positionOnRoute(freight.pickup, freight.delivery, progress);
 
     shipment.status = nextStatus;
     shipment.progress = progress;

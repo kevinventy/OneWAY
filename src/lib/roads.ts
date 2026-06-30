@@ -1,4 +1,4 @@
-import { CITIES, haversine } from './geo';
+import { CITIES, haversine, lerpPoint } from './geo';
 import { ROADS_MG } from '@/data/madagascar-roads';
 
 /**
@@ -45,6 +45,17 @@ export function pathLengthKm(pts: [number, number][]): number {
     s += haversine({ lat: pts[i][0], lng: pts[i][1] }, { lat: pts[i + 1][0], lng: pts[i + 1][1] });
   }
   return s;
+}
+
+/**
+ * Position du véhicule pour une progression donnée : sur la vraie route si
+ * elle est connue, sinon interpolation linéaire (droite). Source de vérité
+ * unique partagée par le stockage (services/seed) et l'affichage.
+ */
+export function positionOnRoute(from: LatLng, to: LatLng, progress: number): LatLng {
+  const t = Math.min(1, Math.max(0, progress));
+  const road = roadBetween(from, to);
+  return road ? pointAlongPath(road, t) : lerpPoint(from, to, t);
 }
 
 /** Point à la fraction t (0..1) le long de la polyligne, par longueur d'arc. */
