@@ -1,6 +1,7 @@
 'use client';
 
 import { CITIES, projectToMap } from '@/lib/geo';
+import { roadBetween, pointAlongPath } from '@/lib/roads';
 import { MADAGASCAR_OUTLINE } from '@/data/madagascar-geo';
 import { cn } from '@/lib/utils';
 
@@ -27,6 +28,16 @@ function pointsToPath(pts: [number, number][]): string {
   );
 }
 
+/** Open polyline (no closing Z) — used for the road geometry. */
+function pointsToPath2(pts: [number, number][]): string {
+  return pts
+    .map(([lat, lng], i) => {
+      const { x, y } = projectToMap({ lat, lng });
+      return `${i === 0 ? 'M' : 'L'}${x.toFixed(2)},${y.toFixed(2)}`;
+    })
+    .join(' ');
+}
+
 /**
  * Lightweight, key-less interactive map.
  * Renders a stylized Madagascar with the route, pickup/delivery markers and
@@ -51,7 +62,15 @@ export function RouteMap({
   const island = pointsToPath(OUTLINE);
   const a = from ? projectToMap(from) : null;
   const b = to ? projectToMap(to) : null;
-  const c = current ? projectToMap(current) : null;
+
+  // Vraie géométrie routière entre les deux villes (sinon ligne droite).
+  const road = from && to ? roadBetween(from, to) : null;
+  const roadPath = road ? pointsToPath2(road) : null;
+
+  // Position du véhicule : le long de la route si on la connaît, sinon `current`.
+  const vehicleGeo =
+    road && progress > 0 && progress < 1 ? pointAlongPath(road, progress) : current ?? null;
+  const c = vehicleGeo ? projectToMap(vehicleGeo) : null;
 
   return (
     <div className={cn('relative overflow-hidden rounded-2xl border border-slate-200 bg-[#eaf1fb]', className)}>
@@ -81,18 +100,26 @@ export function RouteMap({
             return <circle key={city.name} cx={p.x} cy={p.y} r="0.7" fill="#7c9a72" />;
           })}
 
-        {/* Route line */}
-        {a && b && (
-          <line
-            x1={a.x}
-            y1={a.y}
-            x2={b.x}
-            y2={b.y}
-            stroke="#1d3df5"
-            strokeWidth="1"
-            strokeDasharray="2 1.5"
-            strokeLinecap="round"
-          />
+        {/* Route : vraie géométrie routière si connue, sinon ligne droite */}
+        {roadPath ? (
+          <>
+            {/* casing blanc pour l'effet « itinéraire » */}
+            <path d={roadPath} fill="none" stroke="#ffffff" strokeWidth="2" strokeLinejoin="round" strokeLinecap="round" opacity="0.9" />
+            <path d={roadPath} fill="none" stroke="#1d3df5" strokeWidth="1.1" strokeLinejoin="round" strokeLinecap="round" />
+          </>
+        ) : (
+          a && b && (
+            <line
+              x1={a.x}
+              y1={a.y}
+              x2={b.x}
+              y2={b.y}
+              stroke="#1d3df5"
+              strokeWidth="1"
+              strokeDasharray="2 1.5"
+              strokeLinecap="round"
+            />
+          )
         )}
 
         {/* Pickup marker */}
