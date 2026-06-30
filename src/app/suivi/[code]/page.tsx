@@ -7,7 +7,6 @@ import {
   PackageCheck,
   Camera,
   CheckCircle2,
-  Clock,
   SearchX,
 } from 'lucide-react';
 import { Logo } from '@/components/brand/Logo';
@@ -17,6 +16,8 @@ import { LiveRefresh } from '@/components/app/LiveRefresh';
 import { TrackingSearch } from '@/components/track/TrackingSearch';
 import { Badge } from '@/components/ui';
 import { shipmentByTrackingCode, freightById, userById, trackingFor } from '@/lib/queries';
+import { remainingKm } from '@/lib/geo';
+import { km } from '@/lib/format';
 import { SHIPMENT_STATUS } from '@/lib/labels';
 
 export const dynamic = 'force-dynamic';
@@ -70,6 +71,7 @@ export default function PublicTrackingPage({ params }: { params: { code: string 
   const delivered = shipment.status === 'DELIVERED';
   const pct = Math.round(shipment.progress * 100);
   const remainingH = Math.max(0, Math.round(freight.durationH * (1 - shipment.progress)));
+  const remKm = remainingKm(freight.distanceKm, shipment.progress);
   const status = SHIPMENT_STATUS[shipment.status];
 
   return (
@@ -105,23 +107,29 @@ export default function PublicTrackingPage({ params }: { params: { code: string 
                 className="aspect-[16/10] w-full rounded-none border-0"
               />
               <div className="p-5">
-                <div className="flex items-center justify-between text-sm">
-                  <span className="flex items-center gap-1.5 font-medium text-ink">
-                    <Truck size={16} className="text-amber-500" /> {pct} % du trajet
-                  </span>
-                  <span className="flex items-center gap-1.5 text-ink-muted">
-                    {delivered ? (
-                      <>
-                        <CheckCircle2 size={15} className="text-emerald-500" /> Livré
-                      </>
-                    ) : (
-                      <>
-                        <Clock size={15} /> Arrivée estimée ≈ {remainingH} h
-                      </>
-                    )}
-                  </span>
+                <div className="grid grid-cols-3 gap-2 text-center">
+                  <div>
+                    <p className="text-lg font-extrabold text-ink">{pct}%</p>
+                    <p className="text-xs text-ink-muted">du trajet</p>
+                  </div>
+                  <div>
+                    <p className="text-lg font-extrabold text-amber-600">{delivered ? '0 km' : km(remKm)}</p>
+                    <p className="text-xs text-ink-muted">distance restante</p>
+                  </div>
+                  <div>
+                    <p className="flex items-center justify-center gap-1 text-lg font-extrabold text-ink">
+                      {delivered ? (
+                        <>
+                          <CheckCircle2 size={16} className="text-emerald-500" /> Livré
+                        </>
+                      ) : (
+                        <>≈ {remainingH} h</>
+                      )}
+                    </p>
+                    <p className="text-xs text-ink-muted">{delivered ? 'arrivé' : 'arrivée estimée'}</p>
+                  </div>
                 </div>
-                <div className="mt-2 h-2 w-full overflow-hidden rounded-full bg-slate-100">
+                <div className="mt-3 h-2 w-full overflow-hidden rounded-full bg-slate-100">
                   <div
                     className="h-full rounded-full bg-amber-500 transition-all"
                     style={{ width: `${pct}%` }}

@@ -122,6 +122,11 @@ export function projectToMap(p: { lat: number; lng: number }): { x: number; y: n
   return { x: Math.max(0, Math.min(100, x)), y: Math.max(0, Math.min(100, y)) };
 }
 
+/** Kilomètres restants à parcourir, d'après la distance totale et la progression 0..1. */
+export function remainingKm(distanceKm: number, progress: number): number {
+  return Math.max(0, Math.round(distanceKm * (1 - Math.min(1, Math.max(0, progress)))));
+}
+
 /** Linear interpolation between two points (for simulated GPS progress). */
 export function lerpPoint(
   a: { lat: number; lng: number },
