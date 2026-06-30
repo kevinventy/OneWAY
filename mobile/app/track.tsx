@@ -7,6 +7,7 @@ import { Card, Button, Badge, Input } from '@/components/ui';
 import { LogoMark } from '@/components/Logo';
 import { RouteMap } from '@/components/RouteMap';
 import { subscribePublicTracking } from '@/firebase/db';
+import { getFavorites, addFavorite, removeFavorite } from '@/lib/favorites';
 import { COURSE_STATUS } from '@/lib/labels';
 import { km, duration, dateTimeFr } from '@/lib/format';
 import { colors, radius } from '@/theme';
@@ -20,13 +21,20 @@ export default function Track() {
   const [data, setData] = useState<PublicTracking | null>(null);
   const [loaded, setLoaded] = useState(false);
   const [input, setInput] = useState('');
+  const [fav, setFav] = useState(false);
 
   useEffect(() => {
     if (!code) { setLoaded(true); return; }
     setLoaded(false);
+    getFavorites().then((list) => setFav(list.includes(code)));
     const unsub = subscribePublicTracking(code, (d) => { setData(d); setLoaded(true); });
     return () => unsub();
   }, [code]);
+
+  async function toggleFav() {
+    const list = fav ? await removeFavorite(code) : await addFavorite(code);
+    setFav(list.includes(code));
+  }
 
   const remainingH = data ? Math.max(0, data.durationH * (1 - data.progress)) : 0;
 
@@ -59,10 +67,13 @@ export default function Track() {
       {data && (
         <>
           <View style={styles.headRow}>
-            <View>
+            <View style={{ flex: 1 }}>
               <Text style={styles.muted}>Course {data.reference}</Text>
               <Text style={styles.codeBig}>{data.code}</Text>
             </View>
+            <Pressable onPress={toggleFav} hitSlop={8} style={{ padding: 6 }}>
+              <Ionicons name={fav ? 'bookmark' : 'bookmark-outline'} size={22} color={fav ? colors.brand600 : colors.inkMuted} />
+            </Pressable>
             <Badge tone={COURSE_STATUS[data.status].tone}>{data.statusLabel}</Badge>
           </View>
 

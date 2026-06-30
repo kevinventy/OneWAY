@@ -16,4 +16,5 @@ export const COURSE_STATUS: Record<CourseStatus, { label: string; tone: Tone }> 
 export const ROLE_LABEL: Record<Role, string> = {
   GERANT: 'Gérant',
   CHAUFFEUR: 'Chauffeur',
+  CLIENT: 'Client',
 };

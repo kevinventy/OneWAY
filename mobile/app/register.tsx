@@ -9,11 +9,18 @@ import { describeError } from './login';
 import { colors, radius } from '@/theme';
 import type { Role } from '@/lib/types';
 
+const ROLES: { key: Role; label: string; icon: any }[] = [
+  { key: 'CLIENT', label: 'Client', icon: 'person' },
+  { key: 'GERANT', label: 'Gérant', icon: 'briefcase' },
+  { key: 'CHAUFFEUR', label: 'Chauffeur', icon: 'car' },
+];
+
 export default function Register() {
   const router = useRouter();
   const params = useLocalSearchParams<{ role?: string }>();
   const { register } = useAuth();
-  const [role, setRole] = useState<Role>(params.role === 'CHAUFFEUR' ? 'CHAUFFEUR' : 'GERANT');
+  const initial = (['CLIENT', 'GERANT', 'CHAUFFEUR'].includes(params.role ?? '') ? params.role : 'CLIENT') as Role;
+  const [role, setRole] = useState<Role>(initial);
   const [form, setForm] = useState({ name: '', identifiant: '', password: '', confirm: '', companyName: '', companyCode: '', phone: '' });
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
@@ -25,8 +32,9 @@ export default function Register() {
     if (form.identifiant.trim().length < 3) return setError('Choisissez un identifiant (3 caractères min.).');
     if (form.password.length < 6) return setError('Mot de passe : 6 caractères minimum.');
     if (form.password !== form.confirm) return setError('Les deux mots de passe ne correspondent pas.');
+    if (role === 'CLIENT' && form.phone.trim().length < 6) return setError('Votre téléphone est requis (pour retrouver vos livraisons).');
     if (role === 'GERANT' && form.companyName.trim().length < 2) return setError("Indiquez le nom de l'entreprise.");
-    if (role === 'CHAUFFEUR' && form.companyCode.trim().length < 4) return setError("Entrez le code entreprise donné par votre gérant.");
+    if (role === 'CHAUFFEUR' && form.companyCode.trim().length < 4) return setError('Entrez le code entreprise donné par votre gérant.');
     setLoading(true);
     try {
       await register({
@@ -52,10 +60,10 @@ export default function Register() {
         <Text style={styles.title}>Créer un compte</Text>
 
         <View style={styles.roleRow}>
-          {(['GERANT', 'CHAUFFEUR'] as Role[]).map((r) => (
-            <Pressable key={r} onPress={() => setRole(r)} style={[styles.roleBtn, role === r && styles.roleBtnActive]}>
-              <Ionicons name={r === 'GERANT' ? 'briefcase' : 'car'} size={20} color={role === r ? colors.brand700 : colors.inkMuted} />
-              <Text style={[styles.roleText, role === r && { color: colors.brand700 }]}>{r === 'GERANT' ? 'Gérant' : 'Chauffeur'}</Text>
+          {ROLES.map((r) => (
+            <Pressable key={r.key} onPress={() => setRole(r.key)} style={[styles.roleBtn, role === r.key && styles.roleBtnActive]}>
+              <Ionicons name={r.icon} size={20} color={role === r.key ? colors.brand700 : colors.inkMuted} />
+              <Text style={[styles.roleText, role === r.key && { color: colors.brand700 }]}>{r.label}</Text>
             </Pressable>
           ))}
         </View>
@@ -65,22 +73,21 @@ export default function Register() {
         <Field label="Mot de passe"><Input value={form.password} onChangeText={set('password')} secureTextEntry placeholder="6 caractères minimum" /></Field>
         <Field label="Confirmer le mot de passe"><Input value={form.confirm} onChangeText={set('confirm')} secureTextEntry placeholder="ressaisissez le mot de passe" /></Field>
 
-        {role === 'GERANT' ? (
-          <Field label="Nom de l'entreprise"><Input value={form.companyName} onChangeText={set('companyName')} placeholder="One Way SARL" /></Field>
-        ) : (
-          <Field label="Code entreprise">
-            <Input value={form.companyCode} onChangeText={(v) => set('companyCode')(v.toUpperCase())} autoCapitalize="characters" placeholder="donné par votre gérant (ex. OWAB12)" />
-          </Field>
+        {role === 'GERANT' && <Field label="Nom de l'entreprise"><Input value={form.companyName} onChangeText={set('companyName')} placeholder="One Way SARL" /></Field>}
+        {role === 'CHAUFFEUR' && (
+          <Field label="Code entreprise"><Input value={form.companyCode} onChangeText={(v) => set('companyCode')(v.toUpperCase())} autoCapitalize="characters" placeholder="donné par votre gérant (ex. OWAB12)" /></Field>
         )}
-        <Field label="Téléphone (facultatif)"><Input value={form.phone} onChangeText={set('phone')} keyboardType="phone-pad" placeholder="+261…" /></Field>
+        <Field label={role === 'CLIENT' ? 'Téléphone' : 'Téléphone (facultatif)'}>
+          <Input value={form.phone} onChangeText={set('phone')} keyboardType="phone-pad" placeholder="+261…" />
+        </Field>
 
         {error ? <Text style={styles.error}>{error}</Text> : null}
         <Button title="Créer mon compte" onPress={submit} loading={loading} />
         <Button title="J'ai déjà un compte" variant="ghost" onPress={() => router.replace('/login')} style={{ marginTop: 8 }} />
         <Text style={styles.legal}>
-          {role === 'GERANT'
-            ? 'Vous recevrez un code entreprise à partager avec vos chauffeurs.'
-            : 'Demandez le code entreprise à votre gérant pour rejoindre sa flotte.'}
+          {role === 'CLIENT' && 'Suivez vos livraisons et demandez des devis. Votre téléphone relie vos courses à votre compte.'}
+          {role === 'GERANT' && 'Vous recevrez un code entreprise à partager avec vos chauffeurs.'}
+          {role === 'CHAUFFEUR' && 'Demandez le code entreprise à votre gérant pour rejoindre sa flotte.'}
         </Text>
       </ScrollView>
     </KeyboardAvoidingView>
@@ -90,10 +97,10 @@ export default function Register() {
 const styles = StyleSheet.create({
   container: { flexGrow: 1, padding: 24, paddingTop: 64, backgroundColor: colors.bg },
   title: { fontSize: 26, fontWeight: '800', color: colors.ink, marginTop: 20, marginBottom: 16 },
-  roleRow: { flexDirection: 'row', gap: 10, marginBottom: 16 },
-  roleBtn: { flex: 1, alignItems: 'center', gap: 4, paddingVertical: 14, borderRadius: radius.md, borderWidth: 1, borderColor: colors.border, backgroundColor: colors.white },
+  roleRow: { flexDirection: 'row', gap: 8, marginBottom: 16 },
+  roleBtn: { flex: 1, alignItems: 'center', gap: 4, paddingVertical: 12, borderRadius: radius.md, borderWidth: 1, borderColor: colors.border, backgroundColor: colors.white },
   roleBtnActive: { borderColor: colors.brand500, backgroundColor: colors.brand50 },
-  roleText: { fontWeight: '700', color: colors.inkMuted },
+  roleText: { fontWeight: '700', color: colors.inkMuted, fontSize: 13 },
   error: { color: colors.red, marginBottom: 10 },
   legal: { color: colors.inkMuted, fontSize: 12, textAlign: 'center', marginTop: 12, lineHeight: 17 },
 });

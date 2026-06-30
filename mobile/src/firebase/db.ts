@@ -27,6 +27,7 @@ import type {
   GeoPoint,
   Notification,
   PublicTracking,
+  QuoteRequest,
   TrackingEvent,
   User,
   Vehicle,
@@ -261,6 +262,29 @@ export const subscribeEvents = (courseId: string, cb: (t: TrackingEvent[]) => vo
 
 export const subscribeNotifications = (uid: string, cb: (n: Notification[]) => void) =>
   subscribe<Notification>('notifications', [where('userId', '==', uid)], (rows) => cb(rows.sort((a, b) => b.createdAt - a.createdAt)));
+
+/** Courses d'un client (rattachées à son numéro de téléphone). */
+export const subscribeClientCourses = (phone: string, cb: (c: Course[]) => void) =>
+  subscribe<Course>('courses', [where('client.phone', '==', phone)], (rows) => cb(rows.sort((a, b) => b.createdAt - a.createdAt)));
+
+/** Demandes de devis en attente (vue gérant). */
+export const subscribeQuoteRequests = (cb: (q: QuoteRequest[]) => void) =>
+  subscribe<QuoteRequest>('quoteRequests', [where('status', '==', 'NOUVELLE')], (rows) => cb(rows.sort((a, b) => b.createdAt - a.createdAt)));
+
+// ── Demandes de devis (client → gérant) ────────────────────────────────────
+
+export async function createQuoteRequest(client: User, input: { fromCity: string; toCity: string; cargoType: QuoteRequest['cargoType']; weightKg: number; description: string }): Promise<void> {
+  const ref = doc(col('quoteRequests'));
+  await setDoc(ref, clean({
+    id: ref.id, clientId: client.id, clientName: client.name, clientPhone: client.phone || '',
+    fromCity: input.fromCity, toCity: input.toCity, cargoType: input.cargoType, weightKg: input.weightKg,
+    description: input.description, status: 'NOUVELLE', createdAt: Date.now(),
+  }));
+}
+
+export async function markQuoteHandled(id: string, status: 'TRAITEE' | 'REFUSEE' = 'TRAITEE'): Promise<void> {
+  await updateDoc(doc(firestore, 'quoteRequests', id), { status });
+}
 
 export function subscribeCourse(id: string, cb: (c: Course | null) => void) {
   return onSnapshot(doc(firestore, 'courses', id), (snap) => cb(snap.exists() ? (snap.data() as Course) : null));

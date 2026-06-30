@@ -98,6 +98,8 @@ async function main() {
   await ensureUser('u_gerant', 'gerant', { role: 'GERANT', name: 'Hery Rakoto', phone: '+261341234567', companyName: COMPANY, companyCode: COMPANY_CODE, avatarColor: '#1d3df5', createdAt: now });
   await ensureUser('u_chauf1', 'chauffeur', { role: 'CHAUFFEUR', name: 'Rivo Be', phone: '+261347654321', ownerId: 'u_gerant', avatarColor: '#ff9500', createdAt: now });
   await ensureUser('u_chauf2', 'koto', { role: 'CHAUFFEUR', name: 'Koto Solo', phone: '+261349876543', ownerId: 'u_gerant', avatarColor: '#16a34a', createdAt: now });
+  // Client de démo : son téléphone correspond à la course c1 (OWTOA01).
+  await ensureUser('u_client', 'client', { role: 'CLIENT', name: 'Société ABC Import', phone: '+261330000001', avatarColor: '#9333ea', createdAt: now });
 
   console.log('→ Flotte…');
   await db.collection('vehicles').doc('v1').set({ id: 'v1', ownerId: 'u_gerant', type: 'CAMION_5T', name: 'Isuzu NQR', plate: '1234 TBB', capacityKg: 5000, available: false });

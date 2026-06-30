@@ -1,24 +1,28 @@
 import { useMemo, useState } from 'react';
 import { View, Text, ScrollView, StyleSheet, Pressable, KeyboardAvoidingView, Platform } from 'react-native';
-import { useRouter } from 'expo-router';
+import { useRouter, useLocalSearchParams } from 'expo-router';
 import { useAuth } from '@/store/auth';
 import { Button, Card, Field, Input } from '@/components/ui';
-import { createCourse } from '@/firebase/db';
+import { createCourse, markQuoteHandled } from '@/firebase/db';
 import { CITIES, buildCourseRoute } from '@/lib/geo';
 import { quickEstimate } from '@/lib/pricing';
-import { CARGO_TYPES, VEHICLE_TYPES, suggestVehicle, type CargoTypeKey, type VehicleTypeKey } from '@/data/catalog';
+import { CARGO_TYPES, VEHICLE_TYPES, suggestVehicle, cargoByKey, type CargoTypeKey, type VehicleTypeKey } from '@/data/catalog';
 import { money, km, duration } from '@/lib/format';
 import { colors, radius } from '@/theme';
 
 const cityByName = (n: string) => CITIES.find((c) => c.name === n);
+const knownCity = (n?: string) => (n && cityByName(n) ? n : undefined);
+const knownCargo = (k?: string): CargoTypeKey | undefined => (k && CARGO_TYPES.some((c) => c.key === k) ? (k as CargoTypeKey) : undefined);
 
 export default function NewCourse() {
   const router = useRouter();
   const { user } = useAuth();
+  // Pré-remplissage depuis une demande de devis (gérant).
+  const p = useLocalSearchParams<{ clientName?: string; clientPhone?: string; fromCity?: string; toCity?: string; cargoType?: string; weight?: string; description?: string; requestId?: string }>();
   const [f, setF] = useState({
-    clientName: '', clientPhone: '', fromCity: 'Antananarivo', fromAddr: '',
-    toCity: 'Toamasina', toAddr: '', cargoType: 'GENERAL' as CargoTypeKey,
-    description: '', weight: '', vehicleType: 'CAMION_3T' as VehicleTypeKey, autoVehicle: true,
+    clientName: p.clientName ?? '', clientPhone: p.clientPhone ?? '', fromCity: knownCity(p.fromCity) ?? 'Antananarivo', fromAddr: '',
+    toCity: knownCity(p.toCity) ?? 'Toamasina', toAddr: '', cargoType: knownCargo(p.cargoType) ?? ('GENERAL' as CargoTypeKey),
+    description: p.description ?? '', weight: p.weight ?? '', vehicleType: 'CAMION_3T' as VehicleTypeKey, autoVehicle: true,
   });
   const set = (k: keyof typeof f) => (v: any) => setF((s) => ({ ...s, [k]: v }));
   const [error, setError] = useState('');
@@ -57,6 +61,7 @@ export default function NewCourse() {
         pickup: { address: f.fromAddr.trim() || from.name, city: from.name, lat: from.lat, lng: from.lng },
         delivery: { address: f.toAddr.trim() || to.name, city: to.name, lat: to.lat, lng: to.lng },
       });
+      if (p.requestId) await markQuoteHandled(p.requestId).catch(() => {});
       router.replace(`/(app)/course/${course.id}`);
     } catch (e: any) {
       setError(e?.message ?? 'Création impossible.');

@@ -1,8 +1,8 @@
 import type { CargoTypeKey, VehicleTypeKey } from '@/data/catalog';
 import type { LatLng } from '@/data/roads';
 
-/** ONE WAY = l'app d'UN transporteur : gérant + chauffeurs (comptes), client public. */
-export type Role = 'GERANT' | 'CHAUFFEUR';
+/** ONE WAY = l'app d'UN transporteur : gérant + chauffeurs + clients (comptes). */
+export type Role = 'GERANT' | 'CHAUFFEUR' | 'CLIENT';
 
 /** Profil app (Firestore `users/{uid}`). Auth = Firebase Auth (identifiant synthétique). */
 export interface User {
@@ -138,6 +138,23 @@ export interface Notification {
   body: string;
   read: boolean;
   href?: string;
+  createdAt: number;
+}
+
+export type QuoteStatus = 'NOUVELLE' | 'TRAITEE' | 'REFUSEE';
+
+/** Demande de devis / course envoyée par un client au transporteur. */
+export interface QuoteRequest {
+  id: string;
+  clientId: string;
+  clientName: string;
+  clientPhone: string;
+  fromCity: string;
+  toCity: string;
+  cargoType: CargoTypeKey;
+  weightKg: number;
+  description: string;
+  status: QuoteStatus;
   createdAt: number;
 }
 

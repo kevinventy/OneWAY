@@ -63,10 +63,11 @@ export GOOGLE_APPLICATION_CREDENTIALS=./serviceAccount.json
 node --import tsx scripts/seed.ts
 ```
 
-Crée le gérant **`gerant`**, les chauffeurs **`chauffeur`** et **`koto`**
-(identifiants, mot de passe **`oneway123`**), la flotte, et 3 courses de
-démonstration avec leur suivi public (codes **OWTOA01** en route, **OWANT02**
-livrée, **OWMAH03** à assigner). Code entreprise de démo : **OWDEMO**.
+Crée le gérant **`gerant`**, les chauffeurs **`chauffeur`** et **`koto`**, un
+client **`client`** (identifiants, mot de passe **`oneway123`**), la flotte, et
+3 courses de démonstration avec leur suivi public (codes **OWTOA01** en route,
+**OWANT02** livrée, **OWMAH03** à assigner). Code entreprise de démo : **OWDEMO**.
+Le compte `client` (tél. +261330000001) voit la course OWTOA01 dans « Mes livraisons ».
 
 ## 4 bis. (Optionnel) Storage pour les photos
 

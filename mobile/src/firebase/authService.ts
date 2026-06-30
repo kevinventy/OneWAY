@@ -62,9 +62,8 @@ export async function register(input: RegisterInput): Promise<User> {
       phone: input.phone,
       avatarColor: COLORS[Math.floor(Math.random() * COLORS.length)],
       createdAt: Date.now(),
-      ...(input.role === 'GERANT'
-        ? { companyName: input.companyName, companyCode: genCompanyCode() }
-        : { ownerId }),
+      ...(input.role === 'GERANT' ? { companyName: input.companyName, companyCode: genCompanyCode() } : {}),
+      ...(input.role === 'CHAUFFEUR' ? { ownerId } : {}),
     };
 
     const clean: Record<string, unknown> = {};

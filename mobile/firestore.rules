@@ -15,13 +15,28 @@ service cloud.firestore {
       allow create, update: if signedIn() && uid() == id;
     }
 
-    // Courses : gérant propriétaire (lecture + écriture) ou chauffeur assigné
-    // (lecture + avancement d'étape). Aucune lecture croisée entre entreprises.
+    function myPhone() {
+      return get(/databases/$(database)/documents/users/$(uid())).data.phone;
+    }
+
+    // Courses : gérant propriétaire ou chauffeur assigné (lecture + écriture),
+    // et le client (lecture seule de SES courses, rattachées à son téléphone).
     match /courses/{id} {
-      allow read: if signedIn() && (resource.data.ownerId == uid() || resource.data.driverUserId == uid());
+      allow read: if signedIn() && (
+        resource.data.ownerId == uid() ||
+        resource.data.driverUserId == uid() ||
+        resource.data.client.phone == myPhone()
+      );
       allow create: if signedIn() && request.resource.data.ownerId == uid();
       allow update: if signedIn() && (resource.data.ownerId == uid() || resource.data.driverUserId == uid());
       allow delete: if false;
+    }
+
+    // Demandes de devis : créées par le client, consultées/traitées par le gérant.
+    match /quoteRequests/{id} {
+      allow read: if signedIn();
+      allow create: if signedIn() && request.resource.data.clientId == uid();
+      allow update: if signedIn();
     }
 
     // Chauffeurs : gérant propriétaire, ou le chauffeur sur sa propre fiche.

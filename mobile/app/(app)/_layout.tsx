@@ -27,6 +27,7 @@ export default function AppLayout() {
     >
       <Stack.Screen name="home" options={{ headerShown: false }} />
       <Stack.Screen name="new-course" options={{ title: 'Nouvelle course' }} />
+      <Stack.Screen name="new-quote" options={{ title: 'Demander un devis' }} />
       <Stack.Screen name="course/[id]" options={{ title: 'Course' }} />
       <Stack.Screen name="fleet" options={{ title: 'Ma flotte' }} />
       <Stack.Screen name="notifications" options={{ title: 'Notifications' }} />
