@@ -6,13 +6,35 @@ Classeur Excel de devis pour **One Way SARL** (transport · livraison · suivi d
 
 | Fichier | Rôle |
 |---|---|
-| `OneWay_Devis_Transport.xlsx` | **Devis final** (version améliorée — à utiliser) |
+| `OneWay_Devis_Transport.xlsx` | **Devis final** (sans macro — compatible partout) |
+| `OneWay_Devis_Transport.xlsm` | Version **macro** : bouton « Enregistrer le paiement » |
+| `EnregistrerPaiement.bas` | Code de la macro (secours / import manuel) |
 | `OneWay_Devis_Transport.base.xlsx` | Dernière source fournie (provenance) |
 | `../../scripts/devis-carburant-vehicule.py` | Étape 1 : carburant auto par véhicule + nettoyage |
 | `../../scripts/devis-montant-lettres.py` | Étape 2 : montant total en toutes lettres |
 | `../../scripts/devis-recu-paiement.py` | Étape 3 : feuille « Reçu de paiement » |
 | `../../scripts/historique-paiements.py` | Étape 4 : suivi des paiements dans l'historique |
+| `../../scripts/devis-macro-xlsm.py` | Étape 5 : version .xlsm (macro + bouton) |
+| `../../scripts/_vba_builder.py` | Construction du projet VBA (vbaProject.bin) |
 | `../../scripts/ameliore-devis.py` | Utilitaire historique : ajout de désignations |
+
+## 💾 Version macro (.xlsm) — bouton « Enregistrer le paiement »
+
+`OneWay_Devis_Transport.xlsm` ajoute :
+
+- une feuille **📒 Journal des paiements** (journal d'encaissements) ;
+- un **bouton « Enregistrer le paiement »** sur la feuille Reçu : un clic ajoute
+  automatiquement une ligne au journal (date, n° reçu, réf. devis, client,
+  nature, mode, montant reçu, référence).
+
+**À l'ouverture, Excel demande d'activer les macros** (bandeau jaune → « Activer
+le contenu »). Les macros ne fonctionnent que sur **Excel (Windows/Mac)** — pas
+sur Google Sheets ni Excel mobile ; pour ces cas, utilisez le `.xlsx`.
+
+> Le projet VBA a été généré sans Excel et validé structurellement. Si une
+> version d'Excel refuse la macro (« contenu illisible »), importez le module
+> `EnregistrerPaiement.bas` (VBE → Fichier → Importer un fichier), puis
+> clic droit sur un bouton → **Affecter une macro** → `EnregistrerPaiement`.
 
 ## ⚙️ Feuille masquée « Lettres »
 
@@ -113,6 +135,10 @@ python3 scripts/devis-recu-paiement.py \
 # Étape 4 : suivi des paiements dans l'historique
 python3 scripts/historique-paiements.py \
   /tmp/devis-etape3.xlsx docs/devis/OneWay_Devis_Transport.xlsx
+
+# Étape 5 : version macro .xlsm (bouton « Enregistrer le paiement »)
+python3 scripts/devis-macro-xlsm.py \
+  docs/devis/OneWay_Devis_Transport.xlsx docs/devis/OneWay_Devis_Transport.xlsm
 ```
 
 > Tous les montants sont en Ariary (MGA).
