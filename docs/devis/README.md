@@ -8,8 +8,16 @@ Classeur Excel de devis pour **One Way SARL** (transport · livraison · suivi d
 |---|---|
 | `OneWay_Devis_Transport.xlsx` | **Devis final** (version améliorée — à utiliser) |
 | `OneWay_Devis_Transport.base.xlsx` | Dernière source fournie (provenance) |
-| `../../scripts/devis-carburant-vehicule.py` | Transformation appliquée à la base (reproductible) |
+| `../../scripts/devis-carburant-vehicule.py` | Étape 1 : carburant auto par véhicule + nettoyage |
+| `../../scripts/devis-montant-lettres.py` | Étape 2 : montant total en toutes lettres |
 | `../../scripts/ameliore-devis.py` | Utilitaire historique : ajout de désignations |
+
+## ⚙️ Feuille masquée « Lettres »
+
+Le classeur contient une feuille **masquée** `Lettres` : c'est la table de
+conversion *nombre → français* (0 à 999, avec les pluriels « cent/cents » et
+« quatre-vingt/quatre-vingts »). **Ne pas la supprimer ni la modifier** — elle
+alimente le montant en toutes lettres.
 
 ## Feuilles
 
@@ -34,6 +42,16 @@ Quand on choisit un véhicule, le devis se recalcule tout seul :
 > La ligne **« Retour véhicule à vide (repositionnement) »** a été supprimée :
 > le retour est désormais couvert par le carburant aller-retour.
 
+## Montant total en toutes lettres (automatique)
+
+Juste sous **« TOTAL À PAYER (TTC) »**, une ligne affiche le montant en toutes
+lettres et **se met à jour automatiquement** avec le total :
+
+> *Arrêté le présent devis à la somme de deux millions trente et un mille sept cents Ariary.*
+
+La conversion est faite **uniquement par formules** (aucune macro), via la feuille
+masquée `Lettres`. Le classeur est réglé pour **recalculer à l'ouverture**.
+
 Pour faire varier les prix : modifiez le **prix du carburant** ou la **grille
 kilométrique** dans la feuille **⚙️ Paramètres** — tout le devis se met à jour.
 
@@ -50,9 +68,14 @@ kilométrique** dans la feuille **⚙️ Paramètres** — tout le devis se met 
 
 ```bash
 pip install openpyxl Pillow   # Pillow indispensable pour conserver le logo
+
+# Étape 1 : carburant auto par véhicule + suppression du retour à vide
 python3 scripts/devis-carburant-vehicule.py \
-  docs/devis/OneWay_Devis_Transport.base.xlsx \
-  docs/devis/OneWay_Devis_Transport.xlsx
+  docs/devis/OneWay_Devis_Transport.base.xlsx /tmp/devis-etape1.xlsx
+
+# Étape 2 : ligne « montant en toutes lettres »
+python3 scripts/devis-montant-lettres.py \
+  /tmp/devis-etape1.xlsx docs/devis/OneWay_Devis_Transport.xlsx
 ```
 
 > Tous les montants sont en Ariary (MGA).
