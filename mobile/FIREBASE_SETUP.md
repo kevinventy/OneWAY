@@ -30,12 +30,28 @@ EXPO_PUBLIC_FIREBASE_APP_ID=...
 
 **B. `app.json`** — remplissez `expo.extra.firebase` avec les mêmes valeurs.
 
-## 3. Déployer les règles de sécurité
+## 3. Déployer les règles de sécurité + index
+
+Le projet est déjà câblé : `mobile/firebase.json`, `mobile/.firebaserc`
+(projet **oneway-77f85**) et `mobile/firestore.indexes.json` sont fournis.
+
+**Prérequis** : la base **Firestore doit déjà exister** (étape 1.3, mode production).
+
+**Option A — en local (1 commande)** :
 
 ```
+cd mobile
 npm i -g firebase-tools && firebase login
-firebase deploy --only firestore:rules   # utilise mobile/firestore.rules
+firebase deploy --only firestore        # règles + index, projet oneway-77f85
 ```
+
+**Option B — via GitHub Actions** (aucune install locale) :
+
+1. Génère un jeton : `firebase login:ci` (en local, une fois).
+2. GitHub → **Settings → Secrets and variables → Actions → New repository secret** :
+   nom `FIREBASE_TOKEN`, valeur = le jeton.
+   *(ou `FIREBASE_SERVICE_ACCOUNT` = le JSON d'une clé de compte de service)*
+3. **Actions → Firebase Deploy (Firestore) → Run workflow**.
 
 ## 4. (Optionnel) Seed des données de démonstration
 
