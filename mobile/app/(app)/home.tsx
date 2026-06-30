@@ -12,6 +12,7 @@ import {
 import { getFavorites } from '@/lib/favorites';
 import { moneyCompact } from '@/lib/format';
 import { cargoByKey } from '@/data/catalog';
+import { SERVICES, COMPANY, telHref, whatsappHref } from '@/data/company';
 import { colors } from '@/theme';
 import type { Course, QuoteRequest } from '@/lib/types';
 
@@ -169,7 +170,7 @@ function ClientHome() {
   return (
     <ScrollView contentContainerStyle={styles.scroll}>
       <Text style={styles.greet}>Bonjour, {user!.name.split(' ')[0]} 👋</Text>
-      <Text style={styles.muted}>Suivez vos livraisons ONE WAY</Text>
+      <Text style={styles.muted}>Vos livraisons, vos devis et nos services</Text>
 
       {/* Suivi par code */}
       <Card style={{ padding: 14, marginTop: 8 }}>
@@ -181,6 +182,22 @@ function ClientHome() {
       </Card>
 
       <Button title="Demander un devis" icon="document-text" variant="accent" onPress={() => router.push('/(app)/new-quote')} style={{ marginTop: 12 }} />
+
+      {/* Nos services */}
+      <SectionTitle>Nos services</SectionTitle>
+      {SERVICES.map((s) => (
+        <Card key={s.title} style={styles.serviceRow}>
+          <View style={styles.serviceIcon}><Ionicons name={s.icon as any} size={20} color={colors.brand600} /></View>
+          <View style={{ flex: 1 }}>
+            <Text style={styles.serviceTitle}>{s.title}</Text>
+            <Text style={styles.muted}>{s.desc}</Text>
+          </View>
+        </Card>
+      ))}
+      <View style={{ flexDirection: 'row', gap: 8, marginTop: 4 }}>
+        <Button title="WhatsApp" icon="logo-whatsapp" onPress={() => Linking.openURL(whatsappHref(COMPANY.whatsapp, 'Bonjour ONE WAY, je souhaite un renseignement.'))} style={{ flex: 1, backgroundColor: colors.green }} />
+        <Button title="Appeler" icon="call" variant="outline" onPress={() => Linking.openURL(telHref(COMPANY.phoneIntl))} />
+      </View>
 
       <SectionTitle>Mes livraisons</SectionTitle>
       {!user!.phone ? (
@@ -224,4 +241,7 @@ const styles = StyleSheet.create({
   quoteName: { fontWeight: '700', color: colors.ink },
   favRow: { flexDirection: 'row', alignItems: 'center', gap: 10, padding: 14, marginBottom: 8 },
   favCode: { flex: 1, fontWeight: '800', color: colors.ink, letterSpacing: 1 },
+  serviceRow: { flexDirection: 'row', gap: 12, padding: 14, marginBottom: 10, alignItems: 'center' },
+  serviceIcon: { width: 42, height: 42, borderRadius: 12, backgroundColor: colors.brand50, alignItems: 'center', justifyContent: 'center' },
+  serviceTitle: { fontWeight: '800', color: colors.ink, fontSize: 14 },
 });
