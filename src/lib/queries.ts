@@ -26,6 +26,13 @@ export function shipmentByFreight(freightId: string): Shipment | undefined {
   return db().shipments.find((s) => s.freightId === freightId);
 }
 
+/** Public tracking lookup by code (case-insensitive). No auth required. */
+export function shipmentByTrackingCode(code?: string | null): Shipment | undefined {
+  if (!code) return undefined;
+  const c = code.trim().toUpperCase();
+  return db().shipments.find((s) => s.trackingCode.toUpperCase() === c);
+}
+
 export function trackingFor(shipmentId: string) {
   return db()
     .tracking.filter((t) => t.shipmentId === shipmentId)

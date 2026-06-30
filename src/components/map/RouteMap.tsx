@@ -1,6 +1,7 @@
 'use client';
 
 import { CITIES, projectToMap } from '@/lib/geo';
+import { MADAGASCAR_OUTLINE } from '@/data/madagascar-geo';
 import { cn } from '@/lib/utils';
 
 export interface MapPoint {
@@ -9,13 +10,11 @@ export interface MapPoint {
   label?: string;
 }
 
-/** Rough Madagascar outline (lat,lng) — projected client-side for context. */
-const OUTLINE: [number, number][] = [
-  [-11.95, 49.27], [-13.4, 50.0], [-15.3, 49.9], [-16.9, 49.8], [-18.15, 49.42],
-  [-19.9, 48.8], [-21.5, 48.0], [-23.5, 47.4], [-24.9, 46.9], [-25.6, 45.2],
-  [-25.0, 44.0], [-23.4, 43.65], [-22.0, 43.25], [-20.3, 44.3], [-18.0, 44.0],
-  [-15.7, 45.9], [-14.3, 47.7], [-13.4, 48.6], [-12.3, 49.0],
-];
+/**
+ * Realistic Madagascar coastline (~223 points, [lat,lng]) projected
+ * client-side. Sourced from public GeoJSON — see src/data/madagascar-geo.ts.
+ */
+const OUTLINE = MADAGASCAR_OUTLINE;
 
 function pointsToPath(pts: [number, number][]): string {
   return (
@@ -61,11 +60,19 @@ export function RouteMap({
           <pattern id="grid" width="8" height="8" patternUnits="userSpaceOnUse">
             <path d="M8 0H0V8" fill="none" stroke="#d6e2f5" strokeWidth="0.3" />
           </pattern>
+          <linearGradient id="land" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0%" stopColor="#dcebcf" />
+            <stop offset="0%" stopColor="#d7e8cf" />
+            <stop offset="100%" stopColor="#c6dcbb" />
+          </linearGradient>
+          <filter id="coast" x="-20%" y="-20%" width="140%" height="140%">
+            <feDropShadow dx="0" dy="0.5" stdDeviation="0.6" floodColor="#1d3068" floodOpacity="0.18" />
+          </filter>
         </defs>
         <rect width="100" height="100" fill="url(#grid)" />
 
-        {/* Landmass */}
-        <path d={island} fill="#cfe0c9" stroke="#9cc093" strokeWidth="0.6" />
+        {/* Landmass — realistic coastline */}
+        <path d={island} fill="url(#land)" stroke="#8bb27f" strokeWidth="0.4" strokeLinejoin="round" filter="url(#coast)" />
 
         {/* City dots for context */}
         {showCities &&
@@ -103,7 +110,7 @@ export function RouteMap({
       </svg>
 
       {/* Legend */}
-      <div className="pointer-events-none absolute bottom-2 left-2 flex flex-col gap-1 rounded-lg bg-white/85 px-2 py-1.5 text-[10px] font-medium shadow-sm backdrop-blur">
+      <div className="pointer-events-none absolute bottom-2 left-2 flex flex-col gap-1 rounded-lg bg-white/85 px-2 py-1.5 text-[10px] font-medium text-ink shadow-sm backdrop-blur">
         {from?.label && (
           <span className="flex items-center gap-1.5">
             <span className="h-2 w-2 rounded-full bg-emerald-600" /> {from.label}

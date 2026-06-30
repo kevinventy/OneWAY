@@ -30,6 +30,7 @@ import {
   Smartphone,
 } from 'lucide-react';
 import { Logo } from '@/components/brand/Logo';
+import { TrackingSearch } from '@/components/track/TrackingSearch';
 import { RouteMap } from '@/components/map/RouteMap';
 import { VEHICLE_TYPES } from '@/data/catalog';
 import { KNOWN_ROUTES, findCity, lerpPoint } from '@/lib/geo';
@@ -49,8 +50,6 @@ export default function ApercuVitrine() {
   }, []);
   const current = lerpPoint(tana, toam, progress);
 
-  const [code, setCode] = useState('');
-
   return (
     <div className="min-h-screen bg-white">
       {/* ── Nav simplifiée (transporteur, pas marketplace) ───────── */}
@@ -60,9 +59,9 @@ export default function ApercuVitrine() {
             <Logo />
           </Link>
           <nav className="flex items-center gap-1.5 sm:gap-3">
-            <a href="#suivi" className="btn-ghost hidden sm:inline-flex">
+            <Link href="/suivi" className="btn-ghost hidden sm:inline-flex">
               <Radio size={16} /> Suivre ma livraison
-            </a>
+            </Link>
             <a href="#devis" className="btn-outline">
               Demander un devis
             </a>
@@ -88,24 +87,7 @@ export default function ApercuVitrine() {
             </p>
 
             {/* Boîte de suivi — l'élément central pour le CLIENT */}
-            <form
-              onSubmit={(e) => e.preventDefault()}
-              className="mt-7 rounded-2xl bg-white p-2 shadow-pop sm:flex sm:items-center sm:gap-2"
-            >
-              <div className="flex flex-1 items-center gap-2 px-3">
-                <Search size={18} className="shrink-0 text-ink-muted" />
-                <input
-                  value={code}
-                  onChange={(e) => setCode(e.target.value)}
-                  placeholder="Code de suivi — ex. OW-2026-0481"
-                  className="w-full bg-transparent py-3 text-sm text-ink outline-none placeholder:text-slate-400"
-                  aria-label="Code de suivi"
-                />
-              </div>
-              <a href="#suivi" className="btn-accent m-1 w-full text-base sm:w-auto">
-                <Radio size={18} /> Suivre
-              </a>
-            </form>
+            <TrackingSearch className="mt-7" placeholder="Code de suivi — ex. OWMG3456" />
             <p className="mt-2 text-xs text-brand-200">
               Vous avez reçu votre code par SMS ou WhatsApp à l'enlèvement.
             </p>
@@ -358,7 +340,7 @@ export default function ApercuVitrine() {
             One Way SARL · Transport · Livraison · Suivi Digital · Antananarivo, Madagascar 🇲🇬
           </p>
           <div className="flex gap-4 text-sm">
-            <a href="#suivi" className="hover:text-white">Suivi</a>
+            <Link href="/suivi" className="hover:text-white">Suivi</Link>
             <Link href="/login" className="hover:text-white">Espace pro</Link>
           </div>
         </div>
