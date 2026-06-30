@@ -2,7 +2,7 @@ import { Truck, User, Phone, CircleDot } from 'lucide-react';
 import { GererNav } from '@/components/gerer/GererNav';
 import { Badge } from '@/components/ui';
 import { getCurrentUser } from '@/lib/auth';
-import { companyVehicles, fleetStats } from '@/lib/courses';
+import { companyVehicles, fleetStats, resolveCompanyId } from '@/lib/courses';
 import { vehicleByKey } from '@/data/catalog';
 
 export const dynamic = 'force-dynamic';
@@ -15,9 +15,9 @@ const DRIVER_STATUS: Record<string, { label: string; tone: 'green' | 'amber' | '
 
 export default async function FlottePage() {
   const user = await getCurrentUser();
-  const scope = user?.role === 'CARRIER' ? user.id : undefined;
-  const vehicles = companyVehicles(scope);
-  const { drivers } = fleetStats(scope);
+  const companyId = resolveCompanyId(user?.role === 'CARRIER' ? user.id : undefined);
+  const vehicles = companyVehicles(companyId);
+  const { drivers } = fleetStats(companyId);
 
   return (
     <div className="min-h-screen bg-slate-50">

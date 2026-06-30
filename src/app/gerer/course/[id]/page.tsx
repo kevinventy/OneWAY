@@ -7,7 +7,7 @@ import { TrackingTimeline } from '@/components/app/TrackingTimeline';
 import { LiveRefresh } from '@/components/app/LiveRefresh';
 import { ShareTracking } from '@/components/gerer/ShareTracking';
 import { Badge } from '@/components/ui';
-import { courseById } from '@/lib/courses';
+import { courseById, resolveCompanyId } from '@/lib/courses';
 import { trackingFor } from '@/lib/queries';
 import { getCurrentUser } from '@/lib/auth';
 import { advanceCourseAction, cancelCourseAction } from '@/app/gerer/actions';
@@ -19,7 +19,10 @@ export const dynamic = 'force-dynamic';
 
 export default async function CourseDetail({ params }: { params: { id: string } }) {
   const user = await getCurrentUser();
-  const course = courseById(params.id);
+  // Scope à l'entreprise du gérant (admin → entreprise par défaut). Empêche l'accès
+  // à une course d'une autre société via un id deviné (IDOR).
+  const companyId = resolveCompanyId(user?.role === 'CARRIER' ? user.id : undefined);
+  const course = courseById(params.id, companyId);
   if (!course) notFound();
 
   const { shipment, freight, driverName, remainingKm, pct } = course;

@@ -4,7 +4,7 @@ import { GererNav } from '@/components/gerer/GererNav';
 import { RouteMap } from '@/components/map/RouteMap';
 import { Badge } from '@/components/ui';
 import { getCurrentUser } from '@/lib/auth';
-import { allCourses, activeCourses, fleetStats, type CourseView } from '@/lib/courses';
+import { allCourses, activeCourses, fleetStats, resolveCompanyId, type CourseView } from '@/lib/courses';
 import { SHIPMENT_STATUS } from '@/lib/labels';
 import { money, moneyCompact, km } from '@/lib/format';
 
@@ -12,10 +12,10 @@ export const dynamic = 'force-dynamic';
 
 export default async function GererDashboard() {
   const user = await getCurrentUser();
-  const scope = user?.role === 'CARRIER' ? user.id : undefined;
-  const courses = allCourses(scope);
-  const active = activeCourses(scope);
-  const stats = fleetStats(scope);
+  const companyId = resolveCompanyId(user?.role === 'CARRIER' ? user.id : undefined);
+  const courses = allCourses(companyId);
+  const active = activeCourses(companyId);
+  const stats = fleetStats(companyId);
   const featured = active[0];
 
   return (

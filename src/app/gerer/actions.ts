@@ -3,7 +3,7 @@
 import { revalidatePath } from 'next/cache';
 import { redirect } from 'next/navigation';
 import { getCurrentUser } from '@/lib/auth';
-import { createCourse, advanceCourse, cancelCourse } from '@/lib/courses';
+import { createCourse, advanceCourse, cancelCourse, courseById, userCanActOnCourse } from '@/lib/courses';
 import type { CargoTypeKey, VehicleTypeKey } from '@/data/catalog';
 
 /** Id d'entreprise du gérant connecté (CARRIER → soi-même ; ADMIN → défaut). */
@@ -42,21 +42,24 @@ export async function advanceCourseAction(formData: FormData) {
   const user = await getCurrentUser();
   if (!user) redirect('/connexion');
   const id = (formData.get('shipmentId') as string | null)?.trim();
-  if (id) {
-    advanceCourse(id);
-    revalidatePath(`/gerer/course/${id}`);
-    revalidatePath('/gerer');
-    revalidatePath('/chauffeur');
-  }
+  if (!id) return;
+  // Autorisation : seul le transporteur propriétaire, son chauffeur affecté, ou un admin.
+  const course = courseById(id);
+  if (!course || !userCanActOnCourse(user, course.shipment)) redirect('/connexion?next=/gerer');
+  advanceCourse(id, user.id);
+  revalidatePath(`/gerer/course/${id}`);
+  revalidatePath('/gerer');
+  revalidatePath('/chauffeur');
 }
 
 export async function cancelCourseAction(formData: FormData) {
   const user = await getCurrentUser();
   if (!user || (user.role !== 'ADMIN' && user.role !== 'CARRIER')) redirect('/connexion?next=/gerer');
   const id = (formData.get('shipmentId') as string | null)?.trim();
-  if (id) {
-    cancelCourse(id, user!.id);
-    revalidatePath(`/gerer/course/${id}`);
-    revalidatePath('/gerer');
-  }
+  if (!id) return;
+  const course = courseById(id);
+  if (!course || !userCanActOnCourse(user, course.shipment)) redirect('/gerer');
+  cancelCourse(id, user.id, user.role === 'CARRIER' ? user.id : undefined);
+  revalidatePath(`/gerer/course/${id}`);
+  revalidatePath('/gerer');
 }

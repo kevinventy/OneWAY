@@ -3,13 +3,13 @@ import { ArrowLeft } from 'lucide-react';
 import { GererNav } from '@/components/gerer/GererNav';
 import { NewCourseForm } from '@/components/gerer/NewCourseForm';
 import { getCurrentUser } from '@/lib/auth';
-import { availableDrivers } from '@/lib/courses';
+import { availableDrivers, resolveCompanyId } from '@/lib/courses';
 
 export const dynamic = 'force-dynamic';
 
 export default async function NouvelleCourse() {
   const user = await getCurrentUser();
-  const drivers = availableDrivers(user?.role === 'CARRIER' ? user.id : undefined);
+  const drivers = availableDrivers(resolveCompanyId(user?.role === 'CARRIER' ? user.id : undefined));
   return (
     <div className="min-h-screen bg-slate-50">
       <GererNav active="gerer" user={user} />

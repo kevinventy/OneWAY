@@ -25,7 +25,10 @@ export function ProLoginForm({ next }: { next?: string }) {
       });
       const json = await res.json();
       if (!json.ok) throw new Error(json.error || 'Connexion impossible');
-      window.location.href = next || '/espace';
+      // Anti open-redirect : uniquement un chemin interne relatif.
+      const target =
+        next && next.startsWith('/') && !next.startsWith('//') && !next.startsWith('/\\') ? next : '/espace';
+      window.location.href = target;
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Erreur');
       setLoading(false);

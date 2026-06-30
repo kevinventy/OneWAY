@@ -105,8 +105,8 @@ function MissionCard({ c }: { c: CourseView }) {
             <Phone size={16} /> Client
           </a>
         )}
-        <Link href={`/gerer/course/${shipment.id}`} className="btn-ghost sm:w-auto">
-          Détails
+        <Link href={`/suivi/${shipment.trackingCode}`} className="btn-ghost sm:w-auto" target="_blank">
+          Carte
         </Link>
       </div>
     </div>

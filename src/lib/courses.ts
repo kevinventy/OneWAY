@@ -68,7 +68,10 @@ export function createCourse(input: NewCourseInput, carrierId?: string): Shipmen
 
   return write((d) => {
     const co = d.users.find((u) => u.id === companyId)!;
-    const driver = input.driverId ? d.drivers.find((dr) => dr.id === input.driverId) : undefined;
+    // Le chauffeur doit appartenir à l'entreprise (refus d'un id forgé d'une autre société).
+    const driver = input.driverId
+      ? d.drivers.find((dr) => dr.id === input.driverId && dr.carrierId === co.id)
+      : undefined;
     const vehicle =
       d.vehicles.find((v) => v.carrierId === co.id && v.type === input.vehicleType) ??
       d.vehicles.find((v) => v.type === input.vehicleType);
@@ -145,8 +148,27 @@ export function createCourse(input: NewCourseInput, carrierId?: string): Shipmen
 }
 
 /** Avance la course d'une étape (réutilise la machine à états partagée). */
-export function advanceCourse(shipmentId: string): { shipment: Shipment; event: TrackingEvent } {
-  return advanceShipment({ shipmentId, by: company().id });
+export function advanceCourse(shipmentId: string, by?: string): { shipment: Shipment; event: TrackingEvent } {
+  return advanceShipment({ shipmentId, by: by ?? company().id });
+}
+
+/**
+ * Autorisation : qui peut agir sur une course ?
+ *  - ADMIN : tout
+ *  - CARRIER : ses propres courses (carrierId)
+ *  - DRIVER : uniquement la course qui lui est affectée
+ */
+export function userCanActOnCourse(
+  user: { id: string; role: string },
+  shipment: { carrierId: string; driverId?: string },
+): boolean {
+  if (user.role === 'ADMIN') return true;
+  if (user.role === 'CARRIER') return shipment.carrierId === user.id;
+  if (user.role === 'DRIVER') {
+    const driver = db().drivers.find((dr) => dr.userId === user.id);
+    return !!driver && shipment.driverId === driver.id;
+  }
+  return false;
 }
 
 export interface CourseView {
@@ -186,8 +208,8 @@ export function activeCourses(carrierId?: string): CourseView[] {
   return allCourses(carrierId).filter((c) => !['DELIVERED', 'CANCELLED'].includes(c.shipment.status));
 }
 
-export function courseById(id: string): CourseView | undefined {
-  const s = db().shipments.find((x) => x.id === id);
+export function courseById(id: string, carrierId?: string): CourseView | undefined {
+  const s = db().shipments.find((x) => x.id === id && (!carrierId || x.carrierId === carrierId));
   return s ? toView(s) : undefined;
 }
 
@@ -201,11 +223,12 @@ export function driverCoursesByUser(userId: string): CourseView[] {
     .map(toView);
 }
 
-/** Annule une course (libère chauffeur/véhicule, journalise). */
-export function cancelCourse(shipmentId: string, by: string): void {
+/** Annule une course (libère chauffeur/véhicule, journalise). carrierId limite à l'entreprise. */
+export function cancelCourse(shipmentId: string, by: string, carrierId?: string): void {
   write((d) => {
     const s = d.shipments.find((x) => x.id === shipmentId);
     if (!s || s.status === 'DELIVERED' || s.status === 'CANCELLED') return;
+    if (carrierId && s.carrierId !== carrierId) return; // pas la course de cette entreprise
     s.status = 'CANCELLED';
     const freight = d.freights.find((f) => f.id === s.freightId);
     if (freight) freight.status = 'CANCELLED';
@@ -234,7 +257,7 @@ export interface FleetStats {
 
 export function fleetStats(carrierId?: string): FleetStats {
   const d = db();
-  const coId = carrierId;
+  const coId = resolveCompanyId(carrierId);
   const shipments = d.shipments.filter((s) => !coId || s.carrierId === coId);
   return {
     active: shipments.filter((s) => !['DELIVERED', 'CANCELLED'].includes(s.status)).length,

@@ -5,8 +5,15 @@ import { ProLoginForm } from '@/components/auth/ProLoginForm';
 export const metadata = { title: 'Espace pro — One Way' };
 export const dynamic = 'force-dynamic';
 
+/** N'accepte qu'un chemin interne relatif (anti open-redirect). */
+function safeNext(raw?: string): string | undefined {
+  if (!raw || typeof raw !== 'string') return undefined;
+  if (!raw.startsWith('/') || raw.startsWith('//') || raw.startsWith('/\\')) return undefined;
+  return raw;
+}
+
 export default function ConnexionPage({ searchParams }: { searchParams: { next?: string } }) {
-  const next = typeof searchParams.next === 'string' ? searchParams.next : undefined;
+  const next = safeNext(typeof searchParams.next === 'string' ? searchParams.next : undefined);
   return (
     <div className="flex min-h-screen flex-col bg-slate-50">
       <header className="border-b border-slate-200 bg-white">
