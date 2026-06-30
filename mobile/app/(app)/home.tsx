@@ -12,7 +12,7 @@ import {
 import { getFavorites } from '@/lib/favorites';
 import { moneyCompact } from '@/lib/format';
 import { cargoByKey } from '@/data/catalog';
-import { SERVICES, COMPANY, telHref, whatsappHref } from '@/data/company';
+import { SERVICES, COMPANY, telHref, whatsappHref, emailHref } from '@/data/company';
 import { colors } from '@/theme';
 import type { Course, QuoteRequest } from '@/lib/types';
 
@@ -196,7 +196,8 @@ function ClientHome() {
       ))}
       <View style={{ flexDirection: 'row', gap: 8, marginTop: 4 }}>
         <Button title="WhatsApp" icon="logo-whatsapp" onPress={() => Linking.openURL(whatsappHref(COMPANY.whatsapp, 'Bonjour ONE WAY, je souhaite un renseignement.'))} style={{ flex: 1, backgroundColor: colors.green }} />
-        <Button title="Appeler" icon="call" variant="outline" onPress={() => Linking.openURL(telHref(COMPANY.phoneIntl))} />
+        <Button title="Email" icon="mail" variant="outline" onPress={() => Linking.openURL(emailHref(COMPANY.email, 'Demande de renseignement — ONE WAY'))} />
+        <Button title="" icon="call" variant="outline" onPress={() => Linking.openURL(telHref(COMPANY.phoneIntl))} />
       </View>
 
       <SectionTitle>Mes livraisons</SectionTitle>

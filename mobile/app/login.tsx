@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { View, Text, StyleSheet, ScrollView, KeyboardAvoidingView, Platform } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useAuth } from '@/store/auth';
@@ -8,11 +8,26 @@ import { colors } from '@/theme';
 
 export default function Login() {
   const router = useRouter();
-  const { login } = useAuth();
+  const { login, user } = useAuth();
   const [identifiant, setIdentifiant] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
+
+  // On attend que le profil soit chargé (auth state) AVANT de naviguer : sinon
+  // le garde de route renvoie vers /welcome (cause de l'ancien « connexion ×2 »).
+  useEffect(() => {
+    if (loading && user) router.replace('/(app)/home');
+  }, [loading, user]);
+
+  useEffect(() => {
+    if (!loading) return;
+    const t = setTimeout(() => {
+      setLoading(false);
+      setError('Connexion établie mais profil introuvable. Vérifiez les règles Firestore.');
+    }, 9000);
+    return () => clearTimeout(t);
+  }, [loading]);
 
   async function submit() {
     setError('');
@@ -23,7 +38,7 @@ export default function Login() {
     setLoading(true);
     try {
       await login(identifiant, password);
-      router.replace('/(app)/home');
+      // La navigation se fait via l'effet ci-dessus, une fois `user` chargé.
     } catch (e: any) {
       setError(describeError(e));
       setLoading(false);

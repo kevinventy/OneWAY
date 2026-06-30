@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { View, Text, StyleSheet, ScrollView, Pressable, KeyboardAvoidingView, Platform } from 'react-native';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
@@ -18,13 +18,18 @@ const ROLES: { key: Role; label: string; icon: any }[] = [
 export default function Register() {
   const router = useRouter();
   const params = useLocalSearchParams<{ role?: string }>();
-  const { register } = useAuth();
+  const { register, user } = useAuth();
   const initial = (['CLIENT', 'GERANT', 'CHAUFFEUR'].includes(params.role ?? '') ? params.role : 'CLIENT') as Role;
   const [role, setRole] = useState<Role>(initial);
   const [form, setForm] = useState({ name: '', identifiant: '', password: '', confirm: '', companyName: '', companyCode: '', phone: '' });
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
   const set = (k: keyof typeof form) => (v: string) => setForm((f) => ({ ...f, [k]: v }));
+
+  // On navigue une fois le profil chargé (évite le rebond vers /welcome).
+  useEffect(() => {
+    if (loading && user) router.replace('/(app)/home');
+  }, [loading, user]);
 
   async function submit() {
     setError('');
@@ -46,7 +51,7 @@ export default function Register() {
         companyName: role === 'GERANT' ? form.companyName.trim() : undefined,
         companyCode: role === 'CHAUFFEUR' ? form.companyCode.trim() : undefined,
       });
-      router.replace('/(app)/home');
+      // Navigation via l'effet une fois `user` chargé.
     } catch (e: any) {
       setError(e?.message && !e?.code ? e.message : describeError(e));
       setLoading(false);

@@ -4,15 +4,17 @@ export const COMPANY = {
   legalName: 'One Way SARL',
   city: 'Antananarivo',
   country: 'Madagascar',
-  phone: '+261 34 12 345 67',
-  phoneIntl: '261341234567',
-  whatsapp: '261341234567',
-  email: 'onewindcorp@gmail.com',
+  phone: '+261 34 71 639 40',
+  phoneIntl: '261347163940',
+  whatsapp: '261347163940',
+  email: 'oneway.mada@gmail.com',
 };
 
 export const telHref = (phone: string) => `tel:+${phone.replace(/[^\d]/g, '')}`;
 export const whatsappHref = (phone: string, text?: string) =>
   `https://wa.me/${phone.replace(/[^\d]/g, '')}${text ? `?text=${encodeURIComponent(text)}` : ''}`;
+export const emailHref = (email: string, subject?: string) =>
+  `mailto:${email}${subject ? `?subject=${encodeURIComponent(subject)}` : ''}`;
 
 /** Services mis en avant sur l'accueil. */
 export const SERVICES: { icon: string; title: string; desc: string }[] = [

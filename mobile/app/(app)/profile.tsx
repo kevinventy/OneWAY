@@ -1,9 +1,10 @@
-import { View, Text, ScrollView, StyleSheet, Share } from 'react-native';
+import { View, Text, ScrollView, StyleSheet, Share, Linking, Pressable } from 'react-native';
 import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { useAuth } from '@/store/auth';
 import { Card, Button, Badge, Avatar } from '@/components/ui';
 import { ROLE_LABEL } from '@/lib/labels';
+import { COMPANY, telHref, whatsappHref, emailHref } from '@/data/company';
 import { colors } from '@/theme';
 
 export default function Profile() {
@@ -48,8 +49,29 @@ export default function Profile() {
         </Card>
       )}
 
+      {/* Nous contacter */}
+      <Card style={styles.contactCard}>
+        <Text style={styles.contactTitle}>Nous contacter</Text>
+        <ContactRow icon="logo-whatsapp" color={colors.green} label="WhatsApp" value={COMPANY.phone} onPress={() => Linking.openURL(whatsappHref(COMPANY.whatsapp, 'Bonjour ONE WAY,'))} />
+        <ContactRow icon="call" color={colors.brand600} label="Appeler" value={COMPANY.phone} onPress={() => Linking.openURL(telHref(COMPANY.phoneIntl))} />
+        <ContactRow icon="mail" color={colors.amber600} label="Email" value={COMPANY.email} onPress={() => Linking.openURL(emailHref(COMPANY.email, 'Contact — ONE WAY'))} last />
+      </Card>
+
       <Button title="Se déconnecter" variant="outline" icon="log-out-outline" onPress={doLogout} style={{ marginTop: 18 }} />
     </ScrollView>
+  );
+}
+
+function ContactRow({ icon, color, label, value, onPress, last }: { icon: any; color: string; label: string; value: string; onPress: () => void; last?: boolean }) {
+  return (
+    <Pressable onPress={onPress} style={[styles.contactRow, !last && styles.contactBorder]}>
+      <Ionicons name={icon} size={20} color={color} />
+      <View style={{ flex: 1 }}>
+        <Text style={styles.contactLabel}>{label}</Text>
+        <Text style={styles.contactValue}>{value}</Text>
+      </View>
+      <Ionicons name="chevron-forward" size={18} color={colors.inkMuted} />
+    </Pressable>
   );
 }
 
@@ -70,4 +92,10 @@ const styles = StyleSheet.create({
   codeCard: { padding: 16, marginTop: 14, alignItems: 'center', borderColor: colors.brand100, borderWidth: 1 },
   codeLabel: { color: colors.inkMuted, fontSize: 12, fontWeight: '600' },
   code: { fontSize: 28, fontWeight: '900', color: colors.brand700, letterSpacing: 4, marginTop: 6 },
+  contactCard: { padding: 16, marginTop: 14 },
+  contactTitle: { fontSize: 14, fontWeight: '800', color: colors.ink, marginBottom: 4 },
+  contactRow: { flexDirection: 'row', alignItems: 'center', gap: 12, paddingVertical: 12 },
+  contactBorder: { borderBottomWidth: 1, borderBottomColor: colors.slateBg },
+  contactLabel: { fontSize: 11, color: colors.inkMuted, fontWeight: '600', textTransform: 'uppercase' },
+  contactValue: { fontSize: 15, fontWeight: '700', color: colors.ink },
 });

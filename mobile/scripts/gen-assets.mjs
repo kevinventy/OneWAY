@@ -4,9 +4,10 @@ import { deflateSync } from 'node:zlib';
 import { mkdirSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 
-const BRAND = [22, 34, 77]; // #16224d (marine du logo)
+const BRAND = [27, 42, 94]; // #1b2a5e (marine du logo : anneau / "W")
 const AMBER = [240, 125, 26]; // #f07d1a (orange du logo)
 const WHITE = [255, 255, 255];
+const DARK = [16, 24, 60]; // asphalte de la route
 const SS = 4;
 
 const CRC = (() => { const t = new Uint32Array(256); for (let n = 0; n < 256; n++) { let c = n; for (let k = 0; k < 8; k++) c = c & 1 ? 0xedb88320 ^ (c >>> 1) : c >>> 1; t[n] = c >>> 0; } return t; })();
@@ -19,18 +20,44 @@ function png(w, h, rgba) {
   for (let y = 0; y < h; y++) { raw[y * (stride + 1)] = 0; rgba.copy(raw, y * (stride + 1) + 1, y * stride, y * stride + stride); }
   return Buffer.concat([sig, chunk('IHDR', ihdr), chunk('IDAT', deflateSync(raw, { level: 9 })), chunk('IEND', Buffer.alloc(0))]);
 }
-function sample(nx, ny, { transparentBg, safe, road }) {
-  const m = safe ? 0.66 : 0.82;
-  const cx = 0.5; const ax = (nx - cx) / m + cx; const ay = (ny - 0.5) / m + 0.5;
-  const apexY = 0.2, baseY = 0.5, headHalf = 0.24; let inArrow = false;
-  if (ay >= apexY && ay <= baseY) { const hw = ((ay - apexY) / (baseY - apexY)) * headHalf; if (ax >= cx - hw && ax <= cx + hw) inArrow = true; }
-  if (ay > baseY && ay <= 0.74 && ax >= 0.43 && ax <= 0.57) inArrow = true;
-  if (inArrow) return [...AMBER, 255];
-  // Route : marquages blancs sous la flèche (icône pleine seulement).
-  if (road && nx >= 0.475 && nx <= 0.525) {
-    if ((ny >= 0.79 && ny <= 0.85) || (ny >= 0.88 && ny <= 0.93)) return [...WHITE, 235];
+// Logo ONE WAY : anneau marine + flèche orange ascendante + route en
+// perspective (asphalte sombre, bords orange, pointillés blancs), sur fond
+// blanc (ou transparent pour l'adaptive/splash) — fidèle à l'image de marque.
+function sample(nx, ny, { transparentBg, safe }) {
+  const m = safe ? 0.66 : 0.86;
+  const cx = 0.5;
+  const ax = (nx - cx) / m + cx;
+  const ay = (ny - 0.5) / m + 0.5;
+  const bg = transparentBg ? [0, 0, 0, 0] : [...WHITE, 255];
+
+  const dx = ax - 0.5, dy = ay - 0.5;
+  const dist = Math.sqrt(dx * dx + dy * dy);
+
+  // Anneau marine
+  if (dist <= 0.47 && dist >= 0.405) return [...BRAND, 255];
+
+  // Flèche orange ascendante (tête triangulaire + tige), pointe vers le haut
+  const apexY = 0.18, baseY = 0.46, headHalf = 0.205;
+  if (ay >= apexY && ay <= baseY) {
+    const hw = ((ay - apexY) / (baseY - apexY)) * headHalf;
+    if (ax >= cx - hw && ax <= cx + hw) return [...AMBER, 255];
   }
-  return transparentBg ? [0, 0, 0, 0] : [...BRAND, 255];
+  if (ay > baseY && ay <= 0.60 && ax >= 0.455 && ax <= 0.545) return [...AMBER, 255];
+
+  // Route en perspective sous la flèche
+  const ry0 = 0.58, ry1 = 0.82;
+  if (ay >= ry0 && ay <= ry1) {
+    const t = (ay - ry0) / (ry1 - ry0);
+    const half = 0.05 + (0.16 - 0.05) * t;
+    if (ax >= cx - half && ax <= cx + half) {
+      if (ax <= cx - half + 0.022 || ax >= cx + half - 0.022) return [...AMBER, 255]; // bords
+      const seg = Math.floor((ay - ry0) / 0.05);
+      if (Math.abs(ax - cx) < 0.013 && seg % 2 === 0) return [...WHITE, 255]; // pointillés
+      return [...DARK, 255]; // asphalte
+    }
+  }
+
+  return bg;
 }
 function render(size, opts) {
   const S = size * SS; const hi = Buffer.alloc(S * S * 4);

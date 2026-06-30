@@ -4,9 +4,11 @@ import { useAuth } from '@/store/auth';
 import { colors } from '@/theme';
 
 export default function AppLayout() {
-  const { user, loading, configured } = useAuth();
+  const { user, loading, configured, firebaseUser } = useAuth();
 
-  if (configured && loading) {
+  // Pendant la connexion, `firebaseUser` est défini avant que le profil arrive :
+  // on affiche un spinner plutôt que de renvoyer vers /welcome (anti « ×2 »).
+  if (configured && (loading || (firebaseUser && !user))) {
     return (
       <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center', backgroundColor: colors.bg }}>
         <ActivityIndicator color={colors.brand600} size="large" />
