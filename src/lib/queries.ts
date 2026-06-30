@@ -1,6 +1,6 @@
 import 'server-only';
 import { db } from './db';
-import { toPublicUser, type Bid, type Freight, type PublicUser, type Shipment } from './types';
+import { kmRemaining, toPublicUser, type Course, type Driver, type PublicUser, type Vehicle } from './types';
 
 export function userById(id?: string): PublicUser | undefined {
   if (!id) return undefined;
@@ -8,40 +8,47 @@ export function userById(id?: string): PublicUser | undefined {
   return u ? toPublicUser(u) : undefined;
 }
 
-export function freightById(id: string): Freight | undefined {
-  return db().freights.find((f) => f.id === id);
+export function courseById(id: string): Course | undefined {
+  return db().courses.find((c) => c.id === id);
 }
 
-export function bidsForFreight(freightId: string): Bid[] {
+/** Courses d'un gérant (cloisonnement). */
+export function coursesForOwner(ownerId: string): Course[] {
   return db()
-    .bids.filter((b) => b.freightId === freightId)
-    .sort((a, b) => a.amount - b.amount);
+    .courses.filter((c) => c.ownerId === ownerId)
+    .sort((a, b) => b.createdAt.localeCompare(a.createdAt));
 }
 
-export function shipmentById(id: string): Shipment | undefined {
-  return db().shipments.find((s) => s.id === id);
+export function driverByUser(userId: string): Driver | undefined {
+  return db().drivers.find((d) => d.userId === userId);
 }
 
-export function shipmentByFreight(freightId: string): Shipment | undefined {
-  return db().shipments.find((s) => s.freightId === freightId);
-}
-
-export function trackingFor(shipmentId: string) {
+/** Courses affectées à un chauffeur (via son compte). */
+export function coursesForDriver(driverUserId: string): Course[] {
+  const driver = driverByUser(driverUserId);
+  if (!driver) return [];
   return db()
-    .tracking.filter((t) => t.shipmentId === shipmentId)
+    .courses.filter((c) => c.driverId === driver.id)
+    .sort((a, b) => b.createdAt.localeCompare(a.createdAt));
+}
+
+export function eventsFor(courseId: string) {
+  return db()
+    .events.filter((e) => e.courseId === courseId)
     .sort((a, b) => a.createdAt.localeCompare(b.createdAt));
 }
 
-export function documentsFor(opts: { shipmentId?: string; freightId?: string }) {
-  return db().documents.filter(
-    (d) =>
-      (opts.shipmentId && d.shipmentId === opts.shipmentId) ||
-      (opts.freightId && d.freightId === opts.freightId),
-  );
+export function vehiclesFor(ownerId: string): Vehicle[] {
+  return db().vehicles.filter((v) => v.ownerId === ownerId);
 }
-
-export function unreadNotifications(userId: string): number {
-  return db().notifications.filter((n) => n.userId === userId && !n.read).length;
+export function driversFor(ownerId: string): Driver[] {
+  return db().drivers.filter((d) => d.ownerId === ownerId);
+}
+export function driverById(id?: string): Driver | undefined {
+  return id ? db().drivers.find((d) => d.id === id) : undefined;
+}
+export function vehicleById(id?: string): Vehicle | undefined {
+  return id ? db().vehicles.find((v) => v.id === id) : undefined;
 }
 
 export function notificationsFor(userId: string) {
@@ -49,123 +56,29 @@ export function notificationsFor(userId: string) {
     .notifications.filter((n) => n.userId === userId)
     .sort((a, b) => b.createdAt.localeCompare(a.createdAt));
 }
-
-// ── Role dashboards ────────────────────────────────────────────────────
-
-export function shipperFreights(shipperId: string): Freight[] {
-  return db()
-    .freights.filter((f) => f.shipperId === shipperId)
-    .sort((a, b) => b.createdAt.localeCompare(a.createdAt));
+export function unreadNotifications(userId: string): number {
+  return db().notifications.filter((n) => n.userId === userId && !n.read).length;
 }
 
-export function openMarketplace(filter?: { cargo?: string; vehicle?: string; q?: string }): Freight[] {
-  let list = db()
-    .freights.filter((f) => f.status === 'PUBLISHED')
-    .sort((a, b) => b.createdAt.localeCompare(a.createdAt));
-  if (filter?.cargo) list = list.filter((f) => f.cargoType === filter.cargo);
-  if (filter?.vehicle) list = list.filter((f) => f.vehicleType === filter.vehicle);
-  if (filter?.q) {
-    const q = filter.q.toLowerCase();
-    list = list.filter(
-      (f) =>
-        f.title.toLowerCase().includes(q) ||
-        f.pickup.city.toLowerCase().includes(q) ||
-        f.delivery.city.toLowerCase().includes(q),
-    );
-  }
-  return list;
-}
-
-export function carrierShipments(carrierId: string): Shipment[] {
-  return db()
-    .shipments.filter((s) => s.carrierId === carrierId)
-    .sort((a, b) => b.createdAt.localeCompare(a.createdAt));
-}
-
-export function shipperShipments(shipperId: string): Shipment[] {
-  return db()
-    .shipments.filter((s) => s.shipperId === shipperId)
-    .sort((a, b) => b.createdAt.localeCompare(a.createdAt));
-}
-
-export function carrierBids(carrierId: string): Bid[] {
-  return db()
-    .bids.filter((b) => b.carrierId === carrierId)
-    .sort((a, b) => b.createdAt.localeCompare(a.createdAt));
-}
-
-export function driverShipments(driverUserId: string): Shipment[] {
-  const driver = db().drivers.find((d) => d.userId === driverUserId);
-  if (!driver) return [];
-  return db()
-    .shipments.filter((s) => s.driverId === driver.id)
-    .sort((a, b) => b.createdAt.localeCompare(a.createdAt));
-}
-
-export function vehiclesOf(carrierId: string) {
-  return db().vehicles.filter((v) => v.carrierId === carrierId);
-}
-
-export function driversOf(carrierId: string) {
-  return db().drivers.filter((d) => d.carrierId === carrierId);
-}
-
-export function reviewsFor(userId: string) {
-  return db()
-    .reviews.filter((r) => r.toUserId === userId)
-    .sort((a, b) => b.createdAt.localeCompare(a.createdAt));
-}
-
-// ── Admin KPIs ─────────────────────────────────────────────────────────
-
-export interface AdminStats {
-  users: number;
-  shippers: number;
-  carriers: number;
-  drivers: number;
-  freights: number;
-  activeShipments: number;
+export interface GerantStats {
+  active: number;
   delivered: number;
-  gmv: number; // gross merchandise value
-  revenue: number; // ONE WAY commission
-  pendingKyc: number;
-  byVehicle: { name: string; value: number }[];
-  monthly: { month: string; gmv: number; revenue: number; shipments: number }[];
+  toAssign: number;
+  ca: number;
+  vehicles: number;
+  drivers: number;
 }
-
-export function adminStats(): AdminStats {
-  const d = db();
-  const delivered = d.shipments.filter((s) => s.status === 'DELIVERED');
-  const gmv = d.shipments.reduce((s, x) => s + x.price, 0);
-  const revenue = d.shipments.reduce((s, x) => s + x.commission, 0);
-
-  const byVehicleMap = new Map<string, number>();
-  for (const f of d.freights) byVehicleMap.set(f.vehicleType, (byVehicleMap.get(f.vehicleType) ?? 0) + 1);
-
-  // Synthetic 6-month trend (demo): scale around current totals.
-  const months = ['Jan', 'Fév', 'Mar', 'Avr', 'Mai', 'Juin'];
-  const monthly = months.map((m, i) => {
-    const factor = 0.45 + i * 0.12;
-    return {
-      month: m,
-      gmv: Math.round((gmv || 12_000_000) * factor),
-      revenue: Math.round((revenue || 1_400_000) * factor),
-      shipments: Math.max(1, Math.round((d.shipments.length || 6) * factor)),
-    };
-  });
-
+export function gerantStats(ownerId: string): GerantStats {
+  const courses = db().courses.filter((c) => c.ownerId === ownerId);
+  const done = courses.filter((c) => c.status === 'LIVREE');
   return {
-    users: d.users.length,
-    shippers: d.users.filter((u) => u.role === 'SHIPPER').length,
-    carriers: d.users.filter((u) => u.role === 'CARRIER').length,
-    drivers: d.users.filter((u) => u.role === 'DRIVER').length,
-    freights: d.freights.length,
-    activeShipments: d.shipments.filter((s) => !['DELIVERED', 'CANCELLED'].includes(s.status)).length,
-    delivered: delivered.length,
-    gmv,
-    revenue,
-    pendingKyc: d.kyc.filter((k) => k.status === 'PENDING').length,
-    byVehicle: [...byVehicleMap.entries()].map(([name, value]) => ({ name, value })),
-    monthly,
+    active: courses.filter((c) => !['LIVREE', 'ANNULEE', 'NOUVELLE'].includes(c.status)).length,
+    delivered: done.length,
+    toAssign: courses.filter((c) => c.status === 'NOUVELLE').length,
+    ca: done.reduce((s, c) => s + c.price, 0),
+    vehicles: db().vehicles.filter((v) => v.ownerId === ownerId).length,
+    drivers: db().drivers.filter((d) => d.ownerId === ownerId).length,
   };
 }
+
+export { kmRemaining };

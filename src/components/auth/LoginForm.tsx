@@ -2,74 +2,99 @@
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { Loader2 } from 'lucide-react';
+import { apiPost } from '@/lib/fetcher';
+import { LogIn, Loader2 } from 'lucide-react';
 
 const DEMO = [
-  { label: 'Chargeur', email: 'chargeur@oneway.mg', emoji: '📦' },
-  { label: 'Transporteur', email: 'transporteur@oneway.mg', emoji: '🚛' },
-  { label: 'Chauffeur', email: 'chauffeur@oneway.mg', emoji: '🧑‍✈️' },
-  { label: 'Admin', email: 'admin@oneway.mg', emoji: '🛠️' },
+  { role: 'Gérant', email: 'gerant@oneway.mg' },
+  { role: 'Chauffeur', email: 'chauffeur@oneway.mg' },
 ];
 
 export function LoginForm() {
   const router = useRouter();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
-  async function submit(e: React.FormEvent, creds?: { email: string; password: string }) {
+  async function submit(e: React.FormEvent) {
     e.preventDefault();
-    setError('');
     setLoading(true);
+    setError(null);
     try {
-      const res = await fetch('/api/auth/login', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(creds ?? { email, password }),
-      });
-      const json = await res.json();
-      if (!json.ok) throw new Error(json.error || 'Connexion impossible');
-      window.location.href = '/app';
+      await apiPost('/api/auth/login', { email, password });
+      router.replace('/app');
+      router.refresh();
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Erreur');
+      setError(err instanceof Error ? err.message : 'Connexion impossible');
       setLoading(false);
     }
   }
 
+  function fill(demoEmail: string) {
+    setEmail(demoEmail);
+    setPassword('oneway123');
+    setError(null);
+  }
+
   return (
-    <div className="w-full">
-      <form onSubmit={submit} className="space-y-4">
+    <div className="card p-6">
+      <h1 className="text-xl font-extrabold text-ink">Connexion</h1>
+      <p className="mt-1 text-sm text-ink-muted">Espace gérant &amp; chauffeur ONE WAY.</p>
+
+      <form onSubmit={submit} className="mt-5 space-y-4">
         <div>
-          <label className="label">Email</label>
-          <input className="input" type="email" autoComplete="email" value={email} onChange={(e) => setEmail(e.target.value)} required placeholder="vous@email.mg" />
+          <label className="label" htmlFor="email">Email</label>
+          <input
+            id="email"
+            type="email"
+            autoComplete="username"
+            className="input"
+            placeholder="vous@oneway.mg"
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+            required
+          />
         </div>
         <div>
-          <label className="label">Mot de passe</label>
-          <input className="input" type="password" autoComplete="current-password" value={password} onChange={(e) => setPassword(e.target.value)} required placeholder="••••••••" />
+          <label className="label" htmlFor="password">Mot de passe</label>
+          <input
+            id="password"
+            type="password"
+            autoComplete="current-password"
+            className="input"
+            placeholder="••••••••"
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
+            required
+          />
         </div>
-        {error && <p className="rounded-lg bg-rose-50 px-3 py-2 text-sm text-rose-600">{error}</p>}
-        <button className="btn-primary w-full" disabled={loading}>
-          {loading && <Loader2 size={16} className="animate-spin" />} Se connecter
+
+        {error && <p className="rounded-lg bg-rose-50 px-3 py-2 text-sm font-medium text-rose-600">{error}</p>}
+
+        <button type="submit" className="btn-primary w-full" disabled={loading}>
+          {loading ? <Loader2 size={18} className="animate-spin" /> : <LogIn size={18} />}
+          Se connecter
         </button>
       </form>
 
-      <div className="my-5 flex items-center gap-3 text-xs text-ink-muted">
-        <span className="h-px flex-1 bg-slate-200" /> Comptes de démonstration <span className="h-px flex-1 bg-slate-200" />
+      <div className="mt-6 border-t border-slate-100 pt-4">
+        <p className="text-xs font-semibold uppercase tracking-wide text-ink-muted">Comptes de démonstration</p>
+        <div className="mt-2 grid grid-cols-2 gap-2">
+          {DEMO.map((d) => (
+            <button
+              key={d.email}
+              type="button"
+              onClick={() => fill(d.email)}
+              className="btn-outline flex-col items-start gap-0 py-2 text-left"
+            >
+              <span className="text-sm font-semibold text-ink">{d.role}</span>
+              <span className="text-[11px] text-ink-muted">{d.email}</span>
+            </button>
+          ))}
+        </div>
+        <p className="mt-2 text-[11px] text-ink-muted">Mot de passe : <span className="font-semibold">oneway123</span></p>
       </div>
-      <div className="grid grid-cols-2 gap-2">
-        {DEMO.map((d) => (
-          <button
-            key={d.email}
-            onClick={(e) => submit(e, { email: d.email, password: 'oneway123' })}
-            disabled={loading}
-            className="btn-outline justify-start text-sm"
-          >
-            <span>{d.emoji}</span> {d.label}
-          </button>
-        ))}
-      </div>
-      <p className="mt-3 text-center text-xs text-ink-muted">Mot de passe démo : <code className="rounded bg-slate-100 px-1">oneway123</code></p>
     </div>
   );
 }

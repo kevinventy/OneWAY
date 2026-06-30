@@ -3,14 +3,14 @@ import './globals.css';
 import { ServiceWorkerRegister } from '@/components/pwa/ServiceWorkerRegister';
 
 export const metadata: Metadata = {
-  title: 'ONE WAY — Marketplace de transport de marchandises',
+  title: 'ONE WAY — Transport de marchandises à Madagascar',
   description:
-    'ONE WAY connecte chargeurs et transporteurs : publiez un fret, recevez des offres, suivez la livraison en temps réel et payez en toute sécurité. Madagascar · Afrique francophone · Europe · Maghreb.',
-  keywords: ['transport', 'fret', 'logistique', 'marketplace', 'Madagascar', 'camion', 'livraison'],
+    'ONE WAY transporte vos marchandises partout à Madagascar et vous permet de suivre chaque livraison en temps réel, avec les kilomètres restants en direct.',
+  keywords: ['transport', 'marchandises', 'logistique', 'Madagascar', 'camion', 'livraison', 'suivi'],
   authors: [{ name: 'One Way SARL' }],
   openGraph: {
-    title: 'ONE WAY — Le fret, en un sens',
-    description: 'La marketplace qui connecte chargeurs et transporteurs.',
+    title: 'ONE WAY — Votre marchandise, suivie en temps réel',
+    description: 'Transport routier de marchandises à Madagascar, suivi en temps réel.',
     type: 'website',
   },
   manifest: '/manifest.webmanifest',

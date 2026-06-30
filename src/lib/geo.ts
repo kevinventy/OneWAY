@@ -10,6 +10,8 @@
  * traffic and turn-by-turn data.
  */
 
+import { roadGeometry, roadLength, type LatLng } from '@/data/roads';
+
 export interface City {
   name: string;
   region: string;
@@ -113,6 +115,43 @@ export function estimateRoute(fromName: string, toName: string): RouteEstimate {
 
   // Unknown places — return a neutral estimate so the form still works.
   return { distanceKm: 0, durationH: 0, from, to, source: 'estimated' };
+}
+
+export interface CourseRoute {
+  distanceKm: number;
+  durationH: number;
+  geometry: LatLng[];
+  source: 'road' | 'estimated';
+}
+
+/**
+ * Construit l'itinéraire d'une course : géométrie suivant les vrais axes
+ * routiers (RN) quand disponible, sinon ligne directe. Distance = longueur de
+ * la route réelle si connue (plus juste qu'à vol d'oiseau).
+ */
+export function buildCourseRoute(
+  fromCity: string,
+  fromPoint: { lat: number; lng: number },
+  toCity: string,
+  toPoint: { lat: number; lng: number },
+): CourseRoute {
+  const geo = roadGeometry(fromCity, toCity, {
+    from: [fromPoint.lat, fromPoint.lng],
+    to: [toPoint.lat, toPoint.lng],
+  });
+  if (geo.length > 2) {
+    const distanceKm = Math.round(roadLength(geo));
+    const known = estimateRoute(fromCity, toCity);
+    const durationH = known.durationH || +(distanceKm / 55).toFixed(1);
+    return { distanceKm, durationH, geometry: geo, source: 'road' };
+  }
+  const est = estimateRoute(fromCity, toCity);
+  return {
+    distanceKm: est.distanceKm,
+    durationH: est.durationH,
+    geometry: geo.length === 2 ? geo : [[fromPoint.lat, fromPoint.lng], [toPoint.lat, toPoint.lng]],
+    source: 'estimated',
+  };
 }
 
 /** Project lat/lng into 0..100 SVG viewport coords for the embedded map. */

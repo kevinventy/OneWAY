@@ -3,15 +3,9 @@ import { getCurrentUser } from '@/lib/auth';
 
 export const dynamic = 'force-dynamic';
 
-const HOME: Record<string, string> = {
-  SHIPPER: '/app/shipper',
-  CARRIER: '/app/carrier',
-  DRIVER: '/app/driver',
-  ADMIN: '/app/admin',
-};
-
-export default async function AppIndex() {
+/** Redirige vers l'espace correspondant au rôle. */
+export default async function AppHome() {
   const user = await getCurrentUser();
   if (!user) redirect('/login');
-  redirect(HOME[user.role] ?? '/login');
+  redirect(user.role === 'GERANT' ? '/app/gerant' : '/app/chauffeur');
 }

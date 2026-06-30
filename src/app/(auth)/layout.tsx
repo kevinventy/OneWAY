@@ -2,7 +2,8 @@ import Link from 'next/link';
 import { redirect } from 'next/navigation';
 import { Logo } from '@/components/brand/Logo';
 import { getCurrentUser } from '@/lib/auth';
-import { Radio, ShieldCheck, Star } from 'lucide-react';
+import { COMPANY } from '@/data/company';
+import { Radio, ShieldCheck, MapPin } from 'lucide-react';
 
 export default async function AuthLayout({ children }: { children: React.ReactNode }) {
   const user = await getCurrentUser();
@@ -17,18 +18,19 @@ export default async function AuthLayout({ children }: { children: React.ReactNo
         </Link>
         <div>
           <h2 className="text-3xl font-extrabold leading-tight">
-            Le fret, <span className="text-amber-400">en un sens.</span>
+            Votre marchandise, <span className="text-amber-400">en un sens.</span>
           </h2>
           <p className="mt-3 max-w-sm text-brand-100">
-            La marketplace qui connecte chargeurs et transporteurs à Madagascar et au-delà.
+            L&apos;application de pilotage de {COMPANY.legalName} : créez vos courses, affectez vos chauffeurs,
+            suivez chaque livraison en temps réel.
           </p>
           <ul className="mt-8 space-y-3 text-sm text-brand-100">
-            <li className="flex items-center gap-2"><Radio size={18} className="text-amber-400" /> Suivi GPS en temps réel</li>
-            <li className="flex items-center gap-2"><ShieldCheck size={18} className="text-amber-400" /> Paiement sécurisé & assurance</li>
-            <li className="flex items-center gap-2"><Star size={18} className="text-amber-400" /> Transporteurs vérifiés et notés</li>
+            <li className="flex items-center gap-2"><Radio size={18} className="text-amber-400" /> Suivi en temps réel</li>
+            <li className="flex items-center gap-2"><MapPin size={18} className="text-amber-400" /> Kilomètres restants en direct</li>
+            <li className="flex items-center gap-2"><ShieldCheck size={18} className="text-amber-400" /> Accès sécurisé par rôle</li>
           </ul>
         </div>
-        <p className="text-xs text-brand-200">One Way SARL · Antananarivo, Madagascar 🇲🇬</p>
+        <p className="text-xs text-brand-200">{COMPANY.legalName} · {COMPANY.city}, {COMPANY.country} {COMPANY.flag}</p>
       </div>
 
       {/* Form panel */}

@@ -1,8 +1,11 @@
 import type { CargoTypeKey, VehicleTypeKey } from '@/data/catalog';
+import type { LatLng } from '@/data/roads';
 
-export type Role = 'SHIPPER' | 'CARRIER' | 'DRIVER' | 'ADMIN';
+/** ONE WAY est l'app d'UN transporteur : gérant + chauffeurs (comptes), client public. */
+export type Role = 'GERANT' | 'CHAUFFEUR';
 
-export type KycStatus = 'NONE' | 'PENDING' | 'VERIFIED' | 'REJECTED';
+/** Tonalités de couleur partagées (badges, statuts). */
+export type Tone = 'slate' | 'blue' | 'amber' | 'green' | 'red';
 
 export interface User {
   id: string;
@@ -12,13 +15,8 @@ export interface User {
   phone: string;
   passwordHash: string;
   companyName?: string;
-  city?: string;
-  /** For DRIVER accounts: the carrier they belong to. */
-  carrierId?: string;
-  kycStatus: KycStatus;
-  rating: number;
-  ratingCount: number;
-  premium: boolean;
+  /** Pour un chauffeur : le gérant (entreprise) auquel il est rattaché. */
+  ownerId?: string;
   avatarColor: string;
   createdAt: string;
 }
@@ -27,189 +25,80 @@ export type PublicUser = Omit<User, 'passwordHash'>;
 
 export interface Vehicle {
   id: string;
-  carrierId: string;
+  ownerId: string;
   type: VehicleTypeKey;
   name: string;
   plate: string;
   capacityKg: number;
-  refrigerated: boolean;
   available: boolean;
-  lat?: number;
-  lng?: number;
 }
 
 export interface Driver {
   id: string;
-  carrierId: string;
-  userId?: string;
+  ownerId: string;
+  userId?: string; // compte chauffeur
   name: string;
   phone: string;
   licenseNumber: string;
-  status: 'AVAILABLE' | 'ON_MISSION' | 'OFFLINE';
   vehicleId?: string;
+  status: 'DISPONIBLE' | 'EN_MISSION' | 'HORS_LIGNE';
 }
-
-export type FreightStatus =
-  | 'DRAFT'
-  | 'PUBLISHED'
-  | 'ASSIGNED'
-  | 'IN_TRANSIT'
-  | 'DELIVERED'
-  | 'CANCELLED';
-
-export type Urgency = 'STANDARD' | 'EXPRESS' | 'FLEXIBLE';
-export type PricingMode = 'FIXED' | 'AUCTION';
 
 export interface GeoPoint {
   address: string;
   city: string;
   lat: number;
   lng: number;
-  contactName?: string;
-  contactPhone?: string;
 }
 
-export interface Freight {
+export type CourseStatus =
+  | 'NOUVELLE'
+  | 'ASSIGNEE'
+  | 'EN_ROUTE_RAMASSAGE'
+  | 'AU_CHARGEMENT'
+  | 'EN_ROUTE'
+  | 'ARRIVEE'
+  | 'LIVREE'
+  | 'ANNULEE';
+
+export interface Course {
   id: string;
-  reference: string;
-  shipperId: string;
-  title: string;
+  code: string; // code de suivi public (ex. OW7F3K2)
+  reference: string; // ex. OW-0042
+  ownerId: string; // gérant
+  client: { name: string; phone: string };
   cargoType: CargoTypeKey;
+  cargoDescription: string;
   weightKg: number;
-  volumeM3?: number;
-  dimensions?: string;
-  photos: string[];
+  vehicleType: VehicleTypeKey;
   pickup: GeoPoint;
   delivery: GeoPoint;
-  pickupDate: string;
-  deliveryDate?: string;
-  urgency: Urgency;
-  pricingMode: PricingMode;
-  vehicleType: VehicleTypeKey;
-  declaredValue?: number;
-  insurance: boolean;
   distanceKm: number;
   durationH: number;
-  /** Fixed price (FIXED mode) or starting budget (AUCTION mode). */
-  budget: number;
-  status: FreightStatus;
-  createdAt: string;
-}
-
-export type BidStatus = 'PENDING' | 'ACCEPTED' | 'REJECTED' | 'WITHDRAWN';
-
-export interface Bid {
-  id: string;
-  freightId: string;
-  carrierId: string;
-  amount: number;
-  etaHours: number;
-  message?: string;
-  vehicleId?: string;
-  status: BidStatus;
-  createdAt: string;
-}
-
-export type ShipmentStatus =
-  | 'ASSIGNED'
-  | 'EN_ROUTE_PICKUP'
-  | 'AT_PICKUP'
-  | 'LOADED'
-  | 'IN_TRANSIT'
-  | 'AT_DELIVERY'
-  | 'DELIVERED'
-  | 'CANCELLED';
-
-export interface Shipment {
-  id: string;
-  reference: string;
-  freightId: string;
-  shipperId: string;
-  carrierId: string;
+  price: number;
+  /** Géométrie de l'itinéraire (vrais axes), pour la carte. */
+  routeGeometry: LatLng[];
   driverId?: string;
   vehicleId?: string;
-  bidId?: string;
-  price: number;
-  commission: number;
-  status: ShipmentStatus;
-  trackingCode: string;
-  /** Simulated live position. */
+  status: CourseStatus;
+  progress: number; // 0..1
   currentLat?: number;
   currentLng?: number;
-  progress: number; // 0..1
   createdAt: string;
+  assignedAt?: string;
   deliveredAt?: string;
+  cancelledAt?: string;
 }
 
 export interface TrackingEvent {
   id: string;
-  shipmentId: string;
-  status: ShipmentStatus;
+  courseId: string;
+  status: CourseStatus;
   label: string;
   lat?: number;
   lng?: number;
   note?: string;
-  photoUrl?: string;
   by: string;
-  createdAt: string;
-}
-
-export type DocumentType = 'QUOTE' | 'BL' | 'INVOICE' | 'POD' | 'CERTIFICATE';
-
-export interface DocumentRecord {
-  id: string;
-  shipmentId?: string;
-  freightId?: string;
-  type: DocumentType;
-  reference: string;
-  title: string;
-  createdAt: string;
-  /** Inline JSON payload used to render the document on the fly. */
-  payload?: Record<string, unknown>;
-}
-
-export interface Message {
-  id: string;
-  threadId: string; // freightId or shipmentId
-  fromUserId: string;
-  toUserId: string;
-  body: string;
-  read: boolean;
-  createdAt: string;
-}
-
-export interface Review {
-  id: string;
-  shipmentId: string;
-  fromUserId: string;
-  toUserId: string;
-  rating: number; // 1..5
-  comment?: string;
-  createdAt: string;
-}
-
-export type PaymentMethod = 'MVOLA' | 'ORANGE_MONEY' | 'AIRTEL_MONEY' | 'WAVE' | 'CARD' | 'TRANSFER' | 'CASH';
-export type TxStatus = 'PENDING' | 'ESCROW' | 'RELEASED' | 'REFUNDED' | 'FAILED';
-
-export interface Transaction {
-  id: string;
-  reference: string;
-  shipmentId: string;
-  payerId: string;
-  payeeId: string;
-  amount: number;
-  commission: number;
-  method: PaymentMethod;
-  status: TxStatus;
-  createdAt: string;
-}
-
-export interface KycDocument {
-  id: string;
-  userId: string;
-  type: 'ID' | 'LICENSE' | 'VEHICLE_REG' | 'INSURANCE' | 'COMPANY_REG';
-  reference: string;
-  status: KycStatus;
   createdAt: string;
 }
 
@@ -228,20 +117,48 @@ export interface DB {
   users: User[];
   vehicles: Vehicle[];
   drivers: Driver[];
-  freights: Freight[];
-  bids: Bid[];
-  shipments: Shipment[];
-  tracking: TrackingEvent[];
-  documents: DocumentRecord[];
-  messages: Message[];
-  reviews: Review[];
-  transactions: Transaction[];
-  kyc: KycDocument[];
+  courses: Course[];
+  events: TrackingEvent[];
   notifications: Notification[];
-  meta: { freightSeq: number; shipmentSeq: number; quoteSeq: number; txSeq: number };
+  meta: { courseSeq: number };
 }
 
 export function toPublicUser(u: User): PublicUser {
   const { passwordHash: _omit, ...rest } = u;
   return rest;
+}
+
+/** Km restants à parcourir selon l'avancement. */
+export function kmRemaining(course: Pick<Course, 'distanceKm' | 'progress' | 'status'>): number {
+  if (course.status === 'LIVREE') return 0;
+  return Math.max(0, Math.round(course.distanceKm * (1 - course.progress)));
+}
+
+/**
+ * Vue de suivi PUBLIQUE (client sans compte) — sanitisée : aucune donnée
+ * sensible (prix, identité/numéro du client, identifiants internes).
+ * Type partagé client/serveur ; la projection vit dans `lib/tracking.ts`.
+ */
+export interface PublicTracking {
+  code: string;
+  reference: string;
+  status: CourseStatus;
+  statusLabel: string;
+  statusTone: Tone;
+  progress: number;
+  distanceKm: number;
+  kmRemaining: number;
+  durationH: number;
+  pickup: { city: string; address: string; lat: number; lng: number };
+  delivery: { city: string; address: string; lat: number; lng: number };
+  current: { lat: number; lng: number } | null;
+  routeGeometry: LatLng[];
+  cargo: { label: string; weightKg: number };
+  vehicle: { label: string };
+  transporter: { company: string; phone: string; driverName?: string };
+  delivered: boolean;
+  cancelled: boolean;
+  createdAt: string;
+  deliveredAt?: string;
+  timeline: { status: CourseStatus; label: string; at: string }[];
 }
