@@ -21,10 +21,19 @@ export default function NewCourse() {
   const p = useLocalSearchParams<{ clientName?: string; clientPhone?: string; fromCity?: string; toCity?: string; cargoType?: string; weight?: string; description?: string; requestId?: string }>();
   const [f, setF] = useState({
     clientName: p.clientName ?? '', clientPhone: p.clientPhone ?? '', fromCity: knownCity(p.fromCity) ?? 'Antananarivo', fromAddr: '',
-    toCity: knownCity(p.toCity) ?? 'Toamasina', toAddr: '', cargoType: knownCargo(p.cargoType) ?? ('GENERAL' as CargoTypeKey),
+    fromLat: '', fromLng: '',
+    toCity: knownCity(p.toCity) ?? 'Toamasina', toAddr: '', toLat: '', toLng: '', cargoType: knownCargo(p.cargoType) ?? ('GENERAL' as CargoTypeKey),
     description: p.description ?? '', weight: p.weight ?? '', vehicleType: 'CAMION_3T' as VehicleTypeKey, autoVehicle: true,
   });
   const set = (k: keyof typeof f) => (v: any) => setF((s) => ({ ...s, [k]: v }));
+
+  // Coordonnées GPS saisies à la main (facultatif) : priment sur le centre-ville.
+  const parseCoord = (s: string) => { const n = parseFloat((s || '').replace(',', '.')); return Number.isFinite(n) ? n : NaN; };
+  const inMada = (lat: number, lng: number) => lat >= -26 && lat <= -11 && lng >= 43 && lng <= 51;
+  const effPoint = (city: { lat: number; lng: number }, latS: string, lngS: string) => {
+    const la = parseCoord(latS), ln = parseCoord(lngS);
+    return !isNaN(la) && !isNaN(ln) && inMada(la, ln) ? { lat: la, lng: ln } : { lat: city.lat, lng: city.lng };
+  };
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
   // Prix modifiable : pré-rempli avec l'estimation, éditable par le gérant.
@@ -38,9 +47,11 @@ export default function NewCourse() {
     const from = cityByName(f.fromCity);
     const to = cityByName(f.toCity);
     if (!from || !to || from.name === to.name) return null;
-    const route = buildCourseRoute(from.name, from, to.name, to);
+    const fromPt = effPoint(from, f.fromLat, f.fromLng);
+    const toPt = effPoint(to, f.toLat, f.toLng);
+    const route = buildCourseRoute(from.name, fromPt, to.name, toPt);
     return { ...route, price: quickEstimate(route.distanceKm, vehicleType, f.cargoType) };
-  }, [f.fromCity, f.toCity, vehicleType, f.cargoType]);
+  }, [f.fromCity, f.toCity, f.fromLat, f.fromLng, f.toLat, f.toLng, vehicleType, f.cargoType]);
 
   // Tant que le gérant n'a pas modifié le prix, il suit l'estimation automatique.
   useEffect(() => {
@@ -66,8 +77,8 @@ export default function NewCourse() {
         cargoDescription: f.description.trim(),
         weightKg: weight,
         vehicleType,
-        pickup: { address: f.fromAddr.trim() || from.name, city: from.name, lat: from.lat, lng: from.lng },
-        delivery: { address: f.toAddr.trim() || to.name, city: to.name, lat: to.lat, lng: to.lng },
+        pickup: { address: f.fromAddr.trim() || from.name, city: from.name, ...effPoint(from, f.fromLat, f.fromLng) },
+        delivery: { address: f.toAddr.trim() || to.name, city: to.name, ...effPoint(to, f.toLat, f.toLng) },
         price: Number(priceInput.replace(/[^\d]/g, '')) || undefined,
       });
       if (p.requestId) await markQuoteHandled(p.requestId).catch(() => {});
@@ -91,8 +102,20 @@ export default function NewCourse() {
           <Text style={styles.h}>Trajet</Text>
           <Field label="Ville de départ"><Chips items={CITIES.map((c) => c.name)} value={f.fromCity} onSelect={set('fromCity')} /></Field>
           <Field label="Adresse de chargement"><Input value={f.fromAddr} onChangeText={set('fromAddr')} placeholder="Quartier, repère" /></Field>
+          <Field label="Coordonnées GPS de chargement (facultatif)">
+            <View style={{ flexDirection: 'row', gap: 8 }}>
+              <Input value={f.fromLat} onChangeText={set('fromLat')} keyboardType="numbers-and-punctuation" placeholder="Latitude −18.8792" style={{ flex: 1 }} />
+              <Input value={f.fromLng} onChangeText={set('fromLng')} keyboardType="numbers-and-punctuation" placeholder="Longitude 47.5079" style={{ flex: 1 }} />
+            </View>
+          </Field>
           <Field label="Ville d’arrivée"><Chips items={CITIES.map((c) => c.name)} value={f.toCity} onSelect={set('toCity')} /></Field>
           <Field label="Adresse de livraison"><Input value={f.toAddr} onChangeText={set('toAddr')} placeholder="Quartier, repère" /></Field>
+          <Field label="Coordonnées GPS de livraison (facultatif)">
+            <View style={{ flexDirection: 'row', gap: 8 }}>
+              <Input value={f.toLat} onChangeText={set('toLat')} keyboardType="numbers-and-punctuation" placeholder="Latitude −18.1499" style={{ flex: 1 }} />
+              <Input value={f.toLng} onChangeText={set('toLng')} keyboardType="numbers-and-punctuation" placeholder="Longitude 49.4023" style={{ flex: 1 }} />
+            </View>
+          </Field>
         </Card>
 
         <Card style={styles.card}>

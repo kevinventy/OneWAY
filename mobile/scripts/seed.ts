@@ -32,6 +32,8 @@ const ROUTES: Record<string, LL[]> = {
   antsirabe: [[-18.879, 47.508], [-19.0, 47.46], [-19.383, 47.417], [-19.6, 47.2], [-19.866, 47.033]],
   mahajanga: [[-18.879, 47.508], [-18.317, 47.117], [-17.3, 46.97], [-16.95, 46.833], [-16.3, 46.55], [-15.717, 46.317]],
 };
+// Distances routières réelles (RN) — la longueur de la polyligne coarse sous-estime.
+const ROUTE_KM: Record<string, number> = { toamasina: 357, antsirabe: 169, mahajanga: 570 };
 // Firestore interdit les tableaux imbriqués : on stocke la géométrie à plat.
 const flatten = (p: LL[]): number[] => { const out: number[] = []; for (const [lat, lng] of p) out.push(lat, lng); return out; };
 const R = 6371, rad = (d: number) => (d * Math.PI) / 180;
@@ -63,7 +65,7 @@ async function makeCourse(o: {
   const geom = ROUTES[o.routeKey];
   const from = CITY.tana, to = CITY[o.toKey];
   const pos = at(geom, o.progress);
-  const distanceKm = length(geom);
+  const distanceKm = ROUTE_KM[o.routeKey] ?? length(geom);
   const course = {
     id: o.id, code: o.code, reference: o.ref, ownerId: 'u_gerant', companyName: COMPANY,
     client: o.client, cargoType: o.cargoType, cargoDescription: o.cargoDescription, weightKg: o.weightKg,

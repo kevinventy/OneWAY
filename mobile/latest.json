@@ -1,6 +1,6 @@
 {
-  "version": "1.0.8",
-  "versionCode": 9,
+  "version": "1.0.9",
+  "versionCode": 10,
   "apkUrl": "https://github.com/kevinventy/OneWAY/releases/latest/download/app-release.apk",
-  "notes": "Écrans secondaires harmonisés : profil avec en-tête de marque, résumé de flotte et notifications colorées."
+  "notes": "Distances routières corrigées (ex. Antananarivo–Toamasina 357 km), progression liée uniquement au GPS du chauffeur et saisie de coordonnées GPS pour le chargement/livraison."
 }

@@ -17,7 +17,7 @@ import { buildCourseRoute, findCity } from '@/lib/geo';
 import { pointAtProgress, progressAlongRoute, flattenLatLng, unflattenLatLng, type LatLng } from '@/data/roads';
 import { quickEstimate } from '@/lib/pricing';
 import { vehicleByKey, cargoByKey } from '@/data/catalog';
-import { STATUS_FLOW, STATUS_LABEL, nextStatus } from '@/lib/flow';
+import { STATUS_LABEL, nextStatus } from '@/lib/flow';
 import { COURSE_STATUS } from '@/lib/labels';
 import { kmRemaining } from '@/lib/types';
 import type {
@@ -199,10 +199,12 @@ export async function advanceCourse(course: Course, by: string): Promise<void> {
   const next = nextStatus(course.status);
   if (!next) throw new Error('Course déjà livrée');
 
-  const idx = STATUS_FLOW.indexOf(next);
-  const progress = next === 'LIVREE' ? 1 : Math.min(0.95, Math.max(course.progress, idx / (STATUS_FLOW.length - 1)));
-  // Conserve la position GPS réelle du chauffeur si elle existe ; sinon estime
-  // la position le long de l'itinéraire d'après l'avancement.
+  // La progression de la marchandise dépend UNIQUEMENT du GPS du chauffeur :
+  // changer d'étape (assignée, chargement, en route…) ne fait PAS avancer la
+  // barre ni les km restants. Seule la livraison force 100 %.
+  const progress = next === 'LIVREE' ? 1 : course.progress;
+  // Position : GPS réel si disponible ; sinon point de l'itinéraire selon la
+  // progression GPS actuelle (départ tant que le GPS n'a rien remonté).
   const pos: LatLng =
     course.currentLat != null && course.currentLng != null
       ? [course.currentLat, course.currentLng]

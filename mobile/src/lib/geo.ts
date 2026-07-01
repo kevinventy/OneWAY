@@ -47,13 +47,13 @@ export interface KnownRoute {
 export const KNOWN_ROUTES: KnownRoute[] = [
   { from: 'Antananarivo', to: 'Toamasina', distanceKm: 357, durationH: 5.5 },
   { from: 'Antananarivo', to: 'Antsirabe', distanceKm: 167, durationH: 3 },
-  { from: 'Antananarivo', to: 'Mahajanga', distanceKm: 472, durationH: 8 },
-  { from: 'Antananarivo', to: 'Fianarantsoa', distanceKm: 404, durationH: 7 },
-  { from: 'Antananarivo', to: 'Toliara', distanceKm: 756, durationH: 13 },
-  { from: 'Antananarivo', to: 'Ambositra', distanceKm: 258, durationH: 4.5 },
-  { from: 'Antananarivo', to: 'Moramanga', distanceKm: 109, durationH: 2 },
-  { from: 'Antananarivo', to: 'Antalaha', distanceKm: 820, durationH: 15 },
-  { from: 'Antananarivo', to: 'Fort-Dauphin', distanceKm: 950, durationH: 18 },
+  { from: 'Antananarivo', to: 'Mahajanga', distanceKm: 570, durationH: 10 },
+  { from: 'Antananarivo', to: 'Fianarantsoa', distanceKm: 408, durationH: 7 },
+  { from: 'Antananarivo', to: 'Toliara', distanceKm: 936, durationH: 16 },
+  { from: 'Antananarivo', to: 'Ambositra', distanceKm: 265, durationH: 4.5 },
+  { from: 'Antananarivo', to: 'Moramanga', distanceKm: 114, durationH: 2 },
+  { from: 'Antananarivo', to: 'Antalaha', distanceKm: 1215, durationH: 24 },
+  { from: 'Antananarivo', to: 'Fort-Dauphin', distanceKm: 1085, durationH: 20 },
   { from: 'Toamasina', to: 'Mahajanga', distanceKm: 720, durationH: 14 },
   { from: 'Antsirabe', to: 'Fianarantsoa', distanceKm: 237, durationH: 4.5 },
   { from: 'Mahajanga', to: 'Antsiranana', distanceKm: 620, durationH: 11.5 },
@@ -154,17 +154,34 @@ export function buildCourseRoute(
     from: [fromPoint.lat, fromPoint.lng],
     to: [toPoint.lat, toPoint.lng],
   });
-  if (geo.length > 2) {
-    const distanceKm = Math.round(roadLength(geo));
-    const known = estimateRoute(fromCity, toCity);
-    const durationH = known.durationH || +(distanceKm / 55).toFixed(1);
-    return { distanceKm, durationH, geometry: geo, source: 'road' };
-  }
   const est = estimateRoute(fromCity, toCity);
+  const following = geo.length > 2;
+
+  // Distance : on privilégie les distances ROUTIÈRES répertoriées (précises,
+  // ex. Antananarivo → Toamasina = 357 km). La longueur de la polyligne sous-
+  // estime le trajet réel (elle « coupe » les virages) : on ne l'utilise qu'à
+  // défaut de route connue.
+  const distanceKm = est.source === 'known' ? est.distanceKm : following ? Math.round(roadLength(geo)) : est.distanceKm;
+  const durationH = est.durationH || +(distanceKm / 55).toFixed(1);
+
+  const start: LatLng = [fromPoint.lat, fromPoint.lng];
+  const end: LatLng = [toPoint.lat, toPoint.lng];
+
+  if (following) {
+    // L'itinéraire suit les axes RN répertoriés ; on raccorde les coordonnées
+    // exactes de chargement/livraison (si elles diffèrent) au corridor.
+    const eps = 0.02; // ~2 km
+    let geometry: LatLng[] = [...geo];
+    const first = geo[0], last = geo[geo.length - 1];
+    if (Math.abs(first[0] - start[0]) > eps || Math.abs(first[1] - start[1]) > eps) geometry = [start, ...geometry];
+    if (Math.abs(last[0] - end[0]) > eps || Math.abs(last[1] - end[1]) > eps) geometry = [...geometry, end];
+    return { distanceKm, durationH, geometry, source: 'road' };
+  }
+
   return {
-    distanceKm: est.distanceKm,
-    durationH: est.durationH,
-    geometry: geo.length === 2 ? geo : [[fromPoint.lat, fromPoint.lng], [toPoint.lat, toPoint.lng]],
+    distanceKm,
+    durationH,
+    geometry: geo.length === 2 ? geo : [start, end],
     source: 'estimated',
   };
 }
