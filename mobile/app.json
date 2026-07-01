@@ -2,7 +2,7 @@
   "expo": {
     "name": "ONE WAY",
     "slug": "oneway",
-    "version": "1.0.4",
+    "version": "1.0.5",
     "orientation": "portrait",
     "scheme": "oneway",
     "userInterfaceStyle": "light",
@@ -20,12 +20,19 @@
     },
     "android": {
       "package": "mg.oneway.app",
-      "versionCode": 5,
+      "versionCode": 6,
       "adaptiveIcon": {
         "foregroundImage": "./assets/adaptive-icon.png",
         "backgroundColor": "#ffffff"
       },
-      "permissions": ["ACCESS_FINE_LOCATION", "ACCESS_COARSE_LOCATION", "CAMERA"]
+      "permissions": [
+        "ACCESS_FINE_LOCATION",
+        "ACCESS_COARSE_LOCATION",
+        "ACCESS_BACKGROUND_LOCATION",
+        "FOREGROUND_SERVICE",
+        "FOREGROUND_SERVICE_LOCATION",
+        "CAMERA"
+      ]
     },
     "web": {
       "bundler": "metro",
@@ -40,7 +47,12 @@
       ],
       [
         "expo-location",
-        { "locationAlwaysAndWhenInUsePermission": "ONE WAY utilise votre position pour le suivi des livraisons." }
+        {
+          "locationAlwaysAndWhenInUsePermission": "ONE WAY utilise votre position pour le suivi des livraisons, y compris en arrière-plan pendant une course.",
+          "locationWhenInUsePermission": "ONE WAY utilise votre position pour le suivi des livraisons.",
+          "isAndroidBackgroundLocationEnabled": true,
+          "isAndroidForegroundServiceEnabled": true
+        }
       ],
       [
         "expo-image-picker",

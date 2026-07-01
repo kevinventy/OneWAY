@@ -1,44 +1,30 @@
-import { useEffect, useRef } from 'react';
-import * as Location from 'expo-location';
-import { updateDriverLocation } from '@/firebase/db';
+import { useEffect } from 'react';
+import { Alert } from 'react-native';
+import { startDriverTracking, stopDriverTracking } from '@/lib/locationTask';
 import type { Course } from '@/lib/types';
 
 /**
- * Partage la position GPS du téléphone du chauffeur pendant une course active.
- * À activer uniquement pour le chauffeur affecté (`active`) : demande la
- * permission de localisation puis pousse la position vers Firestore (au plus
- * une fois toutes les ~12 s ou tous les 40 m) pour un suivi temps réel.
+ * Active le partage GPS du chauffeur affecté pendant une course active.
+ * S'appuie sur un service de premier plan (voir locationTask) : la position
+ * continue d'être remontée téléphone verrouillé / app en arrière-plan.
+ * Le partage s'arrête quand l'écran est quitté ou la mission terminée.
  */
 export function useDriverLocation(course: Course | null, active: boolean) {
-  // Réf. tenue à jour pour toujours écrire avec la version la plus récente de la course.
-  const courseRef = useRef<Course | null>(course);
-  courseRef.current = course;
-  const lastSent = useRef(0);
-
+  const courseId = course?.id;
   useEffect(() => {
-    if (!course || !active) return;
-    let cancelled = false;
-    let sub: Location.LocationSubscription | undefined;
-
-    (async () => {
-      const { status } = await Location.requestForegroundPermissionsAsync();
-      if (status !== 'granted' || cancelled) return;
-      sub = await Location.watchPositionAsync(
-        { accuracy: Location.Accuracy.Balanced, distanceInterval: 40, timeInterval: 12000 },
-        (pos) => {
-          const now = Date.now();
-          if (now - lastSent.current < 10000) return;
-          lastSent.current = now;
-          const c = courseRef.current;
-          if (!c) return;
-          updateDriverLocation(c, pos.coords.latitude, pos.coords.longitude).catch(() => {});
-        },
-      );
-    })();
-
+    if (!courseId || !active) return;
+    startDriverTracking(courseId)
+      .then((r) => {
+        if (r === 'denied') {
+          Alert.alert(
+            'Localisation requise',
+            'Activez la localisation (« Toujours autoriser » pour le suivi même écran verrouillé) afin de partager votre position au client.',
+          );
+        }
+      })
+      .catch(() => undefined);
     return () => {
-      cancelled = true;
-      sub?.remove();
+      stopDriverTracking().catch(() => undefined);
     };
-  }, [course?.id, active]);
+  }, [courseId, active]);
 }

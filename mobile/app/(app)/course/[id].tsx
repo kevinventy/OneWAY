@@ -120,7 +120,7 @@ export default function CourseScreen() {
       {shareGps && (
         <View style={styles.gpsHint}>
           <Ionicons name="navigate-circle" size={16} color={colors.green} />
-          <Text style={styles.gpsHintText}>Partage de votre position GPS en direct activé</Text>
+          <Text style={styles.gpsHintText}>Position GPS partagée en direct — continue même écran verrouillé</Text>
         </View>
       )}
 

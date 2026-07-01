@@ -3,6 +3,8 @@ import { StatusBar } from 'expo-status-bar';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { AuthProvider } from '@/store/auth';
 import { UpdateBanner } from '@/components/UpdateBanner';
+// Enregistre la tâche GPS de fond dès le démarrage (y compris relance headless).
+import '@/lib/locationTask';
 
 export default function RootLayout() {
   return (

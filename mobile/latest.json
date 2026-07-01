@@ -1,6 +1,6 @@
 {
-  "version": "1.0.4",
-  "versionCode": 5,
+  "version": "1.0.5",
+  "versionCode": 6,
   "apkUrl": "https://github.com/kevinventy/OneWAY/releases/latest/download/app-release.apk",
-  "notes": "Suivi GPS temps réel du chauffeur, carte OpenStreetMap haute qualité, prix modifiable et suppression de l'heure d'arrivée estimée."
+  "notes": "Suivi GPS du chauffeur en arrière-plan (continue même téléphone verrouillé) via un service de premier plan."
 }
