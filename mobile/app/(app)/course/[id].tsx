@@ -1,19 +1,20 @@
 import { useEffect, useState } from 'react';
-import { View, Text, ScrollView, StyleSheet, Pressable, Linking, Share, Alert } from 'react-native';
+import { View, Text, ScrollView, StyleSheet, Pressable, Linking, Share, Alert, Modal, TextInput } from 'react-native';
 import { useLocalSearchParams } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { useAuth } from '@/store/auth';
 import { Card, Button, Badge } from '@/components/ui';
-import { RouteMap } from '@/components/RouteMap';
+import { OsmMap } from '@/components/OsmMap';
 import { Stepper } from '@/components/app';
 import {
   subscribeCourse, subscribeEvents, subscribeOwnerDrivers,
-  assignCourse, advanceCourse, cancelCourse,
+  assignCourse, advanceCourse, cancelCourse, updateCoursePrice,
 } from '@/firebase/db';
+import { useDriverLocation } from '@/lib/useDriverLocation';
 import { COURSE_STATUS } from '@/lib/labels';
 import { STATUS_ACTION, nextStatus } from '@/lib/flow';
 import { cargoByKey, vehicleByKey } from '@/data/catalog';
-import { money, km, duration, dateTimeFr } from '@/lib/format';
+import { money, km, dateTimeFr } from '@/lib/format';
 import { kmRemaining, type Course, type Driver, type TrackingEvent } from '@/lib/types';
 import { colors } from '@/theme';
 
@@ -24,6 +25,8 @@ export default function CourseScreen() {
   const [events, setEvents] = useState<TrackingEvent[]>([]);
   const [drivers, setDrivers] = useState<Driver[]>([]);
   const [busy, setBusy] = useState(false);
+  const [priceModal, setPriceModal] = useState(false);
+  const [priceInput, setPriceInput] = useState('');
 
   useEffect(() => {
     if (!id) return;
@@ -36,6 +39,12 @@ export default function CourseScreen() {
     if (!user || user.role !== 'GERANT') return;
     return subscribeOwnerDrivers(user.id, setDrivers);
   }, [user?.id]);
+
+  // Le chauffeur affecté partage sa position GPS en direct pendant la mission.
+  const shareGps =
+    !!course && !!user && user.role === 'CHAUFFEUR' && course.driverUserId === user.id &&
+    !['LIVREE', 'ANNULEE', 'NOUVELLE'].includes(course.status);
+  useDriverLocation(course, shareGps);
 
   if (!user) return null;
   if (!course) return <View style={styles.center}><Text style={styles.muted}>Chargement…</Text></View>;
@@ -68,6 +77,15 @@ export default function CourseScreen() {
   function shareCode() {
     Share.share({ message: `Suivez votre livraison ONE WAY ${course!.reference} en temps réel.\nCode de suivi : ${course!.code}` });
   }
+  function openPriceModal() {
+    setPriceInput(String(course!.price ?? ''));
+    setPriceModal(true);
+  }
+  async function savePrice() {
+    const value = Number(priceInput.replace(/[^\d]/g, '')) || 0;
+    setPriceModal(false);
+    try { await updateCoursePrice(course!.id, value); } catch (e: any) { Alert.alert('Erreur', e?.message ?? 'Prix non enregistré'); }
+  }
 
   return (
     <ScrollView contentContainerStyle={styles.scroll}>
@@ -91,15 +109,20 @@ export default function CourseScreen() {
         </View>
       </Card>
 
-      <RouteMap
+      <OsmMap
         height={230}
         route={course.routeGeometry}
         from={{ lat: course.pickup.lat, lng: course.pickup.lng, label: course.pickup.city }}
         to={{ lat: course.delivery.lat, lng: course.delivery.lng, label: course.delivery.city }}
         current={active && course.currentLat != null ? { lat: course.currentLat, lng: course.currentLng! } : null}
-        progress={course.progress}
         kmRemaining={active ? remaining : undefined}
       />
+      {shareGps && (
+        <View style={styles.gpsHint}>
+          <Ionicons name="navigate-circle" size={16} color={colors.green} />
+          <Text style={styles.gpsHintText}>Partage de votre position GPS en direct activé</Text>
+        </View>
+      )}
 
       <Card style={{ padding: 14 }}><Stepper status={course.status} /></Card>
 
@@ -147,8 +170,16 @@ export default function CourseScreen() {
         <Detail icon="location-outline" label="Chargement" main={course.pickup.address} sub={course.pickup.city} />
         <Detail icon="flag-outline" label="Livraison" main={course.delivery.address} sub={course.delivery.city} />
         <Detail icon="cube-outline" label="Marchandise" main={cargoByKey(course.cargoType).label} sub={`${course.weightKg.toLocaleString('fr-FR')} kg · ${course.cargoDescription}`} />
-        <Detail icon="car-outline" label="Véhicule" main={vehicleByKey(course.vehicleType).label} sub={`Durée estimée ${duration(course.durationH)}`} last />
-        {isOwner && <View style={styles.priceRow}><Text style={styles.muted}>Prix</Text><Text style={styles.price}>{money(course.price)}</Text></View>}
+        <Detail icon="car-outline" label="Véhicule" main={vehicleByKey(course.vehicleType).label} sub={vehicleByKey(course.vehicleType).capacityLabel} last />
+        {isOwner && (
+          <Pressable onPress={openPriceModal} style={styles.priceRow}>
+            <Text style={styles.muted}>Prix</Text>
+            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+              <Text style={styles.price}>{money(course.price)}</Text>
+              <Ionicons name="create-outline" size={18} color={colors.brand600} />
+            </View>
+          </Pressable>
+        )}
       </Card>
 
       {/* Historique */}
@@ -171,6 +202,29 @@ export default function CourseScreen() {
       {isOwner && active && (
         <Button title="Annuler la course" icon="ban-outline" variant="outline" onPress={confirmCancel} style={{ borderColor: colors.red }} />
       )}
+
+      {/* Modifier le prix (gérant) */}
+      <Modal visible={priceModal} transparent animationType="fade" onRequestClose={() => setPriceModal(false)}>
+        <Pressable style={styles.modalBackdrop} onPress={() => setPriceModal(false)}>
+          <Pressable style={styles.modalCard} onPress={() => {}}>
+            <Text style={styles.modalTitle}>Modifier le prix</Text>
+            <Text style={styles.muted}>Prix de la course {course.reference} (Ar)</Text>
+            <TextInput
+              value={priceInput}
+              onChangeText={setPriceInput}
+              keyboardType="numeric"
+              autoFocus
+              placeholder="Ex. 1 650 000"
+              placeholderTextColor={colors.inkMuted}
+              style={styles.modalInput}
+            />
+            <View style={{ flexDirection: 'row', gap: 10, marginTop: 12 }}>
+              <Button title="Annuler" variant="outline" onPress={() => setPriceModal(false)} style={{ flex: 1 }} />
+              <Button title="Enregistrer" icon="checkmark" onPress={savePrice} style={{ flex: 1 }} />
+            </View>
+          </Pressable>
+        </Pressable>
+      </Modal>
     </ScrollView>
   );
 }
@@ -213,6 +267,12 @@ const styles = StyleSheet.create({
   detailMain: { fontSize: 14, fontWeight: '700', color: colors.ink, marginTop: 1 },
   priceRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingTop: 12 },
   price: { fontSize: 18, fontWeight: '900', color: colors.ink },
+  gpsHint: { flexDirection: 'row', alignItems: 'center', gap: 6, backgroundColor: colors.greenBg, borderRadius: 10, paddingHorizontal: 12, paddingVertical: 8, marginTop: -4 },
+  gpsHintText: { color: colors.green, fontSize: 12, fontWeight: '700', flexShrink: 1 },
+  modalBackdrop: { flex: 1, backgroundColor: 'rgba(0,0,0,0.45)', alignItems: 'center', justifyContent: 'center', padding: 24 },
+  modalCard: { width: '100%', backgroundColor: colors.white, borderRadius: 16, padding: 18 },
+  modalTitle: { fontSize: 17, fontWeight: '800', color: colors.ink, marginBottom: 4 },
+  modalInput: { backgroundColor: colors.white, borderWidth: 1, borderColor: colors.border, borderRadius: 10, paddingHorizontal: 14, paddingVertical: 12, fontSize: 18, fontWeight: '700', color: colors.ink, marginTop: 10 },
   evRow: { flexDirection: 'row', gap: 10, paddingVertical: 6 },
   evDot: { width: 9, height: 9, borderRadius: 5, backgroundColor: colors.brand500, marginTop: 5 },
   evLabel: { fontWeight: '600', color: colors.ink },

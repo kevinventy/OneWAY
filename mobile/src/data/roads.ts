@@ -85,6 +85,38 @@ export function unflattenLatLng(flat: number[] | LatLng[] | undefined | null): L
   return out;
 }
 
+/**
+ * Fraction (0..1) le long de la polyligne du point le plus proche de `p`.
+ * Sert à convertir une position GPS réelle du chauffeur en avancement /
+ * kilomètres restants (projection sur l'itinéraire).
+ */
+export function progressAlongRoute(points: LatLng[], p: LatLng): number {
+  if (!points || points.length < 2) return 0;
+  const total = roadLength(points);
+  if (total === 0) return 0;
+  let bestDist = Infinity;
+  let bestCum = 0;
+  let cum = 0;
+  for (let i = 1; i < points.length; i++) {
+    const a = points[i - 1];
+    const b = points[i];
+    const seg = dist(a, b);
+    // Projection planaire locale (équirectangulaire) sur le segment a→b.
+    const lat0 = rad(a[0]);
+    const ax = a[1] * Math.cos(lat0), ay = a[0];
+    const bx = b[1] * Math.cos(lat0), by = b[0];
+    const px = p[1] * Math.cos(lat0), py = p[0];
+    const dx = bx - ax, dy = by - ay;
+    const len2 = dx * dx + dy * dy;
+    const t = len2 === 0 ? 0 : Math.max(0, Math.min(1, ((px - ax) * dx + (py - ay) * dy) / len2));
+    const proj: LatLng = [a[0] + (b[0] - a[0]) * t, a[1] + (b[1] - a[1]) * t];
+    const d = dist(proj, p);
+    if (d < bestDist) { bestDist = d; bestCum = cum + seg * t; }
+    cum += seg;
+  }
+  return Math.max(0, Math.min(1, bestCum / total));
+}
+
 /** Position du véhicule à la fraction t (0..1) le long de la route. */
 export function pointAtProgress(points: LatLng[], t: number): LatLng {
   if (points.length === 0) return [-18.879, 47.508];

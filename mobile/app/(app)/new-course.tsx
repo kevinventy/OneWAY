@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { View, Text, ScrollView, StyleSheet, Pressable, KeyboardAvoidingView, Platform } from 'react-native';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import { useAuth } from '@/store/auth';
@@ -7,7 +7,7 @@ import { createCourse, markQuoteHandled } from '@/firebase/db';
 import { CITIES, buildCourseRoute } from '@/lib/geo';
 import { quickEstimate } from '@/lib/pricing';
 import { CARGO_TYPES, VEHICLE_TYPES, suggestVehicle, cargoByKey, type CargoTypeKey, type VehicleTypeKey } from '@/data/catalog';
-import { money, km, duration } from '@/lib/format';
+import { money, km } from '@/lib/format';
 import { colors, radius } from '@/theme';
 
 const cityByName = (n: string) => CITIES.find((c) => c.name === n);
@@ -27,6 +27,9 @@ export default function NewCourse() {
   const set = (k: keyof typeof f) => (v: any) => setF((s) => ({ ...s, [k]: v }));
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
+  // Prix modifiable : pré-rempli avec l'estimation, éditable par le gérant.
+  const [priceInput, setPriceInput] = useState('');
+  const [priceTouched, setPriceTouched] = useState(false);
 
   const weight = Number(f.weight) || 0;
   const vehicleType = f.autoVehicle && weight > 0 ? suggestVehicle(weight).key : f.vehicleType;
@@ -38,6 +41,11 @@ export default function NewCourse() {
     const route = buildCourseRoute(from.name, from, to.name, to);
     return { ...route, price: quickEstimate(route.distanceKm, vehicleType, f.cargoType) };
   }, [f.fromCity, f.toCity, vehicleType, f.cargoType]);
+
+  // Tant que le gérant n'a pas modifié le prix, il suit l'estimation automatique.
+  useEffect(() => {
+    if (!priceTouched && preview) setPriceInput(String(preview.price));
+  }, [preview?.price, priceTouched]);
 
   async function submit() {
     setError('');
@@ -60,6 +68,7 @@ export default function NewCourse() {
         vehicleType,
         pickup: { address: f.fromAddr.trim() || from.name, city: from.name, lat: from.lat, lng: from.lng },
         delivery: { address: f.toAddr.trim() || to.name, city: to.name, lat: to.lat, lng: to.lng },
+        price: Number(priceInput.replace(/[^\d]/g, '')) || undefined,
       });
       if (p.requestId) await markQuoteHandled(p.requestId).catch(() => {});
       router.replace(`/(app)/course/${course.id}`);
@@ -102,12 +111,24 @@ export default function NewCourse() {
 
         {preview && (
           <Card style={[styles.card, { borderColor: colors.brand100 }]}>
-            <Text style={[styles.h, { color: colors.brand700 }]}>Estimation automatique</Text>
-            <View style={styles.estRow}>
+            <Text style={[styles.h, { color: colors.brand700 }]}>Tarif de la course</Text>
+            <View style={[styles.estRow, { marginBottom: 12 }]}>
               <Est label="Distance" value={km(preview.distanceKm)} />
-              <Est label="Durée" value={duration(preview.durationH)} />
-              <Est label="Prix" value={money(preview.price)} highlight />
+              <Est label="Estimation auto" value={money(preview.price)} />
             </View>
+            <Field label="Prix facturé (Ar) — modifiable">
+              <Input
+                value={priceInput}
+                onChangeText={(v) => { setPriceTouched(true); setPriceInput(v); }}
+                keyboardType="numeric"
+                placeholder={String(preview.price)}
+              />
+            </Field>
+            {priceTouched && (
+              <Pressable onPress={() => { setPriceTouched(false); setPriceInput(String(preview.price)); }}>
+                <Text style={styles.resetPrice}>↺ Revenir à l’estimation automatique ({money(preview.price)})</Text>
+              </Pressable>
+            )}
           </Card>
         )}
 
@@ -156,5 +177,6 @@ const styles = StyleSheet.create({
   estRow: { flexDirection: 'row', gap: 8 },
   estLabel: { fontSize: 11, color: colors.inkMuted },
   estValue: { fontSize: 16, fontWeight: '800', color: colors.ink, marginTop: 2 },
+  resetPrice: { color: colors.brand600, fontSize: 12, fontWeight: '600', marginTop: 2 },
   error: { color: colors.red },
 });

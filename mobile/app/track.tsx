@@ -5,11 +5,11 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { Card, Button, Badge, Input } from '@/components/ui';
 import { LogoMark } from '@/components/Logo';
-import { RouteMap } from '@/components/RouteMap';
+import { OsmMap } from '@/components/OsmMap';
 import { subscribePublicTracking } from '@/firebase/db';
 import { getFavorites, addFavorite, removeFavorite } from '@/lib/favorites';
 import { COURSE_STATUS } from '@/lib/labels';
-import { km, duration, dateTimeFr } from '@/lib/format';
+import { km, dateTimeFr } from '@/lib/format';
 import { colors, radius } from '@/theme';
 import type { PublicTracking } from '@/lib/types';
 
@@ -35,8 +35,6 @@ export default function Track() {
     const list = fav ? await removeFavorite(code) : await addFavorite(code);
     setFav(list.includes(code));
   }
-
-  const remainingH = data ? Math.max(0, data.durationH * (1 - data.progress)) : 0;
 
   return (
     <ScrollView contentContainerStyle={[styles.scroll, { paddingTop: insets.top + 12 }]} style={{ backgroundColor: colors.bg }}>
@@ -80,20 +78,19 @@ export default function Track() {
           <View style={styles.progressTrack}><View style={[styles.progressFill, { width: `${Math.round(data.progress * 100)}%` }]} /></View>
           <View style={styles.cityRow}><Text style={styles.muted}>{data.pickup.city}</Text><Text style={styles.muted}>{data.delivery.city}</Text></View>
 
-          <RouteMap
+          <OsmMap
             height={250}
             route={data.routeGeometry}
             from={{ lat: data.pickup.lat, lng: data.pickup.lng, label: data.pickup.city }}
             to={{ lat: data.delivery.lat, lng: data.delivery.lng, label: data.delivery.city }}
             current={data.current}
-            progress={data.progress}
             kmRemaining={data.kmRemaining}
           />
 
           <View style={styles.metrics}>
             <Metric label="Km restants" value={data.delivered ? '0 km' : km(data.kmRemaining)} highlight />
             <Metric label="Distance" value={km(data.distanceKm)} />
-            <Metric label={data.delivered ? 'Livrée' : 'Temps restant'} value={data.delivered ? '✓' : `~${duration(remainingH)}`} />
+            <Metric label={data.delivered ? 'Statut' : 'Progression'} value={data.delivered ? '✓ Livrée' : `${Math.round(data.progress * 100)} %`} />
           </View>
 
           <Card style={{ padding: 14 }}>

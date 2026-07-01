@@ -1,6 +1,6 @@
 {
-  "version": "1.0.3",
-  "versionCode": 4,
+  "version": "1.0.4",
+  "versionCode": 5,
   "apkUrl": "https://github.com/kevinventy/OneWAY/releases/latest/download/app-release.apk",
-  "notes": "Calcul rapide aligné sur la grille tarifaire officielle ONE WAY (carburant gazole/essence, retour à vide 70 %)."
+  "notes": "Suivi GPS temps réel du chauffeur, carte OpenStreetMap haute qualité, prix modifiable et suppression de l'heure d'arrivée estimée."
 }

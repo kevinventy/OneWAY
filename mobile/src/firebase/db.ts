@@ -14,7 +14,7 @@ import {
 } from 'firebase/firestore';
 import { firestore } from './config';
 import { buildCourseRoute, findCity } from '@/lib/geo';
-import { pointAtProgress, flattenLatLng, unflattenLatLng, type LatLng } from '@/data/roads';
+import { pointAtProgress, progressAlongRoute, flattenLatLng, unflattenLatLng, type LatLng } from '@/data/roads';
 import { quickEstimate } from '@/lib/pricing';
 import { vehicleByKey, cargoByKey } from '@/data/catalog';
 import { STATUS_FLOW, STATUS_LABEL, nextStatus } from '@/lib/flow';
@@ -111,12 +111,11 @@ function buildTracking(course: Course, driver: Driver | null, timeline: PublicTr
 
 async function syncTracking(course: Course, driver: Driver | null, appendEvent?: { status: CourseStatus; label: string; at: number }) {
   const ref = doc(firestore, 'tracking', course.code);
-  let timeline: PublicTracking['timeline'] = [];
-  if (appendEvent) {
-    const prev = await getDoc(ref);
-    timeline = prev.exists() ? ((prev.data() as PublicTracking).timeline ?? []) : [];
-    timeline = [...timeline, appendEvent];
-  }
+  // Toujours repartir de l'historique existant (sinon une simple mise à jour de
+  // position — GPS — effacerait la chronologie).
+  const prev = await getDoc(ref);
+  let timeline: PublicTracking['timeline'] = prev.exists() ? ((prev.data() as PublicTracking).timeline ?? []) : [];
+  if (appendEvent) timeline = [...timeline, appendEvent];
   const tracking = buildTracking(course, driver, timeline);
   // Aplati la géométrie (tableaux imbriqués interdits par Firestore).
   await setDoc(ref, clean({ ...tracking, routeGeometry: flattenLatLng(tracking.routeGeometry) }));
@@ -132,6 +131,8 @@ export interface NewCourseInput {
   vehicleType: Course['vehicleType'];
   pickup: GeoPoint;
   delivery: GeoPoint;
+  /** Prix saisi par le gérant (sinon estimation automatique). */
+  price?: number;
 }
 
 export async function createCourse(gerant: User, input: NewCourseInput): Promise<Course> {
@@ -153,7 +154,7 @@ export async function createCourse(gerant: User, input: NewCourseInput): Promise
     delivery: input.delivery,
     distanceKm: route.distanceKm,
     durationH: route.durationH,
-    price: priceOf(route.distanceKm, input.vehicleType, input.cargoType),
+    price: input.price != null && input.price > 0 ? Math.round(input.price) : priceOf(route.distanceKm, input.vehicleType, input.cargoType),
     routeGeometry: route.geometry,
     status: 'NOUVELLE',
     progress: 0,
@@ -200,7 +201,12 @@ export async function advanceCourse(course: Course, by: string): Promise<void> {
 
   const idx = STATUS_FLOW.indexOf(next);
   const progress = next === 'LIVREE' ? 1 : Math.min(0.95, Math.max(course.progress, idx / (STATUS_FLOW.length - 1)));
-  const pos = pointAtProgress(course.routeGeometry as LatLng[], progress);
+  // Conserve la position GPS réelle du chauffeur si elle existe ; sinon estime
+  // la position le long de l'itinéraire d'après l'avancement.
+  const pos: LatLng =
+    course.currentLat != null && course.currentLng != null
+      ? [course.currentLat, course.currentLng]
+      : pointAtProgress(course.routeGeometry as LatLng[], progress);
 
   const driver = course.driverId ? await getDriver(course.driverId) : null;
   const batch = writeBatch(firestore);
@@ -234,6 +240,29 @@ export async function cancelCourse(course: Course): Promise<void> {
   batch.set(ev, { id: ev.id, courseId: course.id, ownerId: course.ownerId, status: 'ANNULEE', label: 'Course annulée', by: course.ownerId, createdAt: Date.now() });
   await batch.commit();
   await syncTracking({ ...course, status: 'ANNULEE' }, driver);
+}
+
+// ── Position temps réel (GPS du chauffeur) ─────────────────────────────────
+
+/**
+ * Met à jour la position réelle du véhicule à partir du GPS du téléphone du
+ * chauffeur : recalcule l'avancement (projection sur l'itinéraire) et les km
+ * restants, côté course et suivi public. N'altère pas le statut ni l'historique.
+ */
+export async function updateDriverLocation(course: Course, lat: number, lng: number): Promise<void> {
+  if (['LIVREE', 'ANNULEE'].includes(course.status)) return;
+  const geo = (course.routeGeometry as LatLng[]) ?? [];
+  const projected = progressAlongRoute(geo, [lat, lng]);
+  const progress = Math.min(0.99, Math.max(course.progress, projected));
+  await updateDoc(doc(firestore, 'courses', course.id), clean({ currentLat: lat, currentLng: lng, progress }));
+  const driver = course.driverId ? await getDriver(course.driverId) : null;
+  await syncTracking({ ...course, currentLat: lat, currentLng: lng, progress }, driver);
+}
+
+// ── Prix modifiable (gérant) ───────────────────────────────────────────────
+
+export async function updateCoursePrice(courseId: string, price: number): Promise<void> {
+  await updateDoc(doc(firestore, 'courses', courseId), { price: Math.max(0, Math.round(price)) });
 }
 
 // ── Flotte (gérant) ────────────────────────────────────────────────────────
