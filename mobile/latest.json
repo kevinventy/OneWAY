@@ -1,6 +1,6 @@
 {
-  "version": "1.0.9",
-  "versionCode": 10,
+  "version": "1.0.10",
+  "versionCode": 11,
   "apkUrl": "https://github.com/kevinventy/OneWAY/releases/latest/download/app-release.apk",
-  "notes": "Distances routières corrigées (ex. Antananarivo–Toamasina 357 km), progression liée uniquement au GPS du chauffeur et saisie de coordonnées GPS pour le chargement/livraison."
+  "notes": "Itinéraire et distance calés exactement sur les routes (routage en ligne OSRM), avec repli sur les axes RN hors-ligne."
 }

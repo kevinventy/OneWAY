@@ -14,6 +14,7 @@ import {
 } from 'firebase/firestore';
 import { firestore } from './config';
 import { buildCourseRoute, findCity } from '@/lib/geo';
+import { fetchRoadRoute } from '@/lib/routing';
 import { pointAtProgress, progressAlongRoute, flattenLatLng, unflattenLatLng, type LatLng } from '@/data/roads';
 import { quickEstimate } from '@/lib/pricing';
 import { vehicleByKey, cargoByKey } from '@/data/catalog';
@@ -136,7 +137,13 @@ export interface NewCourseInput {
 }
 
 export async function createCourse(gerant: User, input: NewCourseInput): Promise<Course> {
-  const route = buildCourseRoute(input.pickup.city, input.pickup, input.delivery.city, input.delivery);
+  // Itinéraire routier réel (OSRM, suit les routes) ; repli sur les axes RN
+  // répertoriés si le service est indisponible (hors-ligne).
+  const road = await fetchRoadRoute(input.pickup, input.delivery);
+  const fallback = buildCourseRoute(input.pickup.city, input.pickup, input.delivery.city, input.delivery);
+  const distanceKm = road?.distanceKm ?? fallback.distanceKm;
+  const durationH = road?.durationH ?? fallback.durationH;
+  const geometry = road?.geometry ?? fallback.geometry;
   const seq = await nextSeq('course');
   const ref = doc(col('courses'));
   const course: Course = {
@@ -152,10 +159,10 @@ export async function createCourse(gerant: User, input: NewCourseInput): Promise
     vehicleType: input.vehicleType,
     pickup: input.pickup,
     delivery: input.delivery,
-    distanceKm: route.distanceKm,
-    durationH: route.durationH,
-    price: input.price != null && input.price > 0 ? Math.round(input.price) : priceOf(route.distanceKm, input.vehicleType, input.cargoType),
-    routeGeometry: route.geometry,
+    distanceKm,
+    durationH,
+    price: input.price != null && input.price > 0 ? Math.round(input.price) : priceOf(distanceKm, input.vehicleType, input.cargoType),
+    routeGeometry: geometry,
     status: 'NOUVELLE',
     progress: 0,
     currentLat: input.pickup.lat,

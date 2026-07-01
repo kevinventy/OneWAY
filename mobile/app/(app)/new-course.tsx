@@ -5,6 +5,7 @@ import { useAuth } from '@/store/auth';
 import { Button, Card, Field, Input } from '@/components/ui';
 import { createCourse, markQuoteHandled } from '@/firebase/db';
 import { CITIES, buildCourseRoute } from '@/lib/geo';
+import { fetchRoadRoute } from '@/lib/routing';
 import { quickEstimate } from '@/lib/pricing';
 import { CARGO_TYPES, VEHICLE_TYPES, suggestVehicle, cargoByKey, type CargoTypeKey, type VehicleTypeKey } from '@/data/catalog';
 import { money, km } from '@/lib/format';
@@ -43,20 +44,42 @@ export default function NewCourse() {
   const weight = Number(f.weight) || 0;
   const vehicleType = f.autoVehicle && weight > 0 ? suggestVehicle(weight).key : f.vehicleType;
 
-  const preview = useMemo(() => {
+  // Estimation instantanée (axes RN) pour un retour immédiat.
+  const base = useMemo(() => {
     const from = cityByName(f.fromCity);
     const to = cityByName(f.toCity);
     if (!from || !to || from.name === to.name) return null;
     const fromPt = effPoint(from, f.fromLat, f.fromLng);
     const toPt = effPoint(to, f.toLat, f.toLng);
-    const route = buildCourseRoute(from.name, fromPt, to.name, toPt);
-    return { ...route, price: quickEstimate(route.distanceKm, vehicleType, f.cargoType) };
-  }, [f.fromCity, f.toCity, f.fromLat, f.fromLng, f.toLat, f.toLng, vehicleType, f.cargoType]);
+    return buildCourseRoute(from.name, fromPt, to.name, toPt);
+  }, [f.fromCity, f.toCity, f.fromLat, f.fromLng, f.toLat, f.toLng]);
+
+  // Affinage par routage routier réel (OSRM) — suit exactement les routes.
+  const [roadKm, setRoadKm] = useState<number | null>(null);
+  const [routing, setRouting] = useState(false);
+  useEffect(() => {
+    const from = cityByName(f.fromCity);
+    const to = cityByName(f.toCity);
+    if (!from || !to || from.name === to.name) { setRoadKm(null); return; }
+    const fromPt = effPoint(from, f.fromLat, f.fromLng);
+    const toPt = effPoint(to, f.toLat, f.toLng);
+    setRoadKm(null);
+    setRouting(true);
+    let cancelled = false;
+    const h = setTimeout(async () => {
+      const r = await fetchRoadRoute(fromPt, toPt);
+      if (!cancelled) { setRoadKm(r ? r.distanceKm : null); setRouting(false); }
+    }, 500);
+    return () => { cancelled = true; clearTimeout(h); };
+  }, [f.fromCity, f.toCity, f.fromLat, f.fromLng, f.toLat, f.toLng]);
+
+  const distanceKm = roadKm ?? base?.distanceKm ?? 0;
+  const price = base ? quickEstimate(distanceKm, vehicleType, f.cargoType) : 0;
 
   // Tant que le gérant n'a pas modifié le prix, il suit l'estimation automatique.
   useEffect(() => {
-    if (!priceTouched && preview) setPriceInput(String(preview.price));
-  }, [preview?.price, priceTouched]);
+    if (!priceTouched && base) setPriceInput(String(price));
+  }, [price, priceTouched, base]);
 
   async function submit() {
     setError('');
@@ -132,24 +155,27 @@ export default function NewCourse() {
           )}
         </Card>
 
-        {preview && (
+        {base && (
           <Card style={[styles.card, { borderColor: colors.brand100 }]}>
             <Text style={[styles.h, { color: colors.brand700 }]}>Tarif de la course</Text>
-            <View style={[styles.estRow, { marginBottom: 12 }]}>
-              <Est label="Distance" value={km(preview.distanceKm)} />
-              <Est label="Estimation auto" value={money(preview.price)} />
+            <View style={[styles.estRow, { marginBottom: 6 }]}>
+              <Est label="Distance" value={km(distanceKm)} />
+              <Est label="Estimation auto" value={money(price)} />
             </View>
+            <Text style={styles.routeNote}>
+              {routing ? '🛣️ Calcul de l’itinéraire routier…' : roadKm != null ? '🛣️ Distance routière réelle (suit les routes)' : '🛣️ Distance selon axes RN (itinéraire précisé à la création)'}
+            </Text>
             <Field label="Prix facturé (Ar) — modifiable">
               <Input
                 value={priceInput}
                 onChangeText={(v) => { setPriceTouched(true); setPriceInput(v); }}
                 keyboardType="numeric"
-                placeholder={String(preview.price)}
+                placeholder={String(price)}
               />
             </Field>
             {priceTouched && (
-              <Pressable onPress={() => { setPriceTouched(false); setPriceInput(String(preview.price)); }}>
-                <Text style={styles.resetPrice}>↺ Revenir à l’estimation automatique ({money(preview.price)})</Text>
+              <Pressable onPress={() => { setPriceTouched(false); setPriceInput(String(price)); }}>
+                <Text style={styles.resetPrice}>↺ Revenir à l’estimation automatique ({money(price)})</Text>
               </Pressable>
             )}
           </Card>
@@ -200,6 +226,7 @@ const styles = StyleSheet.create({
   estRow: { flexDirection: 'row', gap: 8 },
   estLabel: { fontSize: 11, color: colors.inkMuted },
   estValue: { fontSize: 16, fontWeight: '800', color: colors.ink, marginTop: 2 },
+  routeNote: { color: colors.inkMuted, fontSize: 11.5, marginBottom: 12 },
   resetPrice: { color: colors.brand600, fontSize: 12, fontWeight: '600', marginTop: 2 },
   error: { color: colors.red },
 });
