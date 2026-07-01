@@ -1,6 +1,6 @@
 {
-  "version": "1.0.6",
-  "versionCode": 7,
+  "version": "1.0.7",
+  "versionCode": 8,
   "apkUrl": "https://github.com/kevinventy/OneWAY/releases/latest/download/app-release.apk",
-  "notes": "Accueil client repensé : en-tête de marque, livraison en cours mise en avant, devis en vedette, services colorés et bloc d'aide."
+  "notes": "Accueils gérant et chauffeur relookés (en-tête de marque, KPIs, mission en cours mise en avant) pour une expérience cohérente."
 }

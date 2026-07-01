@@ -1,17 +1,17 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, type ReactNode } from 'react';
 import { View, Text, ScrollView, StyleSheet, Pressable, Linking } from 'react-native';
 import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useAuth } from '@/store/auth';
 import { AppHeader, CourseCard } from '@/components/app';
-import { Button, Card, EmptyState, SectionTitle, Stat, Badge, Input } from '@/components/ui';
+import { Button, Card, EmptyState, SectionTitle, Badge, Input } from '@/components/ui';
 import {
   subscribeOwnerCourses, subscribeDriverCourses, subscribeClientCourses,
   subscribeNotifications, subscribeQuoteRequests,
 } from '@/firebase/db';
 import { getFavorites } from '@/lib/favorites';
-import { moneyCompact } from '@/lib/format';
+import { money } from '@/lib/format';
 import { cargoByKey } from '@/data/catalog';
 import { SERVICES, COMPANY, telHref, whatsappHref, emailHref } from '@/data/company';
 import { useExitConfirm } from '@/lib/useExitConfirm';
@@ -66,30 +66,44 @@ function GerantHome() {
     });
   }
 
+  const hour = new Date().getHours();
+  const hello = hour < 12 ? 'Bonjour' : hour < 18 ? 'Bon après-midi' : 'Bonsoir';
+
   return (
-    <ScrollView contentContainerStyle={styles.scroll}>
-      <View style={styles.greetRow}>
-        <View style={{ flex: 1 }}>
-          <Text style={styles.greet}>Bonjour, {user!.name.split(' ')[0]} 👋</Text>
-          <Text style={styles.muted}>{user!.companyName ?? 'Tableau de bord'}</Text>
+    <ScrollView contentContainerStyle={styles.clientScroll} showsVerticalScrollIndicator={false}>
+      <Hero hello={`${hello}, ${user!.name.split(' ')[0]} 👋`} subtitle={user!.companyName ?? 'Tableau de bord'}>
+        <View style={styles.heroStats}>
+          <HeroStat value={active.length} label="Actives" />
+          <View style={styles.heroDivider} />
+          <HeroStat value={toAssign.length} label="À assigner" />
+          <View style={styles.heroDivider} />
+          <HeroStat value={delivered.length} label="Livrées" />
         </View>
+      </Hero>
+
+      {/* Chiffre d'affaires livré */}
+      <View style={styles.caCard}>
+        <View>
+          <Text style={styles.caLabel}>Chiffre d'affaires livré</Text>
+          <Text style={styles.caValue}>{money(ca)}</Text>
+        </View>
+        <View style={styles.caIcon}><Ionicons name="trending-up" size={22} color={colors.green} /></View>
       </View>
 
-      <View style={{ flexDirection: 'row', gap: 10 }}>
-        <Button title="Nouvelle course" icon="add-circle" onPress={() => router.push('/(app)/new-course')} style={{ flex: 1 }} />
-        <Button title="Flotte" icon="car-outline" variant="outline" onPress={() => router.push('/(app)/fleet')} />
-      </View>
-      <View style={{ flexDirection: 'row', gap: 10, marginTop: 10 }}>
-        <Button title="Calcul rapide" icon="calculator" variant="accent" onPress={() => router.push('/(app)/quick-price')} style={{ flex: 1 }} />
-      </View>
+      {/* CTA principal */}
+      <Pressable onPress={() => router.push('/(app)/new-course')} style={styles.ctaCard}>
+        <View style={styles.ctaIcon}><Ionicons name="add-circle" size={24} color={colors.ink} /></View>
+        <View style={{ flex: 1 }}>
+          <Text style={styles.ctaTitle}>Nouvelle course</Text>
+          <Text style={styles.ctaSub}>Créer une course & générer le code de suivi</Text>
+        </View>
+        <Ionicons name="arrow-forward-circle" size={26} color={colors.ink} />
+      </Pressable>
 
-      <View style={styles.statRow}>
-        <Stat label="Actives" value={active.length} tone="amber" />
-        <Stat label="À assigner" value={toAssign.length} tone="red" />
-        <Stat label="Livrées" value={delivered.length} tone="green" />
-      </View>
-      <View style={[styles.statRow, { marginTop: 0 }]}>
-        <Stat label="CA livré (Ar)" value={moneyCompact(ca)} tone="blue" />
+      {/* Raccourcis */}
+      <View style={{ flexDirection: 'row', gap: 12 }}>
+        <ActionTile icon="calculator" label="Calcul rapide" bg={colors.brand50} fg={colors.brand600} onPress={() => router.push('/(app)/quick-price')} />
+        <ActionTile icon="car-outline" label="Ma flotte" bg={colors.greenBg} fg={colors.green} onPress={() => router.push('/(app)/fleet')} />
       </View>
 
       {quotes.length > 0 && (
@@ -137,11 +151,33 @@ function ChauffeurHome() {
 
   const active = courses.filter((c) => !['LIVREE', 'ANNULEE'].includes(c.status));
   const done = courses.filter((c) => ['LIVREE', 'ANNULEE'].includes(c.status));
+  const activeTop = active.find((c) => c.status !== 'NOUVELLE') ?? active[0];
+
+  const hour = new Date().getHours();
+  const hello = hour < 12 ? 'Bonjour' : hour < 18 ? 'Bon après-midi' : 'Bonsoir';
 
   return (
-    <ScrollView contentContainerStyle={styles.scroll}>
-      <Text style={styles.greet}>Bonjour, {user!.name.split(' ')[0]} 🧑‍✈️</Text>
-      <Text style={styles.muted}>{active.length > 0 ? `${active.length} mission${active.length > 1 ? 's' : ''} en cours` : 'Aucune mission en cours'}</Text>
+    <ScrollView contentContainerStyle={styles.clientScroll} showsVerticalScrollIndicator={false}>
+      <Hero
+        hello={`${hello}, ${user!.name.split(' ')[0]} 🧑‍✈️`}
+        subtitle={active.length > 0 ? `${active.length} mission${active.length > 1 ? 's' : ''} en cours` : 'Aucune mission en cours'}
+      >
+        <View style={styles.heroStats}>
+          <HeroStat value={active.length} label="En cours" />
+          <View style={styles.heroDivider} />
+          <HeroStat value={done.length} label="Terminées" />
+        </View>
+      </Hero>
+
+      {activeTop && (
+        <ActiveDeliveryCard
+          course={activeTop}
+          onPress={() => router.push(`/(app)/course/${activeTop.id}`)}
+          ctaLabel="Ouvrir la mission"
+          ctaIcon="open-outline"
+        />
+      )}
+
       <SectionTitle>Mes missions</SectionTitle>
       {active.length === 0 && done.length === 0 ? (
         <EmptyState icon="map-outline" title="Pas de mission" description="Votre gérant vous affectera des courses ici." />
@@ -194,17 +230,13 @@ function ClientHome() {
   return (
     <ScrollView contentContainerStyle={styles.clientScroll} showsVerticalScrollIndicator={false}>
       {/* Héros de marque */}
-      <View style={styles.hero}>
-        <View style={styles.heroBlob1} pointerEvents="none" />
-        <View style={styles.heroBlob2} pointerEvents="none" />
-        <Text style={styles.heroHello}>{hello}, {user!.name.split(' ')[0]} 👋</Text>
-        <Text style={styles.heroTagline}>Vos marchandises, suivies en temps réel 🇲🇬</Text>
+      <Hero hello={`${hello}, ${user!.name.split(' ')[0]} 👋`} subtitle="Vos marchandises, suivies en temps réel 🇲🇬">
         <View style={styles.heroStats}>
           <HeroStat value={active.length} label="En cours" />
           <View style={styles.heroDivider} />
           <HeroStat value={done.length} label="Livrées" />
         </View>
-      </View>
+      </Hero>
 
       {/* Bandeau nouveauté */}
       {showPromo && (
@@ -297,12 +329,34 @@ function ClientHome() {
   );
 }
 
-function HeroStat({ value, label }: { value: number; label: string }) {
+/** En-tête « héros » de marque partagé (accueils client / gérant / chauffeur). */
+function Hero({ hello, subtitle, children }: { hello: string; subtitle: string; children?: ReactNode }) {
+  return (
+    <View style={styles.hero}>
+      <View style={styles.heroBlob1} pointerEvents="none" />
+      <View style={styles.heroBlob2} pointerEvents="none" />
+      <Text style={styles.heroHello}>{hello}</Text>
+      <Text style={styles.heroTagline}>{subtitle}</Text>
+      {children}
+    </View>
+  );
+}
+
+function HeroStat({ value, label }: { value: number | string; label: string }) {
   return (
     <View style={{ alignItems: 'center', flex: 1 }}>
       <Text style={styles.heroStatValue}>{value}</Text>
       <Text style={styles.heroStatLabel}>{label}</Text>
     </View>
+  );
+}
+
+function ActionTile({ icon, label, bg, fg, onPress }: { icon: any; label: string; bg: string; fg: string; onPress: () => void }) {
+  return (
+    <Pressable onPress={onPress} style={[styles.actionTile, { backgroundColor: bg }]}>
+      <Ionicons name={icon} size={22} color={fg} />
+      <Text style={[styles.actionTileLabel, { color: fg }]}>{label}</Text>
+    </Pressable>
   );
 }
 
@@ -316,7 +370,7 @@ function TrustItem({ icon, text }: { icon: any; text: string }) {
 }
 
 /** Carte « livraison en cours » : trajet + camion positionné selon l'avancement. */
-function ActiveDeliveryCard({ course, onPress }: { course: Course; onPress: () => void }) {
+function ActiveDeliveryCard({ course, onPress, ctaLabel = 'Suivre en direct', ctaIcon = 'navigate' }: { course: Course; onPress: () => void; ctaLabel?: string; ctaIcon?: any }) {
   const st = COURSE_STATUS[course.status];
   const remaining = kmRemaining(course);
   const pct = Math.max(6, Math.min(94, Math.round(course.progress * 100)));
@@ -348,8 +402,8 @@ function ActiveDeliveryCard({ course, onPress }: { course: Course; onPress: () =
           <Text style={styles.activeKmValue}>{isNew ? '—' : `${remaining} km`}</Text>
         </View>
         <View style={styles.suivreBtn}>
-          <Ionicons name="navigate" size={15} color={colors.white} />
-          <Text style={styles.suivreText}>Suivre en direct</Text>
+          <Ionicons name={ctaIcon} size={15} color={colors.white} />
+          <Text style={styles.suivreText}>{ctaLabel}</Text>
         </View>
       </View>
     </Pressable>
@@ -357,13 +411,9 @@ function ActiveDeliveryCard({ course, onPress }: { course: Course; onPress: () =
 }
 
 const styles = StyleSheet.create({
-  scroll: { padding: 16, paddingBottom: 40, gap: 4 },
   clientScroll: { padding: 16, paddingBottom: 44, gap: 12 },
-  greetRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 },
-  greet: { fontSize: 22, fontWeight: '800', color: colors.ink },
   muted: { color: colors.inkMuted, marginBottom: 8 },
   cardH: { fontWeight: '800', color: colors.ink, fontSize: 14 },
-  statRow: { flexDirection: 'row', gap: 10, marginVertical: 14 },
   quoteRow: { flexDirection: 'row', alignItems: 'center', gap: 12, padding: 14, marginBottom: 10 },
   quoteName: { fontWeight: '700', color: colors.ink },
 
@@ -404,6 +454,14 @@ const styles = StyleSheet.create({
   trustText: { fontSize: 10.5, fontWeight: '700', color: colors.inkSoft, textAlign: 'center' },
 
   helpCard: { padding: 16, marginTop: 6 },
+
+  // CA gérant + raccourcis
+  caCard: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', backgroundColor: colors.white, borderRadius: 16, borderWidth: 1, borderColor: colors.brand100, padding: 16 },
+  caLabel: { color: colors.inkMuted, fontSize: 12, fontWeight: '600' },
+  caValue: { color: colors.ink, fontSize: 24, fontWeight: '900', marginTop: 2 },
+  caIcon: { width: 44, height: 44, borderRadius: 12, backgroundColor: colors.greenBg, alignItems: 'center', justifyContent: 'center' },
+  actionTile: { flex: 1, alignItems: 'center', gap: 8, borderRadius: 16, paddingVertical: 18 },
+  actionTileLabel: { fontWeight: '800', fontSize: 13 },
 
   // Livraison en cours
   activeCard: { backgroundColor: colors.white, borderRadius: 18, borderWidth: 1, borderColor: colors.brand100, padding: 16 },
