@@ -201,7 +201,15 @@ export async function assignCourse(course: Course, driver: Driver): Promise<void
 
 // ── Avancement d'étape (gérant propriétaire ou chauffeur assigné) ──────────
 
-export async function advanceCourse(course: Course, by: string): Promise<void> {
+export interface PodInput {
+  recipient: string;
+  signature?: string; // data URL PNG
+  photoUrl?: string;
+  lat?: number;
+  lng?: number;
+}
+
+export async function advanceCourse(course: Course, by: string, pod?: PodInput): Promise<void> {
   if (course.status === 'NOUVELLE') throw new Error('Course non assignée');
   const next = nextStatus(course.status);
   if (!next) throw new Error('Course déjà livrée');
@@ -222,6 +230,13 @@ export async function advanceCourse(course: Course, by: string): Promise<void> {
   batch.update(doc(firestore, 'courses', course.id), clean({
     status: next, progress, currentLat: pos[0], currentLng: pos[1],
     deliveredAt: next === 'LIVREE' ? Date.now() : undefined,
+    // Preuve de livraison (jointe uniquement à l'étape LIVREE).
+    podRecipient: next === 'LIVREE' ? pod?.recipient : undefined,
+    podSignature: next === 'LIVREE' ? pod?.signature : undefined,
+    podPhotoUrl: next === 'LIVREE' ? pod?.photoUrl : undefined,
+    podLat: next === 'LIVREE' ? pod?.lat : undefined,
+    podLng: next === 'LIVREE' ? pod?.lng : undefined,
+    podAt: next === 'LIVREE' && pod ? Date.now() : undefined,
   }));
   const ev = doc(col('events'));
   batch.set(ev, clean({ id: ev.id, courseId: course.id, ownerId: course.ownerId, status: next, label: STATUS_LABEL[next], lat: pos[0], lng: pos[1], by, createdAt: Date.now() }));

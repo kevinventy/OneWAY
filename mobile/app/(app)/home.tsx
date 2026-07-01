@@ -103,6 +103,7 @@ function GerantHome() {
       {/* Raccourcis */}
       <View style={{ flexDirection: 'row', gap: 12 }}>
         <ActionTile icon="calculator" label="Calcul rapide" bg={colors.brand50} fg={colors.brand600} onPress={() => router.push('/(app)/quick-price')} />
+        <ActionTile icon="stats-chart" label="Tableau de bord" bg="#FDECD8" fg={colors.amber600} onPress={() => router.push('/(app)/dashboard')} />
         <ActionTile icon="car-outline" label="Ma flotte" bg={colors.greenBg} fg={colors.green} onPress={() => router.push('/(app)/fleet')} />
       </View>
 

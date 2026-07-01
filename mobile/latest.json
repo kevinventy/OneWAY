@@ -1,6 +1,6 @@
 {
-  "version": "1.0.10",
-  "versionCode": 11,
+  "version": "1.1.0",
+  "versionCode": 12,
   "apkUrl": "https://github.com/kevinventy/OneWAY/releases/latest/download/app-release.apk",
-  "notes": "Itinéraire et distance calés exactement sur les routes (routage en ligne OSRM), avec repli sur les axes RN hors-ligne."
+  "notes": "Preuve de livraison (photo + signature), facture/reçu PDF partageable, navigation GPS chauffeur et tableau de bord gérant."
 }

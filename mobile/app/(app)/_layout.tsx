@@ -31,6 +31,7 @@ export default function AppLayout() {
       <Stack.Screen name="new-course" options={{ title: 'Nouvelle course' }} />
       <Stack.Screen name="new-quote" options={{ title: 'Demander un devis' }} />
       <Stack.Screen name="quick-price" options={{ title: 'Calcul rapide' }} />
+      <Stack.Screen name="dashboard" options={{ title: 'Tableau de bord' }} />
       <Stack.Screen name="course/[id]" options={{ title: 'Course' }} />
       <Stack.Screen name="fleet" options={{ title: 'Ma flotte' }} />
       <Stack.Screen name="notifications" options={{ title: 'Notifications' }} />
