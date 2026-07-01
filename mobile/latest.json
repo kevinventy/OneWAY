@@ -1,6 +1,6 @@
 {
-  "version": "1.0.5",
-  "versionCode": 6,
+  "version": "1.0.6",
+  "versionCode": 7,
   "apkUrl": "https://github.com/kevinventy/OneWAY/releases/latest/download/app-release.apk",
-  "notes": "Suivi GPS du chauffeur en arrière-plan (continue même téléphone verrouillé) via un service de premier plan."
+  "notes": "Accueil client repensé : en-tête de marque, livraison en cours mise en avant, devis en vedette, services colorés et bloc d'aide."
 }

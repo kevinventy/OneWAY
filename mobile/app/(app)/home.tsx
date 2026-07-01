@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { View, Text, ScrollView, StyleSheet, Pressable, Linking } from 'react-native';
 import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useAuth } from '@/store/auth';
 import { AppHeader, CourseCard } from '@/components/app';
 import { Button, Card, EmptyState, SectionTitle, Stat, Badge, Input } from '@/components/ui';
@@ -14,8 +15,9 @@ import { moneyCompact } from '@/lib/format';
 import { cargoByKey } from '@/data/catalog';
 import { SERVICES, COMPANY, telHref, whatsappHref, emailHref } from '@/data/company';
 import { useExitConfirm } from '@/lib/useExitConfirm';
+import { COURSE_STATUS } from '@/lib/labels';
 import { colors } from '@/theme';
-import type { Course, QuoteRequest } from '@/lib/types';
+import { kmRemaining, type Course, type QuoteRequest } from '@/lib/types';
 
 export default function Home() {
   const { user } = useAuth();
@@ -154,12 +156,22 @@ function ChauffeurHome() {
   );
 }
 
+const PROMO_KEY = 'oneway.promo.gps.v1';
+
+/** Palette d'accent par service (cube / rocket / navigate). */
+const SERVICE_ACCENTS = [
+  { bg: colors.brand50, fg: colors.brand600 },
+  { bg: '#FDECD8', fg: colors.amber600 },
+  { bg: colors.greenBg, fg: colors.green },
+];
+
 function ClientHome() {
   const { user } = useAuth();
   const router = useRouter();
   const [courses, setCourses] = useState<Course[]>([]);
   const [favorites, setFavorites] = useState<string[]>([]);
   const [code, setCode] = useState('');
+  const [showPromo, setShowPromo] = useState(false);
 
   useEffect(() => {
     if (!user?.phone) return;
@@ -167,49 +179,102 @@ function ClientHome() {
   }, [user?.phone]);
 
   useEffect(() => { getFavorites().then(setFavorites); }, []);
+  useEffect(() => { AsyncStorage.getItem(PROMO_KEY).then((v) => setShowPromo(v !== '1')); }, []);
+
+  const dismissPromo = () => { setShowPromo(false); AsyncStorage.setItem(PROMO_KEY, '1').catch(() => {}); };
 
   const active = courses.filter((c) => !['LIVREE', 'ANNULEE'].includes(c.status));
   const done = courses.filter((c) => ['LIVREE', 'ANNULEE'].includes(c.status));
+  const activeTop = active.find((c) => c.status !== 'NOUVELLE') ?? active[0];
   const track = (c: string) => router.push(`/track?code=${encodeURIComponent(c)}`);
 
+  const hour = new Date().getHours();
+  const hello = hour < 12 ? 'Bonjour' : hour < 18 ? 'Bon après-midi' : 'Bonsoir';
+
   return (
-    <ScrollView contentContainerStyle={styles.scroll}>
-      <Text style={styles.greet}>Bonjour, {user!.name.split(' ')[0]} 👋</Text>
-      <Text style={styles.muted}>Vos livraisons, vos devis et nos services</Text>
-
-      {/* Suivi par code */}
-      <Card style={{ padding: 14, marginTop: 8 }}>
-        <Text style={styles.cardH}>📦 Suivre par code</Text>
-        <View style={{ flexDirection: 'row', gap: 8, marginTop: 8 }}>
-          <Input value={code} onChangeText={(t) => setCode(t.toUpperCase())} autoCapitalize="characters" placeholder="Code de suivi" style={{ flex: 1 }} />
-          <Button title="" icon="search" onPress={() => code.trim() && track(code.trim())} style={{ paddingHorizontal: 18 }} />
+    <ScrollView contentContainerStyle={styles.clientScroll} showsVerticalScrollIndicator={false}>
+      {/* Héros de marque */}
+      <View style={styles.hero}>
+        <View style={styles.heroBlob1} pointerEvents="none" />
+        <View style={styles.heroBlob2} pointerEvents="none" />
+        <Text style={styles.heroHello}>{hello}, {user!.name.split(' ')[0]} 👋</Text>
+        <Text style={styles.heroTagline}>Vos marchandises, suivies en temps réel 🇲🇬</Text>
+        <View style={styles.heroStats}>
+          <HeroStat value={active.length} label="En cours" />
+          <View style={styles.heroDivider} />
+          <HeroStat value={done.length} label="Livrées" />
         </View>
-      </Card>
-
-      <Button title="Demander un devis" icon="document-text" variant="accent" onPress={() => router.push('/(app)/new-quote')} style={{ marginTop: 12 }} />
-
-      {/* Nos services */}
-      <SectionTitle>Nos services</SectionTitle>
-      {SERVICES.map((s) => (
-        <Card key={s.title} style={styles.serviceRow}>
-          <View style={styles.serviceIcon}><Ionicons name={s.icon as any} size={20} color={colors.brand600} /></View>
-          <View style={{ flex: 1 }}>
-            <Text style={styles.serviceTitle}>{s.title}</Text>
-            <Text style={styles.muted}>{s.desc}</Text>
-          </View>
-        </Card>
-      ))}
-      <View style={{ flexDirection: 'row', gap: 8, marginTop: 4 }}>
-        <Button title="WhatsApp" icon="logo-whatsapp" onPress={() => Linking.openURL(whatsappHref(COMPANY.whatsapp, 'Bonjour ONE WAY, je souhaite un renseignement.'))} style={{ flex: 1, backgroundColor: colors.green }} />
-        <Button title="Email" icon="mail" variant="outline" onPress={() => Linking.openURL(emailHref(COMPANY.email, 'Demande de renseignement — ONE WAY'))} />
-        <Button title="" icon="call" variant="outline" onPress={() => Linking.openURL(telHref(COMPANY.phoneIntl))} />
       </View>
 
+      {/* Bandeau nouveauté */}
+      {showPromo && (
+        <View style={styles.promo}>
+          <Ionicons name="navigate-circle" size={20} color={colors.brand700} />
+          <Text style={styles.promoText}>Nouveau : suivez votre camion en direct par GPS 🚚</Text>
+          <Pressable onPress={dismissPromo} hitSlop={8}><Ionicons name="close" size={18} color={colors.inkMuted} /></Pressable>
+        </View>
+      )}
+
+      {/* Livraison en cours — mise en avant */}
+      {activeTop && <ActiveDeliveryCard course={activeTop} onPress={() => track(activeTop.code)} />}
+
+      {/* CTA devis en vedette */}
+      <Pressable onPress={() => router.push('/(app)/new-quote')} style={styles.ctaCard}>
+        <View style={styles.ctaIcon}><Ionicons name="document-text" size={24} color={colors.ink} /></View>
+        <View style={{ flex: 1 }}>
+          <Text style={styles.ctaTitle}>Demander un devis</Text>
+          <Text style={styles.ctaSub}>Réponse rapide · gratuit · en 30 secondes</Text>
+        </View>
+        <Ionicons name="arrow-forward-circle" size={26} color={colors.ink} />
+      </Pressable>
+
+      {/* Suivre par code */}
+      <Card style={{ padding: 14 }}>
+        <Text style={styles.cardH}>📦 Suivre par code</Text>
+        <View style={{ flexDirection: 'row', gap: 8, marginTop: 8 }}>
+          <Input value={code} onChangeText={(t) => setCode(t.toUpperCase())} autoCapitalize="characters" placeholder="Code de suivi (ex. OWTOA01)" style={{ flex: 1 }} />
+          <Button title="" icon="search" onPress={() => code.trim() && track(code.trim())} style={{ paddingHorizontal: 18 }} />
+        </View>
+        {favorites.length > 0 && (
+          <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 8, paddingTop: 10 }}>
+            {favorites.map((c) => (
+              <Pressable key={c} onPress={() => track(c)} style={styles.favChip}>
+                <Ionicons name="bookmark" size={13} color={colors.brand600} />
+                <Text style={styles.favChipText}>{c}</Text>
+              </Pressable>
+            ))}
+          </ScrollView>
+        )}
+      </Card>
+
+      {/* Nos services — tuiles colorées */}
+      <SectionTitle>Nos services</SectionTitle>
+      <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 12, paddingVertical: 2, paddingRight: 8 }}>
+        {SERVICES.map((s, i) => {
+          const accent = SERVICE_ACCENTS[i % SERVICE_ACCENTS.length];
+          return (
+            <View key={s.title} style={styles.serviceTile}>
+              <View style={[styles.serviceTileIcon, { backgroundColor: accent.bg }]}><Ionicons name={s.icon as any} size={22} color={accent.fg} /></View>
+              <Text style={styles.serviceTileTitle}>{s.title}</Text>
+              <Text style={styles.serviceTileDesc} numberOfLines={3}>{s.desc}</Text>
+            </View>
+          );
+        })}
+      </ScrollView>
+
+      {/* Bande de confiance */}
+      <View style={styles.trust}>
+        <TrustItem icon="navigate" text="Suivi GPS temps réel" />
+        <TrustItem icon="cash-outline" text="Paiement à la livraison" />
+        <TrustItem icon="map-outline" text="Toute l'île 🇲🇬" />
+      </View>
+
+      {/* Mes livraisons */}
       <SectionTitle>Mes livraisons</SectionTitle>
       {!user!.phone ? (
-        <EmptyState icon="call-outline" title="Ajoutez votre téléphone" description="Vos livraisons sont reliées à votre numéro." />
+        <EmptyState icon="call-outline" title="Ajoutez votre téléphone" description="Vos livraisons sont reliées à votre numéro (Mon compte)." />
       ) : active.length === 0 && done.length === 0 ? (
-        <EmptyState icon="cube-outline" title="Aucune livraison" description="Les courses créées à votre nom apparaîtront ici." />
+        <EmptyState icon="cube-outline" title="Aucune livraison pour l'instant" description="Demandez un devis : vos courses apparaîtront ici avec leur suivi." />
       ) : (
         <>
           {active.map((c) => <CourseCard key={c.id} course={c} onPress={() => track(c.code)} />)}
@@ -218,26 +283,82 @@ function ClientHome() {
         </>
       )}
 
-      {favorites.length > 0 && (
-        <>
-          <SectionTitle>Mes suivis enregistrés</SectionTitle>
-          {favorites.map((c) => (
-            <Pressable key={c} onPress={() => track(c)}>
-              <Card style={styles.favRow}>
-                <Ionicons name="bookmark" size={18} color={colors.brand600} />
-                <Text style={styles.favCode}>{c}</Text>
-                <Ionicons name="chevron-forward" size={18} color={colors.inkMuted} />
-              </Card>
-            </Pressable>
-          ))}
-        </>
-      )}
+      {/* Besoin d'aide */}
+      <Card style={styles.helpCard}>
+        <Text style={styles.cardH}>Besoin d'aide ?</Text>
+        <Text style={styles.muted}>Notre équipe vous répond rapidement.</Text>
+        <Button title="Discuter sur WhatsApp" icon="logo-whatsapp" onPress={() => Linking.openURL(whatsappHref(COMPANY.whatsapp, 'Bonjour ONE WAY, je souhaite un renseignement.'))} style={{ marginTop: 12, backgroundColor: colors.green }} />
+        <View style={{ flexDirection: 'row', gap: 8, marginTop: 8 }}>
+          <Button title="Appeler" icon="call" variant="outline" onPress={() => Linking.openURL(telHref(COMPANY.phoneIntl))} style={{ flex: 1 }} />
+          <Button title="Email" icon="mail" variant="outline" onPress={() => Linking.openURL(emailHref(COMPANY.email, 'Demande de renseignement — ONE WAY'))} style={{ flex: 1 }} />
+        </View>
+      </Card>
     </ScrollView>
+  );
+}
+
+function HeroStat({ value, label }: { value: number; label: string }) {
+  return (
+    <View style={{ alignItems: 'center', flex: 1 }}>
+      <Text style={styles.heroStatValue}>{value}</Text>
+      <Text style={styles.heroStatLabel}>{label}</Text>
+    </View>
+  );
+}
+
+function TrustItem({ icon, text }: { icon: any; text: string }) {
+  return (
+    <View style={styles.trustItem}>
+      <Ionicons name={icon} size={16} color={colors.brand600} />
+      <Text style={styles.trustText} numberOfLines={2}>{text}</Text>
+    </View>
+  );
+}
+
+/** Carte « livraison en cours » : trajet + camion positionné selon l'avancement. */
+function ActiveDeliveryCard({ course, onPress }: { course: Course; onPress: () => void }) {
+  const st = COURSE_STATUS[course.status];
+  const remaining = kmRemaining(course);
+  const pct = Math.max(6, Math.min(94, Math.round(course.progress * 100)));
+  const isNew = course.status === 'NOUVELLE';
+  return (
+    <Pressable onPress={onPress} style={styles.activeCard}>
+      <View style={styles.activeTop}>
+        <Text style={styles.activeRef}>{course.reference}</Text>
+        <Badge tone={st.tone}>{st.label}</Badge>
+      </View>
+      <Text style={styles.activeRoute}>{course.pickup.city} → {course.delivery.city}</Text>
+
+      {/* Rail de progression avec camion */}
+      <View style={styles.railWrap}>
+        <View style={styles.rail} />
+        <View style={[styles.railFill, { width: `${pct}%` }]} />
+        <View style={[styles.railDot, styles.railStart]} />
+        <View style={[styles.railDot, styles.railEnd]} />
+        {!isNew && (
+          <View style={[styles.truck, { left: `${pct}%` }]}>
+            <Ionicons name="car" size={14} color={colors.white} />
+          </View>
+        )}
+      </View>
+
+      <View style={styles.activeBottom}>
+        <View>
+          <Text style={styles.activeKmLabel}>{isNew ? 'En préparation' : 'Km restants'}</Text>
+          <Text style={styles.activeKmValue}>{isNew ? '—' : `${remaining} km`}</Text>
+        </View>
+        <View style={styles.suivreBtn}>
+          <Ionicons name="navigate" size={15} color={colors.white} />
+          <Text style={styles.suivreText}>Suivre en direct</Text>
+        </View>
+      </View>
+    </Pressable>
   );
 }
 
 const styles = StyleSheet.create({
   scroll: { padding: 16, paddingBottom: 40, gap: 4 },
+  clientScroll: { padding: 16, paddingBottom: 44, gap: 12 },
   greetRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 },
   greet: { fontSize: 22, fontWeight: '800', color: colors.ink },
   muted: { color: colors.inkMuted, marginBottom: 8 },
@@ -245,9 +366,60 @@ const styles = StyleSheet.create({
   statRow: { flexDirection: 'row', gap: 10, marginVertical: 14 },
   quoteRow: { flexDirection: 'row', alignItems: 'center', gap: 12, padding: 14, marginBottom: 10 },
   quoteName: { fontWeight: '700', color: colors.ink },
-  favRow: { flexDirection: 'row', alignItems: 'center', gap: 10, padding: 14, marginBottom: 8 },
-  favCode: { flex: 1, fontWeight: '800', color: colors.ink, letterSpacing: 1 },
-  serviceRow: { flexDirection: 'row', gap: 12, padding: 14, marginBottom: 10, alignItems: 'center' },
-  serviceIcon: { width: 42, height: 42, borderRadius: 12, backgroundColor: colors.brand50, alignItems: 'center', justifyContent: 'center' },
-  serviceTitle: { fontWeight: '800', color: colors.ink, fontSize: 14 },
+
+  // Héros
+  hero: { backgroundColor: colors.brand950, borderRadius: 20, padding: 20, paddingTop: 22, overflow: 'hidden', position: 'relative' },
+  heroBlob1: { position: 'absolute', width: 170, height: 170, borderRadius: 85, backgroundColor: 'rgba(240,125,26,0.18)', top: -55, right: -35 },
+  heroBlob2: { position: 'absolute', width: 140, height: 140, borderRadius: 70, backgroundColor: 'rgba(63,92,192,0.35)', bottom: -55, left: -25 },
+  heroHello: { color: colors.white, fontSize: 22, fontWeight: '900' },
+  heroTagline: { color: colors.brand100, fontSize: 13, marginTop: 4, fontWeight: '600' },
+  heroStats: { flexDirection: 'row', marginTop: 16, backgroundColor: 'rgba(255,255,255,0.08)', borderRadius: 14, paddingVertical: 10, alignItems: 'center' },
+  heroDivider: { width: 1, alignSelf: 'stretch', backgroundColor: 'rgba(255,255,255,0.15)' },
+  heroStatValue: { color: colors.white, fontSize: 22, fontWeight: '900' },
+  heroStatLabel: { color: colors.brand100, fontSize: 11, fontWeight: '600', marginTop: 1 },
+
+  // Promo
+  promo: { flexDirection: 'row', alignItems: 'center', gap: 8, backgroundColor: colors.brand50, borderRadius: 12, padding: 12, borderWidth: 1, borderColor: colors.brand100 },
+  promoText: { flex: 1, color: colors.brand700, fontSize: 13, fontWeight: '700' },
+
+  // CTA devis
+  ctaCard: { flexDirection: 'row', alignItems: 'center', gap: 12, backgroundColor: colors.amber500, borderRadius: 16, padding: 16 },
+  ctaIcon: { width: 44, height: 44, borderRadius: 12, backgroundColor: 'rgba(255,255,255,0.35)', alignItems: 'center', justifyContent: 'center' },
+  ctaTitle: { color: colors.ink, fontWeight: '900', fontSize: 16 },
+  ctaSub: { color: colors.ink, opacity: 0.75, fontSize: 12, marginTop: 2, fontWeight: '600' },
+
+  // Favoris (puces)
+  favChip: { flexDirection: 'row', alignItems: 'center', gap: 5, backgroundColor: colors.brand50, borderRadius: 999, paddingHorizontal: 10, paddingVertical: 6 },
+  favChipText: { color: colors.brand700, fontWeight: '800', fontSize: 12, letterSpacing: 0.5 },
+
+  // Services (tuiles)
+  serviceTile: { width: 156, backgroundColor: colors.card, borderRadius: 16, borderWidth: 1, borderColor: colors.border, padding: 14, gap: 6 },
+  serviceTileIcon: { width: 42, height: 42, borderRadius: 12, alignItems: 'center', justifyContent: 'center' },
+  serviceTileTitle: { fontWeight: '800', color: colors.ink, fontSize: 13 },
+  serviceTileDesc: { color: colors.inkMuted, fontSize: 11, lineHeight: 15 },
+
+  // Confiance
+  trust: { flexDirection: 'row', gap: 8 },
+  trustItem: { flex: 1, alignItems: 'center', gap: 4, backgroundColor: colors.white, borderRadius: 12, borderWidth: 1, borderColor: colors.border, paddingVertical: 12, paddingHorizontal: 6 },
+  trustText: { fontSize: 10.5, fontWeight: '700', color: colors.inkSoft, textAlign: 'center' },
+
+  helpCard: { padding: 16, marginTop: 6 },
+
+  // Livraison en cours
+  activeCard: { backgroundColor: colors.white, borderRadius: 18, borderWidth: 1, borderColor: colors.brand100, padding: 16 },
+  activeTop: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
+  activeRef: { fontWeight: '900', color: colors.brand700, fontSize: 14 },
+  activeRoute: { fontWeight: '700', color: colors.ink, fontSize: 15, marginTop: 6 },
+  railWrap: { height: 26, marginTop: 16, marginBottom: 2, justifyContent: 'center', position: 'relative' },
+  rail: { position: 'absolute', left: 0, right: 0, height: 6, borderRadius: 3, backgroundColor: colors.slateBg },
+  railFill: { position: 'absolute', left: 0, height: 6, borderRadius: 3, backgroundColor: colors.amber500 },
+  railDot: { position: 'absolute', width: 12, height: 12, borderRadius: 6, borderWidth: 2, borderColor: colors.white, top: 7 },
+  railStart: { left: 0, backgroundColor: colors.green },
+  railEnd: { right: 0, backgroundColor: colors.red },
+  truck: { position: 'absolute', width: 26, height: 26, borderRadius: 13, backgroundColor: colors.brand600, borderWidth: 2, borderColor: colors.white, alignItems: 'center', justifyContent: 'center', top: 0, marginLeft: -13 },
+  activeBottom: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-end', marginTop: 10 },
+  activeKmLabel: { color: colors.inkMuted, fontSize: 11, fontWeight: '600' },
+  activeKmValue: { color: colors.ink, fontSize: 24, fontWeight: '900' },
+  suivreBtn: { flexDirection: 'row', alignItems: 'center', gap: 6, backgroundColor: colors.brand600, borderRadius: 12, paddingHorizontal: 14, paddingVertical: 10 },
+  suivreText: { color: colors.white, fontWeight: '800', fontSize: 13 },
 });
