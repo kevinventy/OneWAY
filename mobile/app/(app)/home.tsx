@@ -280,20 +280,20 @@ function ClientHome() {
         )}
       </Card>
 
-      {/* Nos services — tuiles colorées */}
+      {/* Nos services — liste verticale avec icônes */}
       <SectionTitle>Nos services</SectionTitle>
-      <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 12, paddingVertical: 2, paddingRight: 8 }}>
-        {SERVICES.map((s, i) => {
-          const accent = SERVICE_ACCENTS[i % SERVICE_ACCENTS.length];
-          return (
-            <View key={s.title} style={styles.serviceTile}>
-              <View style={[styles.serviceTileIcon, { backgroundColor: accent.bg }]}><Ionicons name={s.icon as any} size={22} color={accent.fg} /></View>
-              <Text style={styles.serviceTileTitle}>{s.title}</Text>
-              <Text style={styles.serviceTileDesc} numberOfLines={3}>{s.desc}</Text>
+      {SERVICES.map((s, i) => {
+        const accent = SERVICE_ACCENTS[i % SERVICE_ACCENTS.length];
+        return (
+          <Card key={s.title} style={styles.serviceRow}>
+            <View style={[styles.serviceRowIcon, { backgroundColor: accent.bg }]}><Ionicons name={s.icon as any} size={24} color={accent.fg} /></View>
+            <View style={{ flex: 1 }}>
+              <Text style={styles.serviceRowTitle}>{s.title}</Text>
+              <Text style={styles.serviceRowDesc}>{s.desc}</Text>
             </View>
-          );
-        })}
-      </ScrollView>
+          </Card>
+        );
+      })}
 
       {/* Bande de confiance */}
       <View style={styles.trust}>
@@ -444,10 +444,10 @@ const styles = StyleSheet.create({
   favChipText: { color: colors.brand700, fontWeight: '800', fontSize: 12, letterSpacing: 0.5 },
 
   // Services (tuiles)
-  serviceTile: { width: 156, backgroundColor: colors.card, borderRadius: 16, borderWidth: 1, borderColor: colors.border, padding: 14, gap: 6 },
-  serviceTileIcon: { width: 42, height: 42, borderRadius: 12, alignItems: 'center', justifyContent: 'center' },
-  serviceTileTitle: { fontWeight: '800', color: colors.ink, fontSize: 13 },
-  serviceTileDesc: { color: colors.inkMuted, fontSize: 11, lineHeight: 15 },
+  serviceRow: { flexDirection: 'row', alignItems: 'center', gap: 14, padding: 14 },
+  serviceRowIcon: { width: 48, height: 48, borderRadius: 14, alignItems: 'center', justifyContent: 'center' },
+  serviceRowTitle: { fontWeight: '800', color: colors.ink, fontSize: 15 },
+  serviceRowDesc: { color: colors.inkMuted, fontSize: 12.5, lineHeight: 17, marginTop: 2 },
 
   // Confiance
   trust: { flexDirection: 'row', gap: 8 },

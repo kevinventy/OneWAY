@@ -1,6 +1,6 @@
 {
-  "version": "1.2.0",
-  "versionCode": 13,
+  "version": "1.2.1",
+  "versionCode": 14,
   "apkUrl": "https://github.com/kevinventy/OneWAY/releases/latest/download/app-release.apk",
-  "notes": "Notifications système en temps réel (nouvelle mission, changement de statut, devis) lorsque l'app est ouverte ou en arrière-plan."
+  "notes": "Section « Nos services » en liste verticale avec icônes, et retrait de la preuve de livraison."
 }

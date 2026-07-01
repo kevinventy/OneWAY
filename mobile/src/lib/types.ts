@@ -89,13 +89,6 @@ export interface Course {
   assignedAt?: number;
   deliveredAt?: number;
   cancelledAt?: number;
-  /** Preuve de livraison (POD). */
-  podRecipient?: string;
-  podSignature?: string; // data URL base64 (PNG) de la signature
-  podPhotoUrl?: string; // photo (Firebase Storage)
-  podLat?: number;
-  podLng?: number;
-  podAt?: number;
 }
 
 export interface TrackingEvent {

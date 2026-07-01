@@ -1,11 +1,10 @@
 import { useEffect, useState } from 'react';
-import { View, Text, ScrollView, StyleSheet, Pressable, Linking, Share, Alert, Modal, TextInput, Image } from 'react-native';
+import { View, Text, ScrollView, StyleSheet, Pressable, Linking, Share, Alert, Modal, TextInput } from 'react-native';
 import { useLocalSearchParams } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { useAuth } from '@/store/auth';
 import { Card, Button, Badge } from '@/components/ui';
 import { OsmMap } from '@/components/OsmMap';
-import { PodModal } from '@/components/PodModal';
 import { Stepper } from '@/components/app';
 import {
   subscribeCourse, subscribeEvents, subscribeOwnerDrivers,
@@ -30,7 +29,6 @@ export default function CourseScreen() {
   const [busy, setBusy] = useState(false);
   const [priceModal, setPriceModal] = useState(false);
   const [priceInput, setPriceInput] = useState('');
-  const [podOpen, setPodOpen] = useState(false);
 
   useEffect(() => {
     if (!id) return;
@@ -65,8 +63,6 @@ export default function CourseScreen() {
   const next = nextStatus(course.status);
 
   async function advance() {
-    // La confirmation de livraison passe par la preuve de livraison (POD).
-    if (nextStatus(course!.status) === 'LIVREE') { setPodOpen(true); return; }
     setBusy(true);
     try { await advanceCourse(course!, user!.id); } catch (e: any) { Alert.alert('Erreur', e?.message ?? 'Action impossible'); } finally { setBusy(false); }
   }
@@ -168,20 +164,6 @@ export default function CourseScreen() {
         <Card style={styles.doneCard}><Ionicons name="checkmark-circle" size={20} color={colors.green} /><Text style={styles.doneText}>Livraison confirmée</Text></Card>
       )}
 
-      {/* Preuve de livraison */}
-      {course.status === 'LIVREE' && (course.podRecipient || course.podSignature || course.podPhotoUrl) && (
-        <Card style={{ padding: 14 }}>
-          <Text style={styles.h}>Preuve de livraison</Text>
-          {course.podRecipient ? (
-            <Text style={styles.muted}>Reçu par <Text style={{ fontWeight: '700', color: colors.ink }}>{course.podRecipient}</Text>{course.podAt ? ` · ${dateTimeFr(course.podAt)}` : ''}</Text>
-          ) : null}
-          {course.podPhotoUrl ? <Image source={{ uri: course.podPhotoUrl }} style={styles.podPhoto} /> : null}
-          {course.podSignature ? (
-            <View style={styles.podSigWrap}><Image source={{ uri: course.podSignature }} style={styles.podSig} resizeMode="contain" /></View>
-          ) : null}
-        </Card>
-      )}
-
       {/* Document PDF (gérant) */}
       {isOwner && course.status !== 'ANNULEE' && (
         <Button title={course.status === 'LIVREE' ? 'Reçu PDF — partager' : 'Facture PDF — partager'} icon="document-text-outline" variant="outline" onPress={shareDoc} />
@@ -248,9 +230,6 @@ export default function CourseScreen() {
         <Button title="Annuler la course" icon="ban-outline" variant="outline" onPress={confirmCancel} style={{ borderColor: colors.red }} />
       )}
 
-      {/* Preuve de livraison (chauffeur/gérant) */}
-      <PodModal visible={podOpen} course={course} by={user.id} onClose={() => setPodOpen(false)} onDone={() => setPodOpen(false)} />
-
       {/* Modifier le prix (gérant) */}
       <Modal visible={priceModal} transparent animationType="fade" onRequestClose={() => setPriceModal(false)}>
         <Pressable style={styles.modalBackdrop} onPress={() => setPriceModal(false)}>
@@ -315,9 +294,6 @@ const styles = StyleSheet.create({
   detailMain: { fontSize: 14, fontWeight: '700', color: colors.ink, marginTop: 1 },
   priceRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingTop: 12 },
   price: { fontSize: 18, fontWeight: '900', color: colors.ink },
-  podPhoto: { width: '100%', height: 180, borderRadius: 10, marginTop: 10, backgroundColor: colors.slateBg },
-  podSigWrap: { marginTop: 10, borderWidth: 1, borderColor: colors.border, borderRadius: 10, backgroundColor: '#fff', padding: 6 },
-  podSig: { width: '100%', height: 90 },
   gpsHint: { flexDirection: 'row', alignItems: 'center', gap: 6, backgroundColor: colors.greenBg, borderRadius: 10, paddingHorizontal: 12, paddingVertical: 8, marginTop: -4 },
   gpsHintText: { color: colors.green, fontSize: 12, fontWeight: '700', flexShrink: 1 },
   modalBackdrop: { flex: 1, backgroundColor: 'rgba(0,0,0,0.45)', alignItems: 'center', justifyContent: 'center', padding: 24 },
