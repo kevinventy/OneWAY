@@ -28,8 +28,17 @@ export default function Fleet() {
     return <View style={styles.center}><Text style={styles.muted}>Réservé au gérant.</Text></View>;
   }
 
+  const freeCount = vehicles.filter((v) => v.available).length;
+
   return (
     <ScrollView contentContainerStyle={styles.scroll}>
+      {/* Résumé flotte */}
+      <View style={styles.statsRow}>
+        <StatCell value={vehicles.length} label="Véhicules" fg={colors.brand600} />
+        <StatCell value={freeCount} label="Disponibles" fg={colors.green} />
+        <StatCell value={drivers.length} label="Chauffeurs" fg={colors.amber600} />
+      </View>
+
       {/* Code entreprise */}
       <Card style={styles.codeCard}>
         <Text style={styles.codeLabel}>Code entreprise — à donner aux chauffeurs</Text>
@@ -67,6 +76,15 @@ export default function Fleet() {
         <DriverRow key={d.id} driver={d} vehicles={vehicles} />
       ))}
     </ScrollView>
+  );
+}
+
+function StatCell({ value, label, fg }: { value: number; label: string; fg: string }) {
+  return (
+    <Card style={styles.statCell}>
+      <Text style={[styles.statValue, { color: fg }]}>{value}</Text>
+      <Text style={styles.statLabel}>{label}</Text>
+    </Card>
   );
 }
 
@@ -136,6 +154,10 @@ const styles = StyleSheet.create({
   scroll: { padding: 16, paddingBottom: 40 },
   center: { flex: 1, alignItems: 'center', justifyContent: 'center' },
   muted: { color: colors.inkMuted, fontSize: 13 },
+  statsRow: { flexDirection: 'row', gap: 10, marginBottom: 12 },
+  statCell: { flex: 1, padding: 14, alignItems: 'center' },
+  statValue: { fontSize: 24, fontWeight: '900' },
+  statLabel: { fontSize: 11, color: colors.inkMuted, fontWeight: '600', marginTop: 2 },
   codeCard: { padding: 16, alignItems: 'center', borderColor: colors.brand100, marginBottom: 6 },
   codeLabel: { color: colors.inkMuted, fontSize: 12, fontWeight: '600' },
   code: { fontSize: 30, fontWeight: '900', color: colors.brand700, letterSpacing: 4, marginVertical: 6 },

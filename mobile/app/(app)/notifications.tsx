@@ -8,7 +8,8 @@ import { timeAgo } from '@/lib/format';
 import { colors } from '@/theme';
 import type { Notification } from '@/lib/types';
 
-const EMOJI: Record<string, string> = { BID: '⚖️', MISSION: '🚛', TRACKING: '📍', FREIGHT: '📦', MESSAGE: '💬' };
+const EMOJI: Record<string, string> = { BID: '⚖️', MISSION: '🚛', TRACKING: '📍', FREIGHT: '📦', MESSAGE: '💬', COURSE: '🧾' };
+const TINT: Record<string, string> = { MISSION: '#FDECD8', TRACKING: '#dcfce7', COURSE: '#eef2fb', FREIGHT: '#eef2fb', MESSAGE: '#eef2fb', BID: '#fee2e2' };
 
 export default function Notifications() {
   const { user } = useAuth();
@@ -36,8 +37,8 @@ export default function Notifications() {
       ) : (
         items.map((n) => (
           <Pressable key={n.id} onPress={() => open(n)}>
-            <Card style={[styles.item, !n.read && { backgroundColor: '#f5f8ff' }]}>
-              <Text style={{ fontSize: 20 }}>{EMOJI[n.type] ?? '🔔'}</Text>
+            <Card style={[styles.item, !n.read && styles.itemUnread]}>
+              <View style={[styles.iconWrap, { backgroundColor: TINT[n.type] ?? '#eef2fb' }]}><Text style={{ fontSize: 18 }}>{EMOJI[n.type] ?? '🔔'}</Text></View>
               <View style={{ flex: 1 }}>
                 <Text style={styles.title}>{n.title}</Text>
                 <Text style={styles.body}>{n.body}</Text>
@@ -55,6 +56,8 @@ export default function Notifications() {
 const styles = StyleSheet.create({
   scroll: { padding: 16, paddingBottom: 40, gap: 10 },
   item: { flexDirection: 'row', gap: 12, padding: 14, alignItems: 'flex-start' },
+  itemUnread: { backgroundColor: '#f5f8ff', borderColor: colors.brand100 },
+  iconWrap: { width: 40, height: 40, borderRadius: 12, alignItems: 'center', justifyContent: 'center' },
   title: { fontWeight: '700', color: colors.ink },
   body: { color: colors.inkMuted, marginTop: 2 },
   time: { color: colors.inkMuted, fontSize: 11, marginTop: 4 },

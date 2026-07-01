@@ -24,22 +24,19 @@ export default function Profile() {
 
   return (
     <ScrollView contentContainerStyle={styles.scroll}>
-      <Card style={{ padding: 16 }}>
-        <View style={{ flexDirection: 'row', gap: 14, alignItems: 'center' }}>
-          <Avatar name={user.companyName ?? user.name} color={user.avatarColor} size={56} />
-          <View style={{ flex: 1 }}>
-            <Text style={styles.name}>{user.companyName ?? user.name}</Text>
-            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, marginTop: 4 }}>
-              <Badge tone="blue">{ROLE_LABEL[user.role]}</Badge>
-              <Text style={styles.muted}>{user.name}</Text>
-            </View>
-          </View>
+      {/* En-tête de marque */}
+      <View style={styles.hero}>
+        <View style={styles.blob1} pointerEvents="none" />
+        <View style={styles.blob2} pointerEvents="none" />
+        <View style={styles.heroAvatar}><Avatar name={user.companyName ?? user.name} color={user.avatarColor} size={68} /></View>
+        <Text style={styles.hName}>{user.companyName ?? user.name}</Text>
+        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, marginTop: 6 }}>
+          <Badge tone="amber">{ROLE_LABEL[user.role]}</Badge>
+          <Text style={styles.hSub}>@{user.identifiant}</Text>
         </View>
-        <View style={styles.info}>
-          <Row icon="person-outline" text={`@${user.identifiant}`} />
-          {user.phone ? <Row icon="call-outline" text={user.phone} /> : null}
-        </View>
-      </Card>
+        {user.name !== (user.companyName ?? user.name) && <Text style={styles.hSub}>{user.name}</Text>}
+        {user.phone ? <Text style={styles.hSub}>📞 {user.phone}</Text> : null}
+      </View>
 
       {user.role === 'GERANT' && user.companyCode && (
         <Card style={styles.codeCard}>
@@ -75,20 +72,15 @@ function ContactRow({ icon, color, label, value, onPress, last }: { icon: any; c
   );
 }
 
-function Row({ icon, text }: { icon: any; text: string }) {
-  return (
-    <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
-      <Ionicons name={icon} size={16} color={colors.inkMuted} />
-      <Text style={styles.muted}>{text}</Text>
-    </View>
-  );
-}
-
 const styles = StyleSheet.create({
   scroll: { padding: 16, paddingBottom: 40 },
-  name: { fontSize: 18, fontWeight: '800', color: colors.ink },
   muted: { color: colors.inkMuted },
-  info: { marginTop: 14, gap: 8 },
+  hero: { backgroundColor: colors.brand950, borderRadius: 20, padding: 22, alignItems: 'center', overflow: 'hidden', position: 'relative' },
+  blob1: { position: 'absolute', width: 170, height: 170, borderRadius: 85, backgroundColor: 'rgba(240,125,26,0.16)', top: -60, right: -40 },
+  blob2: { position: 'absolute', width: 150, height: 150, borderRadius: 75, backgroundColor: 'rgba(63,92,192,0.35)', bottom: -60, left: -30 },
+  heroAvatar: { borderRadius: 40, borderWidth: 3, borderColor: 'rgba(255,255,255,0.35)' },
+  hName: { color: colors.white, fontSize: 20, fontWeight: '900', marginTop: 12, textAlign: 'center' },
+  hSub: { color: colors.brand100, fontSize: 13, fontWeight: '600', marginTop: 4 },
   codeCard: { padding: 16, marginTop: 14, alignItems: 'center', borderColor: colors.brand100, borderWidth: 1 },
   codeLabel: { color: colors.inkMuted, fontSize: 12, fontWeight: '600' },
   code: { fontSize: 28, fontWeight: '900', color: colors.brand700, letterSpacing: 4, marginTop: 6 },
