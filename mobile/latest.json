@@ -1,6 +1,6 @@
 {
-  "version": "1.2.1",
-  "versionCode": 14,
+  "version": "1.2.2",
+  "versionCode": 15,
   "apkUrl": "https://github.com/kevinventy/OneWAY/releases/latest/download/app-release.apk",
-  "notes": "Section « Nos services » en liste verticale avec icônes, et retrait de la preuve de livraison."
+  "notes": "Reçu de livraison à signer (PDF) : bouton sur la course, pré-rempli, à imprimer/partager et faire signer."
 }
