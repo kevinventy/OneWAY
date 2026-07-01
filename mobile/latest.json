@@ -1,6 +1,6 @@
 {
-  "version": "1.1.0",
-  "versionCode": 12,
+  "version": "1.2.0",
+  "versionCode": 13,
   "apkUrl": "https://github.com/kevinventy/OneWAY/releases/latest/download/app-release.apk",
-  "notes": "Preuve de livraison (photo + signature), facture/reçu PDF partageable, navigation GPS chauffeur et tableau de bord gérant."
+  "notes": "Notifications système en temps réel (nouvelle mission, changement de statut, devis) lorsque l'app est ouverte ou en arrière-plan."
 }

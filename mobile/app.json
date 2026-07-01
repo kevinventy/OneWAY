@@ -2,7 +2,7 @@
   "expo": {
     "name": "ONE WAY",
     "slug": "oneway",
-    "version": "1.1.0",
+    "version": "1.2.0",
     "orientation": "portrait",
     "scheme": "oneway",
     "userInterfaceStyle": "light",
@@ -20,7 +20,7 @@
     },
     "android": {
       "package": "mg.oneway.app",
-      "versionCode": 12,
+      "versionCode": 13,
       "adaptiveIcon": {
         "foregroundImage": "./assets/adaptive-icon.png",
         "backgroundColor": "#ffffff"
@@ -60,6 +60,10 @@
           "photosPermission": "ONE WAY accède à vos photos pour les preuves de chargement/livraison.",
           "cameraPermission": "ONE WAY utilise la caméra pour la photo de preuve de livraison."
         }
+      ],
+      [
+        "expo-notifications",
+        { "color": "#2a44a0" }
       ]
     ],
     "extra": {
