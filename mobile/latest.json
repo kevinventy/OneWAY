@@ -1,6 +1,6 @@
 {
-  "version": "1.2.3",
-  "versionCode": 16,
+  "version": "1.2.4",
+  "versionCode": 17,
   "apkUrl": "https://github.com/kevinventy/OneWAY/releases/latest/download/app-release.apk",
-  "notes": "Correction du partage des PDF (reçu/facture) et « top départ » : le chauffeur lance lui-même le suivi GPS en temps réel."
+  "notes": "La carte suit maintenant la position GPS du chauffeur en direct ; un seul bouton « Reçu de livraison à signer »."
 }

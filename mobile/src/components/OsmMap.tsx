@@ -39,11 +39,13 @@ export function OsmMap({
     [from?.lat, from?.lng, to?.lat, to?.lng, JSON.stringify(route ?? [])],
   );
 
-  // Déplace le marqueur véhicule sans recharger la carte.
+  // Déplace le marqueur véhicule sans recharger la carte. On réessaie tant que
+  // la carte n'est pas prête (chargement Leaflet asynchrone) pour ne jamais
+  // « rater » une position GPS.
   useEffect(() => {
-    if (current && webRef.current) {
-      webRef.current.injectJavaScript(`window.__setVehicle && window.__setVehicle(${current.lat},${current.lng}); true;`);
-    }
+    if (current == null || !webRef.current) return;
+    const js = `(function(){var la=${current.lat},ln=${current.lng};function go(){if(window.__setVehicle){window.__setVehicle(la,ln);}else{setTimeout(go,300);}}go();})();true;`;
+    webRef.current.injectJavaScript(js);
   }, [current?.lat, current?.lng]);
 
   return (
@@ -98,13 +100,16 @@ function buildHtml({ from, to, route, current }: { from?: MapPoint; to?: MapPoin
   function dot(latlng,fill){return L.circleMarker(latlng,{radius:8,color:'#ffffff',weight:2,fillColor:fill,fillOpacity:1});}
   if(FROM){dot(FROM,'#16a34a').addTo(map).bindPopup('Chargement');}
   if(TO){dot(TO,'#dc2626').addTo(map).bindPopup('Livraison');}
-  var veh=null;
+  var veh=null, vehHalo=null, vehInit=false;
   window.__setVehicle=function(lat,lng){
     var ll=[lat,lng];
     if(!veh){
-      L.circleMarker(ll,{radius:13,color:'#f07d1a',weight:0,fillColor:'#f07d1a',fillOpacity:.2}).addTo(map);
+      vehHalo=L.circleMarker(ll,{radius:14,color:'#f07d1a',weight:0,fillColor:'#f07d1a',fillOpacity:.2}).addTo(map);
       veh=L.circleMarker(ll,{radius:8,color:'#ffffff',weight:2,fillColor:'#f07d1a',fillOpacity:1}).addTo(map).bindPopup('Véhicule');
-    } else { veh.setLatLng(ll); }
+    } else { veh.setLatLng(ll); vehHalo.setLatLng(ll); }
+    // Suit le véhicule à chaque mise à jour GPS (pas au tout premier point).
+    if(vehInit){ map.panTo(ll,{animate:true,duration:0.6}); }
+    vehInit=true;
   };
   var pts=ROUTE.slice(); if(FROM)pts.push(FROM); if(TO)pts.push(TO); if(CUR)pts.push(CUR);
   if(pts.length>0){ try{ map.fitBounds(L.latLngBounds(pts).pad(0.18)); }catch(e){ map.setView(pts[0],7);} }

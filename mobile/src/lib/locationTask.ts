@@ -54,9 +54,9 @@ export async function startDriverTracking(courseId: string): Promise<'ok' | 'den
     if (already) return 'ok';
 
     await Location.startLocationUpdatesAsync(LOCATION_TASK, {
-      accuracy: Location.Accuracy.Balanced,
-      distanceInterval: 40, // m
-      timeInterval: 15000, // ms
+      accuracy: Location.Accuracy.High,
+      distanceInterval: 10, // m — assez fin pour que la carte suive réellement
+      timeInterval: 5000, // ms
       showsBackgroundLocationIndicator: true,
       pausesUpdatesAutomatically: false,
       foregroundService: {

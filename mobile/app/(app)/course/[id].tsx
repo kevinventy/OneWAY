@@ -12,7 +12,7 @@ import {
 } from '@/firebase/db';
 import { useDriverLocation } from '@/lib/useDriverLocation';
 import { openNavigation } from '@/lib/maps';
-import { shareCourseDocument, shareDeliveryReceipt } from '@/lib/invoice';
+import { shareDeliveryReceipt } from '@/lib/invoice';
 import { COURSE_STATUS } from '@/lib/labels';
 import { STATUS_ACTION, nextStatus } from '@/lib/flow';
 import { cargoByKey, vehicleByKey } from '@/data/catalog';
@@ -73,11 +73,6 @@ export default function CourseScreen() {
     const goPickup = ['ASSIGNEE', 'EN_ROUTE_RAMASSAGE'].includes(course!.status);
     const t = goPickup ? course!.pickup : course!.delivery;
     openNavigation(t.lat, t.lng);
-  }
-  async function shareDoc() {
-    try {
-      await shareCourseDocument(course!, course!.status === 'LIVREE' ? 'RECU' : 'FACTURE', Date.now());
-    } catch (e: any) { Alert.alert('Erreur', e?.message ?? 'Génération PDF impossible'); }
   }
   async function shareReceipt() {
     const dName = isDriver ? user!.name : drivers.find((d) => d.id === course!.driverId)?.name;
@@ -173,12 +168,9 @@ export default function CourseScreen() {
         <Card style={styles.doneCard}><Ionicons name="checkmark-circle" size={20} color={colors.green} /><Text style={styles.doneText}>Livraison confirmée</Text></Card>
       )}
 
-      {/* Documents PDF */}
+      {/* Reçu de livraison à signer (PDF) */}
       {course.status !== 'ANNULEE' && (isOwner || isDriver) && (
         <Button title="Reçu de livraison à signer (PDF)" icon="create-outline" variant="outline" onPress={shareReceipt} />
-      )}
-      {isOwner && course.status !== 'ANNULEE' && (
-        <Button title={course.status === 'LIVREE' ? 'Reçu PDF — partager' : 'Facture PDF — partager'} icon="document-text-outline" variant="outline" onPress={shareDoc} />
       )}
 
       {/* Top départ — suivi temps réel (chauffeur) */}
