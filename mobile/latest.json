@@ -1,6 +1,6 @@
 {
-  "version": "1.2.2",
-  "versionCode": 15,
+  "version": "1.2.3",
+  "versionCode": 16,
   "apkUrl": "https://github.com/kevinventy/OneWAY/releases/latest/download/app-release.apk",
-  "notes": "Reçu de livraison à signer (PDF) : bouton sur la course, pré-rempli, à imprimer/partager et faire signer."
+  "notes": "Correction du partage des PDF (reçu/facture) et « top départ » : le chauffeur lance lui-même le suivi GPS en temps réel."
 }

@@ -1,17 +1,42 @@
 import * as Print from 'expo-print';
 import * as Sharing from 'expo-sharing';
+import * as FileSystem from 'expo-file-system';
 import { money, km, dateFr } from '@/lib/format';
 import { vehicleByKey, cargoByKey } from '@/data/catalog';
 import { COMPANY } from '@/data/company';
 import type { Course } from '@/lib/types';
 
+/** Nettoie un libellé pour en faire un nom de fichier sûr. */
+function safeName(s: string): string {
+  return s.replace(/[^a-zA-Z0-9._-]+/g, '_').slice(0, 40) || 'document';
+}
+
+/**
+ * Imprime un HTML en PDF puis ouvre le partage. On RECOPIE le PDF dans le
+ * cache canonique avant de partager : `printToFileAsync` renvoie parfois un
+ * chemin (`/data/data/…`) qu'expo-sharing refuse de lire (« Not allowed to
+ * read file under given URL ») ; la copie via expo-file-system donne un chemin
+ * accepté.
+ */
+async function sharePdf(html: string, fileName: string, dialogTitle: string): Promise<void> {
+  const { uri } = await Print.printToFileAsync({ html, base64: false });
+  let target = uri;
+  try {
+    const dest = `${FileSystem.cacheDirectory}${safeName(fileName)}.pdf`;
+    await FileSystem.copyAsync({ from: uri, to: dest });
+    target = dest;
+  } catch {
+    // en cas d'échec de copie, on tente de partager l'URI d'origine.
+  }
+  if (await Sharing.isAvailableAsync()) {
+    await Sharing.shareAsync(target, { mimeType: 'application/pdf', dialogTitle, UTI: 'com.adobe.pdf' });
+  }
+}
+
 /** Génère un PDF (facture ou reçu) et ouvre le partage (WhatsApp, e-mail…). */
 export async function shareCourseDocument(course: Course, kind: 'FACTURE' | 'RECU', at: number): Promise<void> {
   const html = buildHtml(course, kind, at);
-  const { uri } = await Print.printToFileAsync({ html, base64: false });
-  if (await Sharing.isAvailableAsync()) {
-    await Sharing.shareAsync(uri, { mimeType: 'application/pdf', dialogTitle: `${kind === 'RECU' ? 'Reçu' : 'Facture'} ${course.reference}` });
-  }
+  await sharePdf(html, `${kind === 'RECU' ? 'Recu' : 'Facture'}_${course.reference}`, `${kind === 'RECU' ? 'Reçu' : 'Facture'} ${course.reference}`);
 }
 
 /**
@@ -21,10 +46,7 @@ export async function shareCourseDocument(course: Course, kind: 'FACTURE' | 'REC
  */
 export async function shareDeliveryReceipt(course: Course, at: number, driverName?: string): Promise<void> {
   const html = buildDeliveryReceipt(course, at, driverName);
-  const { uri } = await Print.printToFileAsync({ html, base64: false });
-  if (await Sharing.isAvailableAsync()) {
-    await Sharing.shareAsync(uri, { mimeType: 'application/pdf', dialogTitle: `Reçu de livraison ${course.reference}` });
-  }
+  await sharePdf(html, `Recu_livraison_${course.reference}`, `Reçu de livraison ${course.reference}`);
 }
 
 function esc(s: string): string {

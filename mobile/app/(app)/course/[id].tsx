@@ -29,6 +29,8 @@ export default function CourseScreen() {
   const [busy, setBusy] = useState(false);
   const [priceModal, setPriceModal] = useState(false);
   const [priceInput, setPriceInput] = useState('');
+  // Suivi GPS temps réel : lancé manuellement par le chauffeur (« top départ »).
+  const [tracking, setTracking] = useState(false);
 
   useEffect(() => {
     if (!id) return;
@@ -43,10 +45,11 @@ export default function CourseScreen() {
   }, [user?.id]);
 
   // Le chauffeur affecté partage sa position GPS en direct pendant la mission.
-  const shareGps =
+  const canTrack =
     !!course && !!user && user.role === 'CHAUFFEUR' && course.driverUserId === user.id &&
     !['LIVREE', 'ANNULEE', 'NOUVELLE'].includes(course.status);
-  useDriverLocation(course, shareGps);
+  // Le partage GPS ne démarre QUE si le chauffeur a lancé le « top départ ».
+  useDriverLocation(course, canTrack && tracking);
 
   if (!user) return null;
   if (!course) return <View style={styles.center}><Text style={styles.muted}>Chargement…</Text></View>;
@@ -135,10 +138,10 @@ export default function CourseScreen() {
         current={active && course.currentLat != null ? { lat: course.currentLat, lng: course.currentLng! } : null}
         kmRemaining={active ? remaining : undefined}
       />
-      {shareGps && (
+      {canTrack && tracking && (
         <View style={styles.gpsHint}>
           <Ionicons name="navigate-circle" size={16} color={colors.green} />
-          <Text style={styles.gpsHintText}>Position GPS partagée en direct — continue même écran verrouillé</Text>
+          <Text style={styles.gpsHintText}>Suivi en direct activé — position partagée, même écran verrouillé</Text>
         </View>
       )}
 
@@ -176,6 +179,17 @@ export default function CourseScreen() {
       )}
       {isOwner && course.status !== 'ANNULEE' && (
         <Button title={course.status === 'LIVREE' ? 'Reçu PDF — partager' : 'Facture PDF — partager'} icon="document-text-outline" variant="outline" onPress={shareDoc} />
+      )}
+
+      {/* Top départ — suivi temps réel (chauffeur) */}
+      {canTrack && (
+        <Button
+          title={tracking ? 'Arrêter le suivi en temps réel' : '🚀 Top départ — démarrer le suivi'}
+          icon={tracking ? 'stop-circle' : 'play-circle'}
+          variant={tracking ? 'outline' : 'primary'}
+          onPress={() => setTracking((t) => !t)}
+          style={tracking ? { borderColor: colors.red } : undefined}
+        />
       )}
 
       {/* Navigation GPS (chauffeur) */}
