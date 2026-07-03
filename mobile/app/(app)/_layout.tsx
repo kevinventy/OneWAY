@@ -36,6 +36,7 @@ export default function AppLayout() {
       <Stack.Screen name="fleet" options={{ title: 'Ma flotte' }} />
       <Stack.Screen name="notifications" options={{ title: 'Notifications' }} />
       <Stack.Screen name="profile" options={{ title: 'Mon compte' }} />
+      <Stack.Screen name="edit-profile" options={{ title: 'Modifier le profil' }} />
     </Stack>
   );
 }

@@ -12,6 +12,8 @@ export interface User {
   identifiant: string;
   email: string; // synthétique `identifiant@oneway.app`
   phone?: string;
+  /** Email de contact éditable (distinct de l'identifiant de connexion). */
+  contactEmail?: string;
   /** Gérant : nom de l'entreprise. */
   companyName?: string;
   /** Gérant : code à partager aux chauffeurs pour rejoindre l'entreprise. */

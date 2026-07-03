@@ -283,6 +283,16 @@ export async function updateCoursePrice(courseId: string, price: number): Promis
   await updateDoc(doc(firestore, 'courses', courseId), { price: Math.max(0, Math.round(price)) });
 }
 
+// ── Profil utilisateur (modifiable par son propriétaire) ───────────────────
+
+export async function updateUserProfile(uid: string, input: { name: string; phone: string; contactEmail: string }): Promise<void> {
+  await updateDoc(doc(firestore, 'users', uid), {
+    name: input.name.trim(),
+    phone: input.phone.trim(),
+    contactEmail: input.contactEmail.trim(),
+  });
+}
+
 // ── Flotte (gérant) ────────────────────────────────────────────────────────
 
 export async function addVehicle(ownerId: string, input: { type: Vehicle['type']; name: string; plate: string; capacityKg: number }): Promise<void> {

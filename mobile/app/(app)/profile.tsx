@@ -36,7 +36,10 @@ export default function Profile() {
         </View>
         {user.name !== (user.companyName ?? user.name) && <Text style={styles.hSub}>{user.name}</Text>}
         {user.phone ? <Text style={styles.hSub}>📞 {user.phone}</Text> : null}
+        {user.contactEmail ? <Text style={styles.hSub}>✉️ {user.contactEmail}</Text> : null}
       </View>
+
+      <Button title="Modifier le profil" icon="create-outline" variant="outline" onPress={() => router.push('/(app)/edit-profile')} style={{ marginTop: 14 }} />
 
       {user.role === 'GERANT' && user.companyCode && (
         <Card style={styles.codeCard}>
