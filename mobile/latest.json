@@ -1,6 +1,6 @@
 {
-  "version": "1.2.7",
-  "versionCode": 20,
+  "version": "1.2.8",
+  "versionCode": 21,
   "apkUrl": "https://github.com/kevinventy/OneWAY/releases/latest/download/app-release.apk",
-  "notes": "La ligne de suivi (position du chauffeur → livraison) épouse désormais l'itinéraire des routes au lieu d'une ligne droite."
+  "notes": "Ligne de suivi du chauffeur en trait continu (au lieu de pointillés)."
 }

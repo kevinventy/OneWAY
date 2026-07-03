@@ -158,7 +158,7 @@ function buildHtml({ from, to, route, current, tracking }: { from?: MapPoint; to
 
   var liveLine=null;
   if(TRACK && TO){
-    liveLine=L.polyline(CUR?remainingPath(CUR):[TO],{color:'#f07d1a',weight:5,opacity:.95,dashArray:'10,8'}).addTo(map);
+    liveLine=L.polyline(CUR?remainingPath(CUR):[TO],{color:'#f07d1a',weight:5,opacity:.95}).addTo(map);
   }
 
   var veh=null, vehHalo=null, vehInit=false;
