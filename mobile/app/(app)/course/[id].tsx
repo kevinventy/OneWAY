@@ -131,6 +131,7 @@ export default function CourseScreen() {
         from={{ lat: course.pickup.lat, lng: course.pickup.lng, label: course.pickup.city }}
         to={{ lat: course.delivery.lat, lng: course.delivery.lng, label: course.delivery.city }}
         current={active && course.currentLat != null ? { lat: course.currentLat, lng: course.currentLng! } : null}
+        tracking={active && course.currentLat != null && ((isDriver && tracking) || ['EN_ROUTE', 'ARRIVEE'].includes(course.status))}
         kmRemaining={active ? remaining : undefined}
       />
       {canTrack && tracking && (

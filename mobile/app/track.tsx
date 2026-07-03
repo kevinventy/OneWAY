@@ -84,6 +84,7 @@ export default function Track() {
             from={{ lat: data.pickup.lat, lng: data.pickup.lng, label: data.pickup.city }}
             to={{ lat: data.delivery.lat, lng: data.delivery.lng, label: data.delivery.city }}
             current={data.current}
+            tracking={!!data.current && ['EN_ROUTE', 'ARRIVEE'].includes(data.status)}
             kmRemaining={data.kmRemaining}
           />
 

@@ -1,6 +1,6 @@
 {
-  "version": "1.2.5",
-  "versionCode": 18,
+  "version": "1.2.6",
+  "versionCode": 19,
   "apkUrl": "https://github.com/kevinventy/OneWAY/releases/latest/download/app-release.apk",
-  "notes": "Livraisons terminées : récapitulatif (référence, trajet, marchandise, client) et suppression. « Livraisons récentes » côté gérant."
+  "notes": "Suivi carte amélioré : après « top départ », le point de départ disparaît et la position GPS du chauffeur est reliée à la livraison (progression), avec une légende."
 }
