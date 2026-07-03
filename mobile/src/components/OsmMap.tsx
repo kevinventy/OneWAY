@@ -133,10 +133,32 @@ function buildHtml({ from, to, route, current, tracking }: { from?: MapPoint; to
   if(!TRACK && FROM){ dot(FROM,'#16a34a').addTo(map).bindPopup('Chargement'); }
   if(TO){ dot(TO,'#dc2626').addTo(map).bindPopup('Livraison'); }
 
-  // Mode suivi : ligne GPS chauffeur -> livraison (progression).
+  // Portion RESTANTE de l'itinéraire : de la projection de la position GPS sur
+  // la route jusqu'à la livraison (suit les routes, pas une droite).
+  function nearestFwdIndex(ll){
+    if(ROUTE.length<2) return ROUTE.length;
+    var best=Infinity, bestK=0;
+    for(var k=0;k<ROUTE.length-1;k++){
+      var a=ROUTE[k], b=ROUTE[k+1];
+      var ax=a[1],ay=a[0],bx=b[1],by=b[0],px=ll[1],py=ll[0];
+      var dx=bx-ax,dy=by-ay,len2=dx*dx+dy*dy;
+      var t=len2?((px-ax)*dx+(py-ay)*dy)/len2:0; t=Math.max(0,Math.min(1,t));
+      var qx=ax+dx*t, qy=ay+dy*t, ex=px-qx, ey=py-qy, d=ex*ex+ey*ey;
+      if(d<best){ best=d; bestK=k; }
+    }
+    return bestK+1;
+  }
+  function remainingPath(ll){
+    if(ROUTE.length<2) return TO?[ll,TO]:[ll];
+    var path=[ll];
+    for(var k=nearestFwdIndex(ll);k<ROUTE.length;k++) path.push(ROUTE[k]);
+    if(TO) path.push(TO);
+    return path;
+  }
+
   var liveLine=null;
   if(TRACK && TO){
-    liveLine=L.polyline(CUR?[CUR,TO]:[TO,TO],{color:'#f07d1a',weight:4,opacity:.9,dashArray:'8,8'}).addTo(map);
+    liveLine=L.polyline(CUR?remainingPath(CUR):[TO],{color:'#f07d1a',weight:5,opacity:.95,dashArray:'10,8'}).addTo(map);
   }
 
   var veh=null, vehHalo=null, vehInit=false;
@@ -146,13 +168,13 @@ function buildHtml({ from, to, route, current, tracking }: { from?: MapPoint; to
       vehHalo=L.circleMarker(ll,{radius:14,color:'#f07d1a',weight:0,fillColor:'#f07d1a',fillOpacity:.2}).addTo(map);
       veh=L.circleMarker(ll,{radius:8,color:'#ffffff',weight:2,fillColor:'#f07d1a',fillOpacity:1}).addTo(map).bindPopup('Véhicule');
     } else { veh.setLatLng(ll); vehHalo.setLatLng(ll); }
-    if(liveLine && TO){ liveLine.setLatLngs([ll, TO]); }
+    if(liveLine){ liveLine.setLatLngs(remainingPath(ll)); }
     if(vehInit){ map.panTo(ll,{animate:true,duration:0.6}); }
     vehInit=true;
   };
 
   var pts=[];
-  if(TRACK){ if(CUR)pts.push(CUR); if(TO)pts.push(TO); }
+  if(TRACK){ pts = CUR ? remainingPath(CUR) : (TO?[TO]:[]); }
   else { pts=ROUTE.slice(); if(FROM)pts.push(FROM); if(TO)pts.push(TO); if(CUR)pts.push(CUR); }
   if(pts.length>0){ try{ map.fitBounds(L.latLngBounds(pts).pad(0.2)); }catch(e){ map.setView(pts[0],7);} }
   else { map.setView([-18.8792,47.5079],6); }
