@@ -1,12 +1,15 @@
 import { useEffect, useMemo, useState } from 'react';
 import { View, Text, ScrollView, StyleSheet, Pressable, KeyboardAvoidingView, Platform } from 'react-native';
 import { useRouter, useLocalSearchParams } from 'expo-router';
+import { Ionicons } from '@expo/vector-icons';
 import { useAuth } from '@/store/auth';
 import { Button, Card, Field, Input } from '@/components/ui';
-import { createCourse, markQuoteHandled } from '@/firebase/db';
+import { createCourse, markQuoteHandled, subscribeOwnerTariffs, subscribeClientCoursesForOwner } from '@/firebase/db';
 import { CITIES, buildCourseRoute } from '@/lib/geo';
 import { fetchRoadRoute } from '@/lib/routing';
 import { quickEstimate } from '@/lib/pricing';
+import { findTariffPrice, type Tariff } from '@/lib/tariffs';
+import { countDelivered, LOYALTY } from '@/lib/loyalty';
 import { CARGO_TYPES, VEHICLE_TYPES, suggestVehicle, cargoByKey, type CargoTypeKey, type VehicleTypeKey } from '@/data/catalog';
 import { money, km } from '@/lib/format';
 import { colors, radius } from '@/theme';
@@ -40,6 +43,21 @@ export default function NewCourse() {
   // Prix modifiable : pré-rempli avec l'estimation, éditable par le gérant.
   const [priceInput, setPriceInput] = useState('');
   const [priceTouched, setPriceTouched] = useState(false);
+
+  // Grille tarifaire du gérant (prix par axe + tonnage).
+  const [tariffs, setTariffs] = useState<Tariff[]>([]);
+  useEffect(() => {
+    if (!user || user.role !== 'GERANT') return;
+    return subscribeOwnerTariffs(user.id, setTariffs);
+  }, [user?.id]);
+
+  // Fidélité : livraisons déjà terminées pour ce client chez ce gérant.
+  const [clientDelivered, setClientDelivered] = useState(0);
+  useEffect(() => {
+    const phone = f.clientPhone.trim();
+    if (!user || user.role !== 'GERANT' || phone.length < 6) { setClientDelivered(0); return; }
+    return subscribeClientCoursesForOwner(user.id, phone, (rows) => setClientDelivered(countDelivered(rows)));
+  }, [f.clientPhone, user?.id]);
 
   const weight = Number(f.weight) || 0;
   const vehicleType = f.autoVehicle && weight > 0 ? suggestVehicle(weight).key : f.vehicleType;
@@ -76,10 +94,24 @@ export default function NewCourse() {
   const distanceKm = roadKm ?? base?.distanceKm ?? 0;
   const price = base ? quickEstimate(distanceKm, vehicleType, f.cargoType) : 0;
 
-  // Tant que le gérant n'a pas modifié le prix, il suit l'estimation automatique.
+  // Prix grille (axe + tonnage) prioritaire sur l'estimation automatique.
+  const gridMatch = useMemo(
+    () => (base ? findTariffPrice(tariffs, f.fromCity, f.toCity, weight) : null),
+    [tariffs, f.fromCity, f.toCity, weight, base],
+  );
+  const defaultPrice = gridMatch ? gridMatch.price : price;
+
+  // Client fidèle : au moins un palier de livraisons atteint.
+  const loyal = clientDelivered >= LOYALTY.milestone;
+  function applyLoyaltyDiscount() {
+    setPriceTouched(true);
+    setPriceInput(String(Math.round(defaultPrice * (1 - LOYALTY.discountPct / 100))));
+  }
+
+  // Tant que le gérant n'a pas modifié le prix, il suit le tarif proposé.
   useEffect(() => {
-    if (!priceTouched && base) setPriceInput(String(price));
-  }, [price, priceTouched, base]);
+    if (!priceTouched && base) setPriceInput(String(defaultPrice));
+  }, [defaultPrice, priceTouched, base]);
 
   async function submit() {
     setError('');
@@ -160,22 +192,39 @@ export default function NewCourse() {
             <Text style={[styles.h, { color: colors.brand700 }]}>Tarif de la course</Text>
             <View style={[styles.estRow, { marginBottom: 6 }]}>
               <Est label="Distance" value={km(distanceKm)} />
-              <Est label="Estimation auto" value={money(price)} />
+              <Est label={gridMatch ? 'Tarif grille' : 'Estimation auto'} value={money(defaultPrice)} highlight={!!gridMatch} />
             </View>
-            <Text style={styles.routeNote}>
-              {routing ? '🛣️ Calcul de l’itinéraire routier…' : roadKm != null ? '🛣️ Distance routière réelle (suit les routes)' : '🛣️ Distance selon axes RN (itinéraire précisé à la création)'}
-            </Text>
+            {gridMatch ? (
+              <View style={styles.gridBadge}>
+                <Text style={styles.gridBadgeText}>
+                  💠 Grille tarifaire · {gridMatch.tariff.fromCity} {gridMatch.tariff.bidirectional ? '⇄' : '→'} {gridMatch.tariff.toCity} · {gridMatch.bracket.label}
+                </Text>
+              </View>
+            ) : (
+              <Text style={styles.routeNote}>
+                {routing ? '🛣️ Calcul de l’itinéraire routier…' : roadKm != null ? '🛣️ Distance routière réelle (suit les routes)' : '🛣️ Distance selon axes RN (itinéraire précisé à la création)'}
+              </Text>
+            )}
+
+            {loyal && (
+              <View style={styles.loyalBanner}>
+                <Ionicons name="ribbon" size={18} color={colors.amber600} />
+                <Text style={styles.loyalText}>Client fidèle · {clientDelivered} livraisons — remise −{LOYALTY.discountPct} % conseillée</Text>
+                <Pressable onPress={applyLoyaltyDiscount} style={styles.loyalBtn}><Text style={styles.loyalBtnText}>Appliquer</Text></Pressable>
+              </View>
+            )}
+
             <Field label="Prix facturé (Ar) — modifiable">
               <Input
                 value={priceInput}
                 onChangeText={(v) => { setPriceTouched(true); setPriceInput(v); }}
                 keyboardType="numeric"
-                placeholder={String(price)}
+                placeholder={String(defaultPrice)}
               />
             </Field>
             {priceTouched && (
-              <Pressable onPress={() => { setPriceTouched(false); setPriceInput(String(price)); }}>
-                <Text style={styles.resetPrice}>↺ Revenir à l’estimation automatique ({money(price)})</Text>
+              <Pressable onPress={() => { setPriceTouched(false); setPriceInput(String(defaultPrice)); }}>
+                <Text style={styles.resetPrice}>↺ Revenir au tarif proposé ({money(defaultPrice)})</Text>
               </Pressable>
             )}
           </Card>
@@ -228,5 +277,11 @@ const styles = StyleSheet.create({
   estValue: { fontSize: 16, fontWeight: '800', color: colors.ink, marginTop: 2 },
   routeNote: { color: colors.inkMuted, fontSize: 11.5, marginBottom: 12 },
   resetPrice: { color: colors.brand600, fontSize: 12, fontWeight: '600', marginTop: 2 },
+  gridBadge: { backgroundColor: colors.brand50, borderRadius: 10, paddingHorizontal: 10, paddingVertical: 7, marginBottom: 12 },
+  gridBadgeText: { color: colors.brand700, fontSize: 12, fontWeight: '700' },
+  loyalBanner: { flexDirection: 'row', alignItems: 'center', gap: 8, backgroundColor: colors.amberBg, borderRadius: 10, paddingHorizontal: 10, paddingVertical: 8, marginBottom: 12 },
+  loyalText: { flex: 1, color: colors.amber600, fontSize: 12, fontWeight: '700' },
+  loyalBtn: { backgroundColor: colors.amber500, borderRadius: 8, paddingHorizontal: 10, paddingVertical: 6 },
+  loyalBtnText: { color: colors.white, fontWeight: '800', fontSize: 12 },
   error: { color: colors.red },
 });

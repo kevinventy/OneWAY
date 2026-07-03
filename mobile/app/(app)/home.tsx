@@ -12,6 +12,7 @@ import {
 } from '@/firebase/db';
 import { getFavorites } from '@/lib/favorites';
 import { money } from '@/lib/format';
+import { countDelivered, loyaltyProgress, LOYALTY } from '@/lib/loyalty';
 import { cargoByKey } from '@/data/catalog';
 import { SERVICES, COMPANY, telHref, whatsappHref, emailHref } from '@/data/company';
 import { useExitConfirm } from '@/lib/useExitConfirm';
@@ -107,8 +108,9 @@ function GerantHome() {
       </Pressable>
 
       {/* Raccourcis */}
-      <View style={{ flexDirection: 'row', gap: 12 }}>
+      <View style={styles.shortcuts}>
         <ActionTile icon="calculator" label="Calcul rapide" bg={colors.brand50} fg={colors.brand600} onPress={() => router.push('/(app)/quick-price')} />
+        <ActionTile icon="pricetags" label="Grille tarifaire" bg={colors.amberBg} fg={colors.amber600} onPress={() => router.push('/(app)/tariffs')} />
         <ActionTile icon="stats-chart" label="Tableau de bord" bg="#FDECD8" fg={colors.amber600} onPress={() => router.push('/(app)/dashboard')} />
         <ActionTile icon="car-outline" label="Ma flotte" bg={colors.greenBg} fg={colors.green} onPress={() => router.push('/(app)/fleet')} />
       </View>
@@ -274,6 +276,9 @@ function ClientHome() {
       {/* Livraison en cours — mise en avant */}
       {activeTop && <ActiveDeliveryCard course={activeTop} onPress={() => track(activeTop.code)} />}
 
+      {/* Programme fidélité */}
+      {user!.phone && <LoyaltyCard userId={user!.id} courses={courses} />}
+
       {/* CTA devis en vedette */}
       <Pressable onPress={() => router.push('/(app)/new-quote')} style={styles.ctaCard}>
         <View style={styles.ctaIcon}><Ionicons name="document-text" size={24} color={colors.ink} /></View>
@@ -393,6 +398,56 @@ function TrustItem({ icon, text }: { icon: any; text: string }) {
   );
 }
 
+/** Carte fidélité : progression du client vers la prochaine récompense (−10 %). */
+function LoyaltyCard({ userId, courses }: { userId: string; courses: Course[] }) {
+  const count = countDelivered(courses);
+  const { tier, inTier, toNext, milestone } = loyaltyProgress(count);
+  const [claimed, setClaimed] = useState<number | null>(null);
+
+  useEffect(() => {
+    AsyncStorage.getItem(`oneway.loyaltyTier.${userId}`).then((v) => setClaimed(v ? Number(v) : 0)).catch(() => setClaimed(0));
+  }, [userId]);
+
+  if (claimed == null) return null;
+  const rewardUnclaimed = tier > claimed;
+  const fillPct = rewardUnclaimed ? 100 : Math.round((inTier / milestone) * 100);
+  const dismiss = () => {
+    setClaimed(tier);
+    AsyncStorage.setItem(`oneway.loyaltyTier.${userId}`, String(tier)).catch(() => {});
+  };
+
+  return (
+    <View style={[styles.loyaltyCard, rewardUnclaimed && styles.loyaltyCardReward]}>
+      <View style={styles.loyaltyHead}>
+        <View style={styles.loyaltyBadge}><Ionicons name="ribbon" size={18} color={colors.amber600} /></View>
+        <View style={{ flex: 1 }}>
+          <Text style={styles.loyaltyTitle}>{rewardUnclaimed ? '🎉 Récompense fidélité débloquée !' : 'Programme fidélité 🎁'}</Text>
+          <Text style={styles.loyaltySub}>
+            {rewardUnclaimed
+              ? `−${LOYALTY.discountPct} % sur votre prochaine course.`
+              : count === 0
+                ? `Effectuez ${milestone} livraisons et gagnez −${LOYALTY.discountPct} %.`
+                : `Plus que ${toNext} livraison${toNext > 1 ? 's' : ''} avant −${LOYALTY.discountPct} %.`}
+          </Text>
+        </View>
+      </View>
+
+      <View style={styles.loyaltyTrack}><View style={[styles.loyaltyFill, { width: `${fillPct}%` }]} /></View>
+      <Text style={styles.loyaltyCount}>{rewardUnclaimed ? `${milestone}/${milestone}` : `${inTier}/${milestone}`} livraisons</Text>
+
+      {rewardUnclaimed && (
+        <>
+          <View style={styles.loyaltyReward}>
+            <View style={styles.loyaltyCode}><Text style={styles.loyaltyCodeText}>{LOYALTY.code}</Text></View>
+            <Text style={styles.loyaltyRewardHint}>À mentionner lors de votre demande de devis.</Text>
+          </View>
+          <Pressable onPress={dismiss} style={styles.loyaltyOk}><Text style={styles.loyaltyOkText}>J'ai noté ✓</Text></Pressable>
+        </>
+      )}
+    </View>
+  );
+}
+
 /** Carte « livraison en cours » : trajet + camion positionné selon l'avancement. */
 function ActiveDeliveryCard({ course, onPress, ctaLabel = 'Suivre en direct', ctaIcon = 'navigate' }: { course: Course; onPress: () => void; ctaLabel?: string; ctaIcon?: any }) {
   const st = COURSE_STATUS[course.status];
@@ -484,8 +539,26 @@ const styles = StyleSheet.create({
   caLabel: { color: colors.inkMuted, fontSize: 12, fontWeight: '600' },
   caValue: { color: colors.ink, fontSize: 24, fontWeight: '900', marginTop: 2 },
   caIcon: { width: 44, height: 44, borderRadius: 12, backgroundColor: colors.greenBg, alignItems: 'center', justifyContent: 'center' },
-  actionTile: { flex: 1, alignItems: 'center', gap: 8, borderRadius: 16, paddingVertical: 18 },
+  shortcuts: { flexDirection: 'row', flexWrap: 'wrap', gap: 12 },
+  actionTile: { flexBasis: '47%', flexGrow: 1, alignItems: 'center', gap: 8, borderRadius: 16, paddingVertical: 18 },
   actionTileLabel: { fontWeight: '800', fontSize: 13 },
+
+  // Fidélité (client)
+  loyaltyCard: { backgroundColor: colors.white, borderRadius: 16, borderWidth: 1, borderColor: colors.border, padding: 14 },
+  loyaltyCardReward: { borderColor: colors.amber500, backgroundColor: '#fffaf2' },
+  loyaltyHead: { flexDirection: 'row', alignItems: 'center', gap: 10 },
+  loyaltyBadge: { width: 38, height: 38, borderRadius: 11, backgroundColor: colors.amberBg, alignItems: 'center', justifyContent: 'center' },
+  loyaltyTitle: { fontWeight: '800', color: colors.ink, fontSize: 14 },
+  loyaltySub: { color: colors.inkMuted, fontSize: 12, marginTop: 2 },
+  loyaltyTrack: { height: 8, backgroundColor: colors.slateBg, borderRadius: 4, overflow: 'hidden', marginTop: 12 },
+  loyaltyFill: { height: '100%', backgroundColor: colors.amber500, borderRadius: 4 },
+  loyaltyCount: { color: colors.inkMuted, fontSize: 11, fontWeight: '700', marginTop: 5 },
+  loyaltyReward: { flexDirection: 'row', alignItems: 'center', gap: 10, marginTop: 10 },
+  loyaltyCode: { backgroundColor: colors.amber500, borderRadius: 8, paddingHorizontal: 12, paddingVertical: 6 },
+  loyaltyCodeText: { color: colors.white, fontWeight: '900', fontSize: 14, letterSpacing: 1 },
+  loyaltyRewardHint: { flex: 1, color: colors.inkSoft, fontSize: 11.5, fontWeight: '600' },
+  loyaltyOk: { alignSelf: 'flex-end', marginTop: 8 },
+  loyaltyOkText: { color: colors.brand600, fontWeight: '700', fontSize: 12 },
 
   // Livraison en cours
   activeCard: { backgroundColor: colors.white, borderRadius: 18, borderWidth: 1, borderColor: colors.brand100, padding: 16 },

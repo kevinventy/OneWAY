@@ -34,6 +34,7 @@ export default function AppLayout() {
       <Stack.Screen name="dashboard" options={{ title: 'Tableau de bord' }} />
       <Stack.Screen name="course/[id]" options={{ title: 'Course' }} />
       <Stack.Screen name="fleet" options={{ title: 'Ma flotte' }} />
+      <Stack.Screen name="tariffs" options={{ title: 'Grille tarifaire' }} />
       <Stack.Screen name="notifications" options={{ title: 'Notifications' }} />
       <Stack.Screen name="profile" options={{ title: 'Mon compte' }} />
     </Stack>

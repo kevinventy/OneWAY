@@ -1,5 +1,6 @@
 import {
   collection,
+  deleteDoc,
   doc,
   getDoc,
   getDocs,
@@ -21,6 +22,7 @@ import { vehicleByKey, cargoByKey } from '@/data/catalog';
 import { STATUS_LABEL, nextStatus } from '@/lib/flow';
 import { COURSE_STATUS } from '@/lib/labels';
 import { kmRemaining } from '@/lib/types';
+import type { Tariff } from '@/lib/tariffs';
 import type {
   Course,
   CourseStatus,
@@ -305,6 +307,38 @@ export async function getDriverByUser(uid: string): Promise<Driver | null> {
   return snap.empty ? null : (snap.docs[0].data() as Driver);
 }
 
+// ── Grille tarifaire (gérant) ──────────────────────────────────────────────
+
+export interface TariffInput {
+  id?: string;
+  fromCity: string;
+  toCity: string;
+  bidirectional: boolean;
+  prices: Record<string, number>;
+}
+
+/** Crée ou met à jour une ligne de grille tarifaire (axe). */
+export async function saveTariff(ownerId: string, input: TariffInput): Promise<void> {
+  const ref = input.id ? doc(firestore, 'tariffs', input.id) : doc(col('tariffs'));
+  await setDoc(ref, clean({
+    id: ref.id,
+    ownerId,
+    fromCity: input.fromCity,
+    toCity: input.toCity,
+    bidirectional: input.bidirectional,
+    prices: input.prices,
+    updatedAt: Date.now(),
+  }));
+}
+
+export async function deleteTariff(id: string): Promise<void> {
+  await deleteDoc(doc(firestore, 'tariffs', id));
+}
+
+export const subscribeOwnerTariffs = (ownerId: string, cb: (t: Tariff[]) => void) =>
+  subscribe<Tariff>('tariffs', [where('ownerId', '==', ownerId)], (rows) =>
+    cb(rows.sort((a, b) => `${a.fromCity}${a.toCity}`.localeCompare(`${b.fromCity}${b.toCity}`, 'fr'))));
+
 // ── Subscriptions temps réel ───────────────────────────────────────────────
 
 function subscribe<T>(name: string, constraints: QueryConstraint[], cb: (rows: T[]) => void, map?: (data: any) => T) {
@@ -332,6 +366,13 @@ export const subscribeNotifications = (uid: string, cb: (n: Notification[]) => v
 /** Courses d'un client (rattachées à son numéro de téléphone). */
 export const subscribeClientCourses = (phone: string, cb: (c: Course[]) => void) =>
   subscribe<Course>('courses', [where('client.phone', '==', phone)], (rows) => cb(rows.sort((a, b) => b.createdAt - a.createdAt)), courseFromDoc);
+
+/**
+ * Courses d'un client CHEZ CE gérant (fidélité). Filtre cloisonné par `ownerId`
+ * (règles Firestore) + téléphone — deux égalités, aucun index composite requis.
+ */
+export const subscribeClientCoursesForOwner = (ownerId: string, phone: string, cb: (c: Course[]) => void) =>
+  subscribe<Course>('courses', [where('ownerId', '==', ownerId), where('client.phone', '==', phone)], (rows) => cb(rows), courseFromDoc);
 
 /** Demandes de devis en attente (vue gérant). */
 export const subscribeQuoteRequests = (cb: (q: QuoteRequest[]) => void) =>

@@ -55,6 +55,13 @@ service cloud.firestore {
       allow update: if signedIn();
     }
 
+    // Grille tarifaire : privée au gérant propriétaire (prix par axe + tonnage).
+    match /tariffs/{id} {
+      allow read: if signedIn() && resource.data.ownerId == uid();
+      allow create: if signedIn() && request.resource.data.ownerId == uid();
+      allow update, delete: if signedIn() && resource.data.ownerId == uid();
+    }
+
     // Événements de suivi (interne).
     match /events/{id} {
       allow read, create: if signedIn();

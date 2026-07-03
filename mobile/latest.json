@@ -1,6 +1,6 @@
 {
-  "version": "1.2.8",
-  "versionCode": 21,
+  "version": "1.3.0",
+  "versionCode": 22,
   "apkUrl": "https://github.com/kevinventy/OneWAY/releases/latest/download/app-release.apk",
-  "notes": "Ligne de suivi du chauffeur en trait continu (au lieu de pointillés)."
+  "notes": "Grille tarifaire éditable (prix par axe et par tonnage) + programme de fidélité : −10 % tous les 10 livraisons."
 }
