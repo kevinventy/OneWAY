@@ -8,6 +8,7 @@ import { LogoMark } from './Logo';
 import { COURSE_STATUS } from '@/lib/labels';
 import { STATUS_FLOW } from '@/lib/flow';
 import { money, km } from '@/lib/format';
+import { cargoByKey } from '@/data/catalog';
 import { kmRemaining, type Course, type CourseStatus } from '@/lib/types';
 import { colors } from '@/theme';
 
@@ -86,6 +87,36 @@ export function CourseCard({
   );
 }
 
+/** Carte récapitulative d'une livraison terminée : réf · trajet · marchandise · client, avec suppression. */
+export function DeliveryRecapCard({ course, onPress, onDelete }: { course: Course; onPress?: () => void; onDelete?: () => void }) {
+  const st = COURSE_STATUS[course.status];
+  return (
+    <Card style={{ padding: 14, marginBottom: 10 }}>
+      <View style={styles.recapTop}>
+        <Text style={styles.ref}>{course.reference}</Text>
+        <Badge tone={st.tone}>{st.label}</Badge>
+        <View style={{ flex: 1 }} />
+        {onDelete && (
+          <Pressable onPress={onDelete} hitSlop={10} style={styles.recapDel}>
+            <Ionicons name="trash-outline" size={18} color={colors.red} />
+          </Pressable>
+        )}
+      </View>
+      <Pressable onPress={onPress} disabled={!onPress}>
+        <View style={{ marginTop: 8 }}><RouteLine from={course.pickup.city} to={course.delivery.city} /></View>
+        <View style={styles.recapRow}>
+          <Ionicons name="cube-outline" size={14} color={colors.inkMuted} />
+          <Text style={styles.recapText} numberOfLines={1}>{cargoByKey(course.cargoType).label} · {course.weightKg.toLocaleString('fr-FR')} kg</Text>
+        </View>
+        <View style={styles.recapRow}>
+          <Ionicons name="person-outline" size={14} color={colors.inkMuted} />
+          <Text style={styles.recapText} numberOfLines={1}>{course.client.name}</Text>
+        </View>
+      </Pressable>
+    </Card>
+  );
+}
+
 /** Indicateur d'étapes (chargement → livraison). */
 export function Stepper({ status }: { status: CourseStatus }) {
   if (status === 'ANNULEE') {
@@ -127,6 +158,10 @@ const styles = StyleSheet.create({
   muted: { fontSize: 12, color: colors.inkMuted, flexShrink: 1 },
   kmText: { fontSize: 13, fontWeight: '700', color: colors.brand700 },
   price: { fontSize: 15, fontWeight: '800', color: colors.ink },
+  recapTop: { flexDirection: 'row', alignItems: 'center', gap: 8 },
+  recapDel: { padding: 2 },
+  recapRow: { flexDirection: 'row', alignItems: 'center', gap: 6, marginTop: 6 },
+  recapText: { flex: 1, fontSize: 13, color: colors.inkSoft, fontWeight: '600' },
   progressTrack: { height: 6, backgroundColor: colors.slateBg, borderRadius: 3, marginTop: 10, overflow: 'hidden' },
   progressFill: { height: '100%', backgroundColor: colors.amber500, borderRadius: 3 },
   stepper: { flexDirection: 'row', justifyContent: 'space-between' },

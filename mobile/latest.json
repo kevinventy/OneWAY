@@ -1,6 +1,6 @@
 {
-  "version": "1.2.4",
-  "versionCode": 17,
+  "version": "1.2.5",
+  "versionCode": 18,
   "apkUrl": "https://github.com/kevinventy/OneWAY/releases/latest/download/app-release.apk",
-  "notes": "La carte suit maintenant la position GPS du chauffeur en direct ; un seul bouton « Reçu de livraison à signer »."
+  "notes": "Livraisons terminées : récapitulatif (référence, trajet, marchandise, client) et suppression. « Livraisons récentes » côté gérant."
 }

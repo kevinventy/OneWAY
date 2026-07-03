@@ -251,6 +251,15 @@ export async function cancelCourse(course: Course): Promise<void> {
   await syncTracking({ ...course, status: 'ANNULEE' }, driver);
 }
 
+// ── Suppression d'une livraison terminée (gérant propriétaire) ─────────────
+
+export async function deleteCourse(course: Course): Promise<void> {
+  const batch = writeBatch(firestore);
+  batch.delete(doc(firestore, 'courses', course.id));
+  batch.delete(doc(firestore, 'tracking', course.code));
+  await batch.commit();
+}
+
 // ── Position temps réel (GPS du chauffeur) ─────────────────────────────────
 
 /**

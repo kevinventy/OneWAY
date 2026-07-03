@@ -29,7 +29,8 @@ service cloud.firestore {
       );
       allow create: if signedIn() && request.resource.data.ownerId == uid();
       allow update: if signedIn() && (resource.data.ownerId == uid() || resource.data.driverUserId == uid());
-      allow delete: if false;
+      // Le gérant propriétaire peut supprimer une de ses courses (nettoyage).
+      allow delete: if signedIn() && resource.data.ownerId == uid();
     }
 
     // Demandes de devis : créées par le client, consultées/traitées par le gérant.

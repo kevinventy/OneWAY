@@ -1,14 +1,14 @@
 import { useEffect, useState, type ReactNode } from 'react';
-import { View, Text, ScrollView, StyleSheet, Pressable, Linking } from 'react-native';
+import { View, Text, ScrollView, StyleSheet, Pressable, Linking, Alert } from 'react-native';
 import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useAuth } from '@/store/auth';
-import { AppHeader, CourseCard } from '@/components/app';
+import { AppHeader, CourseCard, DeliveryRecapCard } from '@/components/app';
 import { Button, Card, EmptyState, SectionTitle, Badge, Input } from '@/components/ui';
 import {
   subscribeOwnerCourses, subscribeDriverCourses, subscribeClientCourses,
-  subscribeNotifications, subscribeQuoteRequests,
+  subscribeNotifications, subscribeQuoteRequests, deleteCourse,
 } from '@/firebase/db';
 import { getFavorites } from '@/lib/favorites';
 import { money } from '@/lib/format';
@@ -64,6 +64,12 @@ function GerantHome() {
       pathname: '/(app)/new-course',
       params: { clientName: q.clientName, clientPhone: q.clientPhone, fromCity: q.fromCity, toCity: q.toCity, cargoType: q.cargoType, weight: String(q.weightKg), description: q.description, requestId: q.id },
     });
+  }
+  function confirmDelete(c: Course) {
+    Alert.alert('Supprimer la livraison', `Supprimer définitivement ${c.reference} (${c.pickup.city} → ${c.delivery.city}) ?`, [
+      { text: 'Annuler', style: 'cancel' },
+      { text: 'Supprimer', style: 'destructive', onPress: () => deleteCourse(c).catch((e: any) => Alert.alert('Erreur', e?.message ?? 'Suppression impossible')) },
+    ]);
   }
 
   const hour = new Date().getHours();
@@ -132,8 +138,10 @@ function GerantHome() {
 
       {delivered.length > 0 && (
         <>
-          <SectionTitle>Livrées récentes</SectionTitle>
-          {delivered.slice(0, 5).map((c) => <CourseCard key={c.id} course={c} onPress={() => router.push(`/(app)/course/${c.id}`)} />)}
+          <SectionTitle>Livraisons récentes</SectionTitle>
+          {delivered.slice(0, 8).map((c) => (
+            <DeliveryRecapCard key={c.id} course={c} onPress={() => router.push(`/(app)/course/${c.id}`)} onDelete={() => confirmDelete(c)} />
+          ))}
         </>
       )}
     </ScrollView>
@@ -209,6 +217,7 @@ function ClientHome() {
   const [favorites, setFavorites] = useState<string[]>([]);
   const [code, setCode] = useState('');
   const [showPromo, setShowPromo] = useState(false);
+  const [hidden, setHidden] = useState<string[]>([]);
 
   useEffect(() => {
     if (!user?.phone) return;
@@ -217,11 +226,25 @@ function ClientHome() {
 
   useEffect(() => { getFavorites().then(setFavorites); }, []);
   useEffect(() => { AsyncStorage.getItem(PROMO_KEY).then((v) => setShowPromo(v !== '1')); }, []);
+  useEffect(() => {
+    if (!user) return;
+    AsyncStorage.getItem(`oneway.hidden.${user.id}`).then((v) => setHidden(v ? JSON.parse(v) : [])).catch(() => {});
+  }, [user?.id]);
 
   const dismissPromo = () => { setShowPromo(false); AsyncStorage.setItem(PROMO_KEY, '1').catch(() => {}); };
+  function hideCourse(id: string) {
+    Alert.alert('Supprimer de la liste', 'Retirer cette livraison de vos livraisons terminées ?', [
+      { text: 'Annuler', style: 'cancel' },
+      { text: 'Supprimer', style: 'destructive', onPress: () => {
+        const next = [...hidden, id];
+        setHidden(next);
+        if (user) AsyncStorage.setItem(`oneway.hidden.${user.id}`, JSON.stringify(next)).catch(() => {});
+      } },
+    ]);
+  }
 
   const active = courses.filter((c) => !['LIVREE', 'ANNULEE'].includes(c.status));
-  const done = courses.filter((c) => ['LIVREE', 'ANNULEE'].includes(c.status));
+  const done = courses.filter((c) => ['LIVREE', 'ANNULEE'].includes(c.status) && !hidden.includes(c.id));
   const activeTop = active.find((c) => c.status !== 'NOUVELLE') ?? active[0];
   const track = (c: string) => router.push(`/track?code=${encodeURIComponent(c)}`);
 
@@ -312,7 +335,7 @@ function ClientHome() {
         <>
           {active.map((c) => <CourseCard key={c.id} course={c} onPress={() => track(c.code)} />)}
           {done.length > 0 && <SectionTitle>Terminées</SectionTitle>}
-          {done.map((c) => <CourseCard key={c.id} course={c} onPress={() => track(c.code)} />)}
+          {done.map((c) => <DeliveryRecapCard key={c.id} course={c} onPress={() => track(c.code)} onDelete={() => hideCourse(c.id)} />)}
         </>
       )}
 
