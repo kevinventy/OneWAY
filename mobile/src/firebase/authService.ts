@@ -30,6 +30,8 @@ export interface RegisterInput {
   identifiant: string;
   password: string;
   phone?: string;
+  /** Vraie adresse email (facultative). Si fournie, elle sert d'identifiant de connexion. */
+  email?: string;
   /** Gérant uniquement. */
   companyName?: string;
   /** Chauffeur uniquement : code de l'entreprise à rejoindre. */
@@ -40,7 +42,10 @@ export async function register(input: RegisterInput): Promise<User> {
   if (input.role === 'CHAUFFEUR' && !(input.companyCode || '').trim()) {
     throw new Error('Code entreprise requis');
   }
-  const email = synthEmail(input.identifiant);
+  // Si une vraie adresse email est fournie, elle devient l'identifiant de
+  // connexion Firebase ; sinon on retombe sur l'email synthétique (@oneway.app).
+  const realEmail = (input.email || '').trim().toLowerCase();
+  const email = realEmail || synthEmail(input.identifiant);
   const cred = await createUserWithEmailAndPassword(auth, email, input.password);
   const uid = cred.user.uid;
 
@@ -59,6 +64,7 @@ export async function register(input: RegisterInput): Promise<User> {
       name: input.name,
       identifiant: input.identifiant.trim(),
       email,
+      contactEmail: realEmail || undefined,
       phone: input.phone,
       avatarColor: COLORS[Math.floor(Math.random() * COLORS.length)],
       createdAt: Date.now(),
@@ -94,8 +100,15 @@ async function resolveCompanyOwner(code: string): Promise<string | null> {
   return snap.empty ? null : snap.docs[0].id;
 }
 
-export async function login(identifiant: string, password: string): Promise<void> {
-  await signInWithEmailAndPassword(auth, synthEmail(identifiant), password);
+/**
+ * Connexion par identifiant OU vraie adresse email. Si la saisie contient « @ »,
+ * elle est utilisée telle quelle comme email Firebase ; sinon on la transforme
+ * en email synthétique `identifiant@oneway.app`.
+ */
+export async function login(identifier: string, password: string): Promise<void> {
+  const id = identifier.trim();
+  const email = id.includes('@') ? id.toLowerCase() : synthEmail(id);
+  await signInWithEmailAndPassword(auth, email, password);
 }
 
 export async function logout(): Promise<void> {

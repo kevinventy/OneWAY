@@ -66,7 +66,7 @@ export default function Login() {
         <Text style={styles.sub}>Ravi de vous revoir sur ONE WAY.</Text>
 
         <View style={{ marginTop: 24 }}>
-          <Field label="Identifiant">
+          <Field label="Identifiant ou email">
             <Input
               value={identifiant}
               onChangeText={setIdentifiant}
@@ -75,7 +75,7 @@ export default function Login() {
               textContentType="username"
               importantForAutofill="yes"
               autoCorrect={false}
-              placeholder="votre nom d'utilisateur"
+              placeholder="identifiant ou vous@exemple.com"
             />
           </Field>
           <Field label="Mot de passe">

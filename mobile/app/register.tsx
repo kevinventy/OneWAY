@@ -21,7 +21,7 @@ export default function Register() {
   const { register, user } = useAuth();
   const initial = (['CLIENT', 'GERANT', 'CHAUFFEUR'].includes(params.role ?? '') ? params.role : 'CLIENT') as Role;
   const [role, setRole] = useState<Role>(initial);
-  const [form, setForm] = useState({ name: '', identifiant: '', password: '', confirm: '', companyName: '', companyCode: '', phone: '' });
+  const [form, setForm] = useState({ name: '', identifiant: '', email: '', password: '', confirm: '', companyName: '', companyCode: '', phone: '' });
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
   const set = (k: keyof typeof form) => (v: string) => setForm((f) => ({ ...f, [k]: v }));
@@ -35,6 +35,8 @@ export default function Register() {
     setError('');
     if (form.name.trim().length < 2) return setError('Indiquez votre nom complet.');
     if (form.identifiant.trim().length < 3) return setError('Choisissez un identifiant (3 caractères min.).');
+    const email = form.email.trim();
+    if (email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) return setError('Adresse email invalide.');
     if (form.password.length < 6) return setError('Mot de passe : 6 caractères minimum.');
     if (form.password !== form.confirm) return setError('Les deux mots de passe ne correspondent pas.');
     if (role === 'CLIENT' && form.phone.trim().length < 6) return setError('Votre téléphone est requis (pour retrouver vos livraisons).');
@@ -46,6 +48,7 @@ export default function Register() {
         role,
         name: form.name.trim(),
         identifiant: form.identifiant.trim(),
+        email: email || undefined,
         password: form.password,
         phone: form.phone.trim() || undefined,
         companyName: role === 'GERANT' ? form.companyName.trim() : undefined,
@@ -75,6 +78,7 @@ export default function Register() {
 
         <Field label="Nom complet"><Input value={form.name} onChangeText={set('name')} autoComplete="name" textContentType="name" placeholder="Hery Rakoto" /></Field>
         <Field label="Identifiant (nom d'utilisateur)"><Input value={form.identifiant} onChangeText={set('identifiant')} autoCapitalize="none" autoCorrect={false} autoComplete="username" textContentType="username" placeholder="ex : hery.rakoto" /></Field>
+        <Field label="Adresse email (facultatif — sert à se connecter)"><Input value={form.email} onChangeText={set('email')} keyboardType="email-address" autoCapitalize="none" autoCorrect={false} autoComplete="email" textContentType="emailAddress" placeholder="vous@exemple.com" /></Field>
         <Field label="Mot de passe"><Input value={form.password} onChangeText={set('password')} secureTextEntry autoComplete="password-new" textContentType="newPassword" importantForAutofill="yes" placeholder="6 caractères minimum" /></Field>
         <Field label="Confirmer le mot de passe"><Input value={form.confirm} onChangeText={set('confirm')} secureTextEntry autoComplete="password-new" textContentType="newPassword" importantForAutofill="yes" placeholder="ressaisissez le mot de passe" /></Field>
 

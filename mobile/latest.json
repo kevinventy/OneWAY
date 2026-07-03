@@ -1,6 +1,6 @@
 {
-  "version": "1.3.2",
-  "versionCode": 24,
+  "version": "1.3.3",
+  "versionCode": 25,
   "apkUrl": "https://github.com/kevinventy/OneWAY/releases/latest/download/app-release.apk",
-  "notes": "Modifier son profil (nom, email de contact, téléphone) + « Se souvenir de moi » à la connexion (identifiants mémorisés de façon chiffrée)."
+  "notes": "Connexion par email ou identifiant + « Se souvenir de moi » + édition du profil (nom, email de contact, téléphone)."
 }
