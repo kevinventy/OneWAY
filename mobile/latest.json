@@ -2,5 +2,5 @@
   "version": "1.3.0",
   "versionCode": 22,
   "apkUrl": "https://github.com/kevinventy/OneWAY/releases/latest/download/app-release.apk",
-  "notes": "Grille tarifaire éditable (prix par axe et par tonnage) + programme de fidélité : −10 % tous les 10 livraisons."
+  "notes": "Programme de fidélité : −10 % tous les 10 livraisons (progression côté client + rappel « client fidèle » côté gérant)."
 }

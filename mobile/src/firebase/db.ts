@@ -1,6 +1,5 @@
 import {
   collection,
-  deleteDoc,
   doc,
   getDoc,
   getDocs,
@@ -22,7 +21,6 @@ import { vehicleByKey, cargoByKey } from '@/data/catalog';
 import { STATUS_LABEL, nextStatus } from '@/lib/flow';
 import { COURSE_STATUS } from '@/lib/labels';
 import { kmRemaining } from '@/lib/types';
-import type { Tariff } from '@/lib/tariffs';
 import type {
   Course,
   CourseStatus,
@@ -306,38 +304,6 @@ export async function getDriverByUser(uid: string): Promise<Driver | null> {
   const snap = await getDocs(query(col('drivers'), where('userId', '==', uid)));
   return snap.empty ? null : (snap.docs[0].data() as Driver);
 }
-
-// ── Grille tarifaire (gérant) ──────────────────────────────────────────────
-
-export interface TariffInput {
-  id?: string;
-  fromCity: string;
-  toCity: string;
-  bidirectional: boolean;
-  prices: Record<string, number>;
-}
-
-/** Crée ou met à jour une ligne de grille tarifaire (axe). */
-export async function saveTariff(ownerId: string, input: TariffInput): Promise<void> {
-  const ref = input.id ? doc(firestore, 'tariffs', input.id) : doc(col('tariffs'));
-  await setDoc(ref, clean({
-    id: ref.id,
-    ownerId,
-    fromCity: input.fromCity,
-    toCity: input.toCity,
-    bidirectional: input.bidirectional,
-    prices: input.prices,
-    updatedAt: Date.now(),
-  }));
-}
-
-export async function deleteTariff(id: string): Promise<void> {
-  await deleteDoc(doc(firestore, 'tariffs', id));
-}
-
-export const subscribeOwnerTariffs = (ownerId: string, cb: (t: Tariff[]) => void) =>
-  subscribe<Tariff>('tariffs', [where('ownerId', '==', ownerId)], (rows) =>
-    cb(rows.sort((a, b) => `${a.fromCity}${a.toCity}`.localeCompare(`${b.fromCity}${b.toCity}`, 'fr'))));
 
 // ── Subscriptions temps réel ───────────────────────────────────────────────
 

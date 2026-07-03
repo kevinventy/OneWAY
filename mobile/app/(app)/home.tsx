@@ -108,9 +108,8 @@ function GerantHome() {
       </Pressable>
 
       {/* Raccourcis */}
-      <View style={styles.shortcuts}>
+      <View style={{ flexDirection: 'row', gap: 12 }}>
         <ActionTile icon="calculator" label="Calcul rapide" bg={colors.brand50} fg={colors.brand600} onPress={() => router.push('/(app)/quick-price')} />
-        <ActionTile icon="pricetags" label="Grille tarifaire" bg={colors.amberBg} fg={colors.amber600} onPress={() => router.push('/(app)/tariffs')} />
         <ActionTile icon="stats-chart" label="Tableau de bord" bg="#FDECD8" fg={colors.amber600} onPress={() => router.push('/(app)/dashboard')} />
         <ActionTile icon="car-outline" label="Ma flotte" bg={colors.greenBg} fg={colors.green} onPress={() => router.push('/(app)/fleet')} />
       </View>
@@ -539,8 +538,7 @@ const styles = StyleSheet.create({
   caLabel: { color: colors.inkMuted, fontSize: 12, fontWeight: '600' },
   caValue: { color: colors.ink, fontSize: 24, fontWeight: '900', marginTop: 2 },
   caIcon: { width: 44, height: 44, borderRadius: 12, backgroundColor: colors.greenBg, alignItems: 'center', justifyContent: 'center' },
-  shortcuts: { flexDirection: 'row', flexWrap: 'wrap', gap: 12 },
-  actionTile: { flexBasis: '47%', flexGrow: 1, alignItems: 'center', gap: 8, borderRadius: 16, paddingVertical: 18 },
+  actionTile: { flex: 1, alignItems: 'center', gap: 8, borderRadius: 16, paddingVertical: 18 },
   actionTileLabel: { fontWeight: '800', fontSize: 13 },
 
   // Fidélité (client)
