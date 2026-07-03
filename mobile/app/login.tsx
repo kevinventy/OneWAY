@@ -1,9 +1,11 @@
 import { useState, useEffect } from 'react';
-import { View, Text, StyleSheet, ScrollView, KeyboardAvoidingView, Platform } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, KeyboardAvoidingView, Platform, Pressable } from 'react-native';
 import { useRouter } from 'expo-router';
+import { Ionicons } from '@expo/vector-icons';
 import { useAuth } from '@/store/auth';
 import { Button, Field, Input } from '@/components/ui';
 import { Logo } from '@/components/Logo';
+import { getSavedLogin, saveLogin, clearSavedLogin } from '@/lib/credentials';
 import { colors } from '@/theme';
 
 export default function Login() {
@@ -11,8 +13,16 @@ export default function Login() {
   const { login, user } = useAuth();
   const [identifiant, setIdentifiant] = useState('');
   const [password, setPassword] = useState('');
+  const [remember, setRemember] = useState(true);
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
+
+  // Pré-remplit l'écran si des identifiants ont été mémorisés (trousseau chiffré).
+  useEffect(() => {
+    getSavedLogin().then((s) => {
+      if (s) { setIdentifiant(s.identifiant); setPassword(s.password); setRemember(true); }
+    });
+  }, []);
 
   // On attend que le profil soit chargé (auth state) AVANT de naviguer : sinon
   // le garde de route renvoie vers /welcome (cause de l'ancien « connexion ×2 »).
@@ -38,6 +48,9 @@ export default function Login() {
     setLoading(true);
     try {
       await login(identifiant, password);
+      // Mémorise (trousseau chiffré) ou efface selon le choix de l'utilisateur.
+      if (remember) await saveLogin(identifiant.trim(), password);
+      else await clearSavedLogin();
       // La navigation se fait via l'effet ci-dessus, une fois `user` chargé.
     } catch (e: any) {
       setError(describeError(e));
@@ -78,6 +91,10 @@ export default function Login() {
               placeholder="••••••••"
             />
           </Field>
+          <Pressable onPress={() => setRemember((r) => !r)} style={styles.rememberRow} hitSlop={6}>
+            <Ionicons name={remember ? 'checkbox' : 'square-outline'} size={22} color={remember ? colors.brand600 : colors.inkMuted} />
+            <Text style={styles.rememberText}>Se souvenir de moi</Text>
+          </Pressable>
           {error ? <Text style={styles.error}>{error}</Text> : null}
           <Button title="Se connecter" onPress={submit} loading={loading} style={{ marginTop: 6 }} />
           <Button title="Créer un compte" variant="ghost" onPress={() => router.replace('/register')} style={{ marginTop: 8 }} />
@@ -122,6 +139,8 @@ const styles = StyleSheet.create({
   container: { flexGrow: 1, padding: 24, paddingTop: 72, backgroundColor: colors.bg },
   title: { fontSize: 26, fontWeight: '800', color: colors.ink, marginTop: 24 },
   sub: { color: colors.inkMuted, marginTop: 4 },
+  rememberRow: { flexDirection: 'row', alignItems: 'center', gap: 8, marginTop: 4, marginBottom: 12, paddingVertical: 2 },
+  rememberText: { color: colors.inkSoft, fontSize: 14, fontWeight: '600' },
   error: { color: colors.red, marginBottom: 10 },
   hint: { marginTop: 24, backgroundColor: colors.brand50, borderRadius: 12, padding: 12 },
   hintText: { color: colors.brand700, fontSize: 13, lineHeight: 19 },
