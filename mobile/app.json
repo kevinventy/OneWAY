@@ -2,7 +2,7 @@
   "expo": {
     "name": "ONE WAY",
     "slug": "oneway",
-    "version": "1.3.3",
+    "version": "1.3.4",
     "orientation": "portrait",
     "scheme": "oneway",
     "userInterfaceStyle": "light",
@@ -20,7 +20,7 @@
     },
     "android": {
       "package": "mg.oneway.app",
-      "versionCode": 25,
+      "versionCode": 26,
       "adaptiveIcon": {
         "foregroundImage": "./assets/adaptive-icon.png",
         "backgroundColor": "#ffffff"

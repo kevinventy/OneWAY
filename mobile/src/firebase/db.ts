@@ -82,6 +82,24 @@ async function notify(userId: string, n: { type: string; title: string; body: st
   await setDoc(ref, { id: ref.id, userId, read: false, createdAt: Date.now(), ...n });
 }
 
+/**
+ * Exécute un effet **secondaire** (doc de suivi public, notification) sans
+ * jamais faire échouer l'action principale déjà enregistrée.
+ *
+ * Ces écritures suivaient la course/l'affectation dans la même fonction : la
+ * moindre coupure réseau faisait remonter « Erreur » à l'utilisateur alors que
+ * l'opération avait bien été enregistrée — au risque qu'il la refasse et crée
+ * un doublon. Le suivi public est de toute façon reconstruit à l'étape
+ * suivante.
+ */
+async function bestEffort(label: string, fn: () => Promise<unknown>): Promise<void> {
+  try {
+    await fn();
+  } catch (e) {
+    console.warn(`[ONE WAY] ${label} non synchronisé :`, e);
+  }
+}
+
 /** Construit le doc public de suivi (sanitisé) à partir d'une course. */
 function buildTracking(course: Course, driver: Driver | null, timeline: PublicTracking['timeline']): PublicTracking {
   return clean({
@@ -170,8 +188,8 @@ export async function createCourse(gerant: User, input: NewCourseInput): Promise
     createdAt: Date.now(),
   };
   await setDoc(ref, courseForWrite(course));
-  await syncTracking(course, null);
-  await notify(gerant.id, { type: 'COURSE', title: 'Course créée', body: `${course.reference} · code ${course.code}`, href: `/(app)/course/${course.id}` });
+  await bestEffort('suivi public', () => syncTracking(course, null));
+  await bestEffort('notification', () => notify(gerant.id, { type: 'COURSE', title: 'Course créée', body: `${course.reference} · code ${course.code}`, href: `/(app)/course/${course.id}` }));
   return course;
 }
 
@@ -193,9 +211,9 @@ export async function assignCourse(course: Course, driver: Driver): Promise<void
   await batch.commit();
 
   const updated: Course = { ...course, driverId: driver.id, driverUserId: driver.userId, vehicleId: driver.vehicleId, status: 'ASSIGNEE' };
-  await syncTracking(updated, driver, { status: 'ASSIGNEE', label: `Course assignée à ${driver.name}`, at: Date.now() });
+  await bestEffort('suivi public', () => syncTracking(updated, driver, { status: 'ASSIGNEE', label: `Course assignée à ${driver.name}`, at: Date.now() }));
   if (driver.userId) {
-    await notify(driver.userId, { type: 'MISSION', title: 'Nouvelle mission 🚚', body: `${course.reference} : ${course.pickup.city} → ${course.delivery.city}`, href: `/(app)/course/${course.id}` });
+    await bestEffort('notification', () => notify(driver.userId!, { type: 'MISSION', title: 'Nouvelle mission 🚚', body: `${course.reference} : ${course.pickup.city} → ${course.delivery.city}`, href: `/(app)/course/${course.id}` }));
   }
 }
 
@@ -217,7 +235,9 @@ export async function advanceCourse(course: Course, by: string): Promise<void> {
       ? [course.currentLat, course.currentLng]
       : pointAtProgress(course.routeGeometry as LatLng[], progress);
 
-  const driver = course.driverId ? await getDriver(course.driverId) : null;
+  // Lecture d'agrément (nom du chauffeur sur le suivi public) : ne doit pas
+  // empêcher le changement d'étape si elle échoue.
+  const driver = course.driverId ? await getDriver(course.driverId).catch(() => null) : null;
   const batch = writeBatch(firestore);
   batch.update(doc(firestore, 'courses', course.id), clean({
     status: next, progress, currentLat: pos[0], currentLng: pos[1],
@@ -233,14 +253,14 @@ export async function advanceCourse(course: Course, by: string): Promise<void> {
   await batch.commit();
 
   const updated: Course = { ...course, status: next, progress, currentLat: pos[0], currentLng: pos[1] };
-  await syncTracking(updated, driver, { status: next, label: STATUS_LABEL[next], at: Date.now() });
-  await notify(course.ownerId, { type: 'TRACKING', title: `Suivi ${course.reference}`, body: COURSE_STATUS[next].label, href: `/(app)/course/${course.id}` });
+  await bestEffort('suivi public', () => syncTracking(updated, driver, { status: next, label: STATUS_LABEL[next], at: Date.now() }));
+  await bestEffort('notification', () => notify(course.ownerId, { type: 'TRACKING', title: `Suivi ${course.reference}`, body: COURSE_STATUS[next].label, href: `/(app)/course/${course.id}` }));
 }
 
 // ── Annulation (gérant) ────────────────────────────────────────────────────
 
 export async function cancelCourse(course: Course): Promise<void> {
-  const driver = course.driverId ? await getDriver(course.driverId) : null;
+  const driver = course.driverId ? await getDriver(course.driverId).catch(() => null) : null;
   const batch = writeBatch(firestore);
   batch.update(doc(firestore, 'courses', course.id), { status: 'ANNULEE', cancelledAt: Date.now() });
   if (course.driverId) batch.update(doc(firestore, 'drivers', course.driverId), { status: 'DISPONIBLE' });
@@ -248,7 +268,7 @@ export async function cancelCourse(course: Course): Promise<void> {
   const ev = doc(col('events'));
   batch.set(ev, { id: ev.id, courseId: course.id, ownerId: course.ownerId, status: 'ANNULEE', label: 'Course annulée', by: course.ownerId, createdAt: Date.now() });
   await batch.commit();
-  await syncTracking({ ...course, status: 'ANNULEE' }, driver);
+  await bestEffort('suivi public', () => syncTracking({ ...course, status: 'ANNULEE' }, driver));
 }
 
 // ── Suppression d'une livraison terminée (gérant propriétaire) ─────────────
@@ -273,8 +293,8 @@ export async function updateDriverLocation(course: Course, lat: number, lng: num
   const projected = progressAlongRoute(geo, [lat, lng]);
   const progress = Math.min(0.99, Math.max(course.progress, projected));
   await updateDoc(doc(firestore, 'courses', course.id), clean({ currentLat: lat, currentLng: lng, progress }));
-  const driver = course.driverId ? await getDriver(course.driverId) : null;
-  await syncTracking({ ...course, currentLat: lat, currentLng: lng, progress }, driver);
+  const driver = course.driverId ? await getDriver(course.driverId).catch(() => null) : null;
+  await bestEffort('suivi public', () => syncTracking({ ...course, currentLat: lat, currentLng: lng, progress }, driver));
 }
 
 // ── Prix modifiable (gérant) ───────────────────────────────────────────────

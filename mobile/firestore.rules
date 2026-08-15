@@ -13,6 +13,9 @@ service cloud.firestore {
     match /users/{id} {
       allow read: if signedIn();
       allow create, update: if signedIn() && uid() == id;
+      // Suppression de son propre profil (fermeture de compte, nettoyage d'une
+      // fiche restée orpheline après une inscription interrompue).
+      allow delete: if signedIn() && uid() == id;
     }
 
     function myPhone() {

@@ -31,6 +31,20 @@ export default function Register() {
     if (loading && user) router.replace('/(app)/home');
   }, [loading, user]);
 
+  // Filet de sécurité : sans lui, le bouton tournait indéfiniment quand le
+  // profil n'arrivait jamais (réseau coupé au mauvais moment).
+  useEffect(() => {
+    if (!loading) return;
+    const t = setTimeout(() => {
+      setLoading(false);
+      setError(
+        'Le compte a été créé mais l’app n’a pas reçu le profil (connexion instable). ' +
+        'Touchez « J’ai déjà un compte » pour vous connecter.',
+      );
+    }, 20000);
+    return () => clearTimeout(t);
+  }, [loading]);
+
   async function submit() {
     setError('');
     if (form.name.trim().length < 2) return setError('Indiquez votre nom complet.');

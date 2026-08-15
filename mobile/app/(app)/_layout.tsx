@@ -1,10 +1,33 @@
-import { Stack, Redirect } from 'expo-router';
-import { ActivityIndicator, View } from 'react-native';
+import { Stack, Redirect, useRouter } from 'expo-router';
+import { ActivityIndicator, View, Text, StyleSheet } from 'react-native';
 import { useAuth } from '@/store/auth';
+import { Button } from '@/components/ui';
 import { colors } from '@/theme';
 
 export default function AppLayout() {
-  const { user, loading, configured, firebaseUser } = useAuth();
+  const { user, loading, configured, firebaseUser, profileMissing, profileError, logout } = useAuth();
+  const router = useRouter();
+
+  // Compte connecté mais profil illisible/absent : sans issue de secours, l'app
+  // tournait indéfiniment sur son spinner à chaque lancement.
+  if (configured && firebaseUser && !user && (profileMissing || profileError)) {
+    return (
+      <View style={styles.recover}>
+        <Text style={styles.recoverTitle}>Profil incomplet</Text>
+        <Text style={styles.recoverText}>
+          {profileError
+            ? `Votre profil n’a pas pu être chargé (${profileError}). Vérifiez votre connexion puis réessayez.`
+            : 'Votre compte existe, mais son profil n’a jamais été enregistré — une inscription a dû être interrompue. Recréez le compte avec les mêmes identifiants : l’inscription reprendra où elle s’est arrêtée.'}
+        </Text>
+        <Button
+          title="Revenir à l’accueil"
+          icon="arrow-back"
+          onPress={async () => { await logout().catch(() => {}); router.replace('/welcome'); }}
+          style={{ marginTop: 18, alignSelf: 'stretch' }}
+        />
+      </View>
+    );
+  }
 
   // Pendant la connexion, `firebaseUser` est défini avant que le profil arrive :
   // on affiche un spinner plutôt que de renvoyer vers /welcome (anti « ×2 »).
@@ -40,3 +63,9 @@ export default function AppLayout() {
     </Stack>
   );
 }
+
+const styles = StyleSheet.create({
+  recover: { flex: 1, alignItems: 'center', justifyContent: 'center', padding: 28, backgroundColor: colors.bg },
+  recoverTitle: { fontSize: 20, fontWeight: '900', color: colors.ink, marginBottom: 10 },
+  recoverText: { color: colors.inkMuted, fontSize: 14, lineHeight: 21, textAlign: 'center' },
+});

@@ -10,7 +10,7 @@ import { colors } from '@/theme';
 
 export default function Login() {
   const router = useRouter();
-  const { login, user } = useAuth();
+  const { login, user, profileMissing } = useAuth();
   const [identifiant, setIdentifiant] = useState('');
   const [password, setPassword] = useState('');
   const [remember, setRemember] = useState(true);
@@ -30,14 +30,20 @@ export default function Login() {
     if (loading && user) router.replace('/(app)/home');
   }, [loading, user]);
 
+  // Profil qui n'arrive pas : on rend la main au lieu de tourner sans fin.
+  // (20 s : le long polling Firestore met plus de temps sur réseau lent.)
   useEffect(() => {
     if (!loading) return;
     const t = setTimeout(() => {
       setLoading(false);
-      setError('Connexion établie mais profil introuvable. Vérifiez les règles Firestore.');
-    }, 9000);
+      setError(
+        profileMissing
+          ? 'Ce compte n’a pas de profil : son inscription a été interrompue. Touchez « Créer un compte » et reprenez avec les mêmes identifiants.'
+          : 'Connexion établie, mais le profil n’a pas pu être chargé. Vérifiez votre connexion Internet et réessayez.',
+      );
+    }, 20000);
     return () => clearTimeout(t);
-  }, [loading]);
+  }, [loading, profileMissing]);
 
   async function submit() {
     setError('');
@@ -117,22 +123,35 @@ const ERROR_MAP: Record<string, string> = {
   'auth/invalid-credential': 'Identifiant ou mot de passe incorrect',
   'auth/email-already-in-use': 'Cet identifiant est déjà pris',
   'auth/weak-password': 'Mot de passe trop faible (6 caractères min.)',
-  'auth/network-request-failed': 'Problème réseau — vérifiez votre connexion',
+  'auth/network-request-failed': 'Problème réseau — vérifiez votre connexion, puis réessayez.',
+  'auth/too-many-requests': 'Trop de tentatives. Patientez quelques minutes avant de réessayer.',
+  'auth/internal-error': 'Le service d’authentification n’a pas répondu. Réessayez dans un instant.',
+  'auth/user-disabled': 'Ce compte a été désactivé. Contactez ONE WAY.',
+  'auth/missing-password': 'Saisissez votre mot de passe.',
   'auth/operation-not-allowed': 'Activez « E-mail/Mot de passe » dans Firebase → Authentication → Sign-in method.',
   'auth/admin-restricted-operation': 'Activez « E-mail/Mot de passe » dans Firebase → Authentication → Sign-in method.',
   'auth/configuration-not-found': 'Authentication non configuré dans Firebase (activez E-mail/Mot de passe).',
   'auth/api-key-not-valid': 'Clé API Firebase invalide — vérifiez la Variable EXPO_PUBLIC_FIREBASE_API_KEY.',
   'auth/invalid-api-key': 'Clé API Firebase invalide — vérifiez la Variable EXPO_PUBLIC_FIREBASE_API_KEY.',
   'permission-denied': 'Firestore bloque l’écriture. Passez la base en « mode test » ou déployez les règles (mobile/firestore.rules).',
-  'unavailable': 'Firestore indisponible — réessayez dans un instant.',
+  'unavailable': 'Connexion au serveur perdue — vérifiez votre réseau et réessayez.',
+  'deadline-exceeded': 'Le serveur met trop de temps à répondre (réseau lent). Réessayez.',
+  'resource-exhausted': 'Quota Firebase atteint. Réessayez plus tard.',
+  'failed-precondition': 'Requête impossible en l’état — index Firestore manquant (voir la console Firebase).',
+  'unauthenticated': 'Session expirée. Reconnectez-vous.',
+  'cancelled': 'Opération interrompue. Réessayez.',
 };
 
 /** Message clair pour l'utilisateur ; affiche le code brut si inconnu (diagnostic). */
 export function describeError(e: any): string {
   const code: string | undefined = e?.code;
   if (code && ERROR_MAP[code]) return ERROR_MAP[code];
-  const raw = code || e?.message || 'inconnue';
-  return `Erreur : ${raw}`;
+  // Codes réseau non listés : même cause, même conseil.
+  if (code && /network|unavailable|timeout|deadline/i.test(code)) {
+    return 'Connexion instable — vérifiez votre réseau puis réessayez.';
+  }
+  const raw = code || e?.message;
+  return raw ? `Erreur : ${raw}` : 'Une erreur est survenue. Vérifiez votre connexion puis réessayez.';
 }
 
 const styles = StyleSheet.create({

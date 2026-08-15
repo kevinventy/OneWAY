@@ -38,6 +38,50 @@ export interface RegisterInput {
   companyCode?: string;
 }
 
+/** Relance une écriture Firestore : les réseaux mobiles coupent souvent la 1re. */
+async function withRetry<T>(fn: () => Promise<T>, attempts = 3): Promise<T> {
+  let last: any;
+  for (let i = 0; i < attempts; i++) {
+    try {
+      return await fn();
+    } catch (e: any) {
+      last = e;
+      // Une erreur de droits ou de validation ne s'arrangera pas en réessayant.
+      if (e?.code === 'permission-denied' || e?.code === 'invalid-argument') throw e;
+      if (i < attempts - 1) await new Promise((r) => setTimeout(r, 600 * (i + 1)));
+    }
+  }
+  throw last;
+}
+
+/**
+ * Ouvre (ou récupère) le compte Firebase Auth de l'inscription.
+ *
+ * Une inscription interrompue après la création du compte mais avant
+ * l'enregistrement du profil laissait un compte « orphelin » : toute nouvelle
+ * tentative échouait alors définitivement avec « Cet identifiant est déjà
+ * pris », sans aucun moyen de s'en sortir. On récupère donc ce compte quand le
+ * mot de passe saisi est le bon et qu'aucun profil n'existe.
+ */
+async function openAccount(email: string, password: string): Promise<{ uid: string; adopted: boolean }> {
+  try {
+    const cred = await createUserWithEmailAndPassword(auth, email, password);
+    return { uid: cred.user.uid, adopted: false };
+  } catch (e: any) {
+    if (e?.code !== 'auth/email-already-in-use') throw e;
+    let cred;
+    try {
+      cred = await signInWithEmailAndPassword(auth, email, password);
+    } catch {
+      throw e; // le compte appartient à quelqu'un d'autre → message d'origine
+    }
+    if (await loadProfile(cred.user.uid)) {
+      throw new Error('Ce compte existe déjà. Touchez « J’ai déjà un compte » pour vous connecter.');
+    }
+    return { uid: cred.user.uid, adopted: true };
+  }
+}
+
 export async function register(input: RegisterInput): Promise<User> {
   if (input.role === 'CHAUFFEUR' && !(input.companyCode || '').trim()) {
     throw new Error('Code entreprise requis');
@@ -46,16 +90,19 @@ export async function register(input: RegisterInput): Promise<User> {
   // connexion Firebase ; sinon on retombe sur l'email synthétique (@oneway.app).
   const realEmail = (input.email || '').trim().toLowerCase();
   const email = realEmail || synthEmail(input.identifiant);
-  const cred = await createUserWithEmailAndPassword(auth, email, input.password);
-  const uid = cred.user.uid;
+  const { uid, adopted } = await openAccount(email, input.password);
 
   try {
     // La résolution du code entreprise nécessite d'être authentifié (règles) →
     // on le fait APRÈS la création du compte, et on nettoie en cas d'échec.
     let ownerId: string | undefined;
     if (input.role === 'CHAUFFEUR') {
-      ownerId = (await resolveCompanyOwner((input.companyCode || '').trim().toUpperCase())) || undefined;
-      if (!ownerId) throw new Error("Code entreprise introuvable. Demandez-le à votre gérant.");
+      const code = (input.companyCode || '').trim().toUpperCase();
+      const found = await withRetry(() => resolveCompanyOwner(code));
+      if (!found) {
+        throw Object.assign(new Error('Code entreprise introuvable. Demandez-le à votre gérant.'), { badCompanyCode: true });
+      }
+      ownerId = found;
     }
 
     const profile: User = {
@@ -74,21 +121,32 @@ export async function register(input: RegisterInput): Promise<User> {
 
     const clean: Record<string, unknown> = {};
     for (const [k, v] of Object.entries(profile)) if (v !== undefined && v !== '') clean[k] = v;
-    await setDoc(doc(firestore, 'users', uid), clean);
+    await withRetry(() => setDoc(doc(firestore, 'users', uid), clean));
 
     // Crée la fiche chauffeur rattachée au gérant (flotte).
     if (input.role === 'CHAUFFEUR' && ownerId) {
       const dref = doc(collection(firestore, 'drivers'));
-      await setDoc(dref, {
+      await withRetry(() => setDoc(dref, {
         id: dref.id, ownerId, userId: uid,
         name: profile.name, phone: profile.phone || '', licenseNumber: '', status: 'DISPONIBLE',
-      });
+      }));
     }
     return profile;
-  } catch (err) {
-    // Code invalide ou règles verrouillées : on supprime le compte Auth orphelin.
-    await cred.user.delete().catch(() => {});
-    throw err;
+  } catch (err: any) {
+    // Saisie à corriger (code entreprise) : on libère l'identifiant tout de
+    // suite pour que la nouvelle tentative reparte de zéro.
+    if (err?.badCompanyCode && !adopted) {
+      await auth.currentUser?.delete().catch(() => {});
+      throw err;
+    }
+    // Panne réseau / Firestore : le compte Auth est conservé volontairement.
+    // La tentative suivante avec les mêmes identifiants le récupérera et
+    // terminera l'inscription (cf. openAccount) au lieu de rester bloquée.
+    if (err?.code === 'permission-denied') throw err;
+    throw new Error(
+      'Compte créé, mais le profil n’a pas pu être enregistré (connexion instable). ' +
+      'Réessayez avec les mêmes identifiants dès que le réseau revient : l’inscription reprendra où elle s’est arrêtée.',
+    );
   }
 }
 
