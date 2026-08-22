@@ -1,0 +1,490 @@
+@CH|6|The Tax Inspectors
+@EPI|Day one they send a piece of paper. Day two they send a man with a piece of paper. Day three the paper stops coming.|Fanja Rasoanaivo, briefing to site personnel, 2 April
+
+The first attack on Vatofotsy came at 11:40 on the second of April and consisted of four vehicles, nineteen men, and a folder.
+
+Fanja watched them from four kilometres out through the Kite's eye: two white Land Cruisers of the Tax Directorate, one gendarmerie pickup, and behind them, incongruous as a dinner jacket at a funeral, a black Prado with tinted windows and Antananarivo plates that the system's registry lookup returned as belonging to a car hire company that had gone out of business in 2016.
+
+"Sixteen in uniform," she said. "Three not. The three not are in the Prado and they are wearing plate carriers under their shirts, because look at the shoulders, and they have not opened the doors of that car in twenty-two minutes in this heat, which means it has air conditioning and they are not in a hurry."
+
+Beside her, on the terrace, Ravo said: "So it's a look."
+
+"It's a look, and it's a map. They will ask for something they know we will refuse, and while we refuse it they will count our cameras and time our response and see who talks to whom. If I were them I would send a very junior officer with a very stupid demand and let him be humiliated, because a humiliated junior officer generates paperwork, and paperwork generates a legal basis, and a legal basis is what they don't have yet."
+
+"And if you were us?"
+
+Fanja lit a cigarette with her left hand.
+
+"If I were us," she said, "I would give them tea."
+
+@BREAK
+
+They gave them tea.
+
+This became, later, one of the most-watched pieces of footage of the entire affair, because Vatofotsy livestreamed it — four cameras, unedited, with a running timestamp and a caption bar in Malagasy and French, on nine mirrors simultaneously, and by 12:10 it had two hundred thousand concurrent viewers and by 14:00 the number had a comma in a different place.
+
+The country watched a very young captain of the Tax Directorate, sweating in a shirt too big for him, stand at a gate in the sun and read a demand for the immediate production of eleven years of accounts, all customs declarations, the personnel register, and "all equipment of a telecommunications nature."
+
+They watched a Malagasy woman of fifty-one in a linen shirt come out of the gate with two folding chairs and a thermos, set the chairs down in the shade, and invite him to sit.
+
+They watched her hand him, without a word, a memory stick.
+
+"Eleven years of accounts," she said. "Audited by Deloitte, filed with the Ministry every year on time, and mirrored publicly at this address since six o'clock this morning. Every ariary. Every salary. Every tax payment. Every invoice over one hundred euros. It is thirty-one gigabytes. You may also have it on paper if you have a truck."
+
+The captain looked at the memory stick.
+
+"Madame, I must also inspect the premises."
+
+"Of course. Do you have a warrant from a judge?"
+
+"I have an administrative order."
+
+"Then you have a piece of paper signed by a man who is named forty-one times in a document that your mother is reading on her telephone right now." Fanja poured him tea. "Captain. What is your name?"
+
+The camera caught it: the boy's eyes going to the lens, and away, and back.
+
+"Rakotoarisoa," he said. "Fidèle."
+
+"From?"
+
+"Ambatondrazaka."
+
+"Rice country." She nodded. "My grandmother was from Amparafaravola. Captain Rakotoarisoa, I am going to say something to you now in front of eight hundred thousand people and I want you to hear it as a professional and not as an insult. You have been sent here to be embarrassed. Not to inspect. To be embarrassed, on camera, so that a general in Antananarivo can write the word *obstruction* in a report tonight. You are the paperwork. That is all you are, to them. Drink your tea, take the memory stick, and write in your report — truthfully — that the site produced eleven years of accounts within four minutes of your arrival and offered full inspection under judicial warrant."
+
+The young man sat in the shade for a long time.
+
+Then he said, so quietly that the microphones nearly missed it and the sound engineers had to lift it in post: "My uncle is number thirty-three."
+
+Fanja did not move.
+
+"Rasolonjatovo," she said. "The radio journalist in Mahajanga."
+
+"He was my mother's brother."
+
+Nobody said anything for eleven seconds. Then the captain drank his tea, took the memory stick, stood up, put his cap back on, saluted — an odd, formal, entirely correct salute, to a civilian, in the sun — and went back down the road.
+
+That clip went round the island in ninety minutes. By nightfall there were three songs.
+
+@BREAK
+
+The Prado did not leave with the others.
+
+It sat at the bottom of the road for two hours and eleven minutes, and then reversed into a track, and then, at 16:20, one of its occupants got out and walked eleven metres into the scrub and unpacked, from a Peli case, a small quadcopter.
+
+"There we are," said Njiva.
+
+He was nineteen years old, six feet of elbows, and he ran the swarm from a room in the rock with four screens and a rice-cooker he had refused to let anyone remove. He had grown up in Andavamamba, in Antananarivo, in a house where the water came up through the floor twice a year, and had been discovered at fifteen by a foundation Ravo funded and had never in his life been given a rule he did not want to test.
+
+"Do we kill it?" asked Fanja.
+
+"No." Njiva was already typing. "It is a two-thousand-dollar Chinese aircraft. If we kill it they learn our engagement range. If we jam it they learn our jamming. If we do nothing they get eleven minutes of video of a wall."
+
+"So?"
+
+"So we do the third thing." He grinned; it changed his whole face. "We let it fly. We let it film. And we edit."
+
+The Choir woke up.
+
+What the man in the scrub saw on his controller was a perfectly ordinary flight, eleven minutes long, over a compound: walls, a helipad, some vehicles, a white balloon on a cable. What the man in the scrub *actually* recorded was a video stream that had passed, in eleven milliseconds, through a system that had been fed four years of the compound's own imagery and knew, better than any human, exactly what Vatofotsy looked like from every angle at every hour in every weather.
+
+The version he took back to Antananarivo showed nineteen vehicles that did not exist, two radar masts in the wrong places, a gun emplacement that was actually a water tank, and — Njiva's own contribution, added at the last second over Fanja's objection and later described by an analyst in the Directorate as "the single most alarming thing in the packet" — a row of eleven shipping containers on the western slope, painted white, unmarked, with the doors open on darkness.
+
+There were no containers on the western slope. There has never been anything on the western slope but scrub and a broken cistern.
+
+The Directorate spent four days and a great deal of money trying to work out what was in them.
+
+@BREAK
+
+That night, Ravo held what his great-aunt insisted on calling *kabary* and everyone else called the six o'clock.
+
+Two hundred and six people fit, at a squeeze, into the old magazine, which was the only space at Vatofotsy big enough, and which had a barrel-vaulted granite ceiling that made every voice sound like it was being taken seriously.
+
+He stood on a crate. He was not a natural speaker; he had the engineer's habit of starting in the middle.
+
+"You all know what I did last night," he said. "Some of you knew before. Most of you didn't, and that was deliberate, and if you are angry about it you are right to be, and I am not going to apologise for it because an apology is worth nothing tonight. What I am going to do is tell you the truth about your situation, which is a thing I can actually give you."
+
+He held up a hand and counted off.
+
+"One. The archive is out. It cannot be recalled by me, by them, by God. If they kill me it publishes wider. If they kill all of us it publishes wider still. So the only thing that killing us now achieves for them is a photograph of the state killing two hundred people, which is the one thing they cannot afford. That is our shield. Understand that it is a strange shield: it works by making us *more* valuable dead than alive, which is only useful if the people who make the decision are rational. Some of them are not."
+
+"Two. They will not come tomorrow. They will come when they have a story. Right now the story is *the state is killing the man who found the ledger.* They need it to be *the state stopped a foreign plot in the north.* Everything they do for the next two weeks will be building that story. Tax inspectors. Drones. Leaks about my passports. Possibly a body somewhere with my name near it."
+
+"Three. Anyone who wants to leave, leaves. Tonight, tomorrow, in a week. Two boats and four vehicles are available at any hour and nobody will ask you a question or think a thought about you. Your salary is paid for two years either way; the money is already in a Mauritian account in your name, and Mamy has your papers, and I will not know who took the boat because I have asked not to be told."
+
+He stopped. His voice had gone somewhere he had not planned.
+
+"Four. I have to say this part badly. My father was entry seven. I did not build this place to save the country. I built it because I was twenty-two years old in a corridor in Antananarivo and a policeman told me the roads are dangerous in the rain and I said *thank you, monsieur*, and I have been ashamed of saying thank you for twenty-two years."
+
+The magazine was very quiet.
+
+"So this is not a heroic thing I am doing. It is a debt I am paying with money I did not deserve, and you are all standing in it. That is the truth. That is all the truth I have."
+
+He got down off the crate.
+
+Nobody left that night, or the next night, or any night.
+
+Twenty-two more people came *up* the road that week, from Ramena and from Antsiranana and one family from as far as Ambanja: cousins, in-laws, a fisherman whose brother was number twelve, two nurses, a mechanic, and a seventy-four-year-old man who had been a signaller in the French colonial army in 1958 and who arrived on a bicycle and asked, with enormous dignity, whether the battery still had its rangefinder.
+
+It did. He worked it for nineteen days.
+
+@PART|TWO|THE SIEGE
+
+@CH|7|The First Night
+@EPI|Air defence is not about shooting things down. It is about making the other man's staff college arithmetic come out wrong.|from the patent filings of R. Andrianasolo, US 11,942,206 B2
+
+They came on the night of the sixth of April, four days after the upload, and they came the clever way.
+
+Not helicopters. Drones.
+
+Eleven of them, launched from a fishing boat forty kilometres to the north-east: fixed-wing, three metres of span, cheap enough to be deniable and good enough to be dangerous, of a type sold to nineteen air forces by a manufacturer whose brochures show them dropping mortar bombs on mannequins in a desert. Each carried two thermobaric charges of eleven kilograms.
+
+Their target list, recovered later from a controller station in a warehouse near Arrachart, contained four items: the aerostat winch, the radome, the power hall's exhaust stacks, and the residence's eastern terrace, on which the proprietor took his coffee at six every morning and at nine every evening, a fact somebody had paid somebody eleven million ariary to confirm.
+
+The acoustic mesh heard them at thirty-one kilometres.
+
+Not the engines — two-stroke, muffled, quiet as a distant lawnmower. The *propeller blade rate*, a signature as specific as a face, which Vatofotsy's library had held for two years because Ravo had bought four of the same aircraft in 2023 from a dealer in Bulgaria for the express and only purpose of recording them.
+
+*Zanako,* said his grandmother's voice, at 01:14. *Something is coming. Eleven things. They are the ones from the catalogue.*
+
+@BREAK
+
+What happened over the following nineteen minutes is now taught, in a sanitised and heavily redacted form, at three staff colleges.
+
+Fanja did not sound the general alarm. She sounded *tsipoy* — the balloon — which meant: everyone below ground, in silence, except the eleven people whose job this was.
+
+Njiva sat down in front of his four screens and put on a pair of headphones with one ear off, which was a thing he did, and cracked his knuckles, which was a thing Fanja had told him nineteen times not to do.
+
+"Range thirty-one," he said. "They're at four hundred metres altitude, doing one hundred and forty. They'll descend at ten kilometres to come in under the radar horizon because that's what the manual says. The manual is on the internet."
+
+"Choir?"
+
+"Choir is warm. But listen —" He held up a finger, and this was the moment that Fanja later said she understood that the boy from Andavamamba was not a technician but an artist. "If I spoof them now at thirty-one kilometres, they'll fly into the sea and the operator will see eleven aircraft vanish and he will *learn something*. If I spoof them at eleven kilometres, they crash on land in front of the cameras and we have eleven intact airframes with serial numbers, and *he* learns nothing, because from where he's sitting they just went off the air over the target, which is exactly what happens when they work."
+
+Fanja looked at Ravo.
+
+Ravo said, "Do it the way that gets us the serial numbers."
+
+@BREAK
+
+At 01:31 the eleven aircraft descended, as the manual said, to sixty metres.
+
+At 01:33 they crossed into the Choir's inner ring, and the Choir began, very gently, to lie.
+
+It did not shout. It did not jam. It put out a signal only slightly stronger than the real one, and it moved — over ninety seconds, at a rate slower than any receiver's sanity check — the entire constellation of satellites eleven hundred metres to the west.
+
+Eleven autopilots, running the same firmware, made the same correction. Eleven aircraft turned right by a degree and a half and settled onto a course that, according to every instrument aboard them, was perfect.
+
+At 01:36 the Choir performed its second and crueller trick: it advanced their clocks.
+
+Position is time. Every satellite navigation fix in the world is a stopwatch problem, and if you tell a receiver that light took a little longer to arrive than it did, the receiver will place itself, with total confidence, somewhere it is not.
+
+The aircraft believed they were four hundred metres past the terrace.
+
+They believed they had arrived.
+
+Eleven autopilots, in eleven separate machines, executed their terminal manoeuvre — a pitch-over into a shallow dive, arming the charges at four seconds — over a slope of empty red scrub on the western side of the peninsula, one thousand one hundred metres from anything a human being had ever built.
+
+Nine of them detonated.
+
+The night went white and orange in nine places, and the sound came across the rock a heartbeat later like something enormous clearing its throat, and in the magazine two hundred people felt it in their sternums, and a child began to cry, and Mamy Solange started, in an absolutely steady voice, to sing a hymn that everybody's grandmother knew, and by the third line ninety people were singing it, in the dark, under a granite ceiling built by frightened Frenchmen in 1942.
+
+Two of the aircraft did not detonate. Their charges failed, as one in five of anything always fails.
+
+At 06:00 Njiva went out and got them, and at 08:00 Vatofotsy published high-resolution photographs of two intact airframes with legible manufacturer's plates, the export licence number stencilled under the wing root, and a maintenance sticker in a foreign alphabet — along with the acoustic recording, the flight tracks reconstructed from the wreckage, the crater survey, and a plain-language explanation of the spoofing that was accurate in every respect except the four details that mattered.
+
+Ravo insisted on adding one line at the top of the release, and Fanja fought him on it for eleven minutes and lost.
+
+*Nobody was hurt. Nobody at Vatofotsy fired a shot. We would like it noted that the eleven aircraft crashed one kilometre from any person, and that this was a choice.*
+
+@BREAK
+
+In Antananarivo, at 09:40, an analyst put the photographs in front of Nirina Ravelojaona.
+
+He looked at them for a long moment. The export licence number was the problem. The export licence number led to a broker in the Emirates, and the broker led to a payment, and the payment led to a facility, and the facility was in the file — the file that thirty-one million people now had on their telephones — as line four hundred and eleven of an annexe about defence procurement that no journalist had yet had time to read.
+
+They had just handed the man an appendix.
+
+"Sir," said the analyst, "the technical staff want to know how he defeated eleven simultaneous—"
+
+"He didn't defeat anything," said Ravelojaona.
+
+"Sir?"
+
+Ravelojaona set the photographs down and aligned their edges, which was a thing he did.
+
+"We shot eleven arrows into a room in the dark," he said, "and the man in the room caught two of them and has just posted a photograph of our fingerprints on the shafts. He did not defeat us. He *invoiced* us."
+
+@CH|8|What They Do Instead
+@EPI|You cannot reach the man. Very well. Reach the man's mother.|Handwritten annotation, undated, exhibit 116
+
+They stopped attacking Vatofotsy on the seventh of April, and this was, for Ravo, far worse.
+
+Because the mathematics of Vatofotsy was solved. Fanja had solved it in 2022, on paper, in a document eleven pages long, and everything since had been engineering. The peninsula could not be taken from the sea without landing craft that could be sunk; it could not be taken from the air without an air force that could be blinded; it could not be taken from the road without three bridges that could be dropped; and it could not be starved inside ninety days.
+
+The mathematics of everyone he loved was not solved and could not be.
+
+@BREAK
+
+They took Hanta on the eighth, at a checkpoint on the Route Nationale 4, in the rain, at 05:40, in front of eleven witnesses, four of whom filmed it.
+
+Not violently. That was the horror of it. Two officers in clean uniforms, an administrative detention order, the word *espionnage*, and a hand on her elbow of almost gentle courtesy as she got into the car. She had time to hand her telephone to the taxi driver — a man named Rado whom she had never met and who kept that telephone in a rice sack under his floor for nineteen days and lied about it to two separate visits — and to say, loudly, to the cameras: "My name is Hanta Ravelonarivo. It is Tuesday the eighth of April, it is twenty to six, I am not injured, and I have not taken money from anyone."
+
+She said that last part because she knew what was coming.
+
+By noon the state broadcaster had a photograph of a bank statement.
+
+@BREAK
+
+At Vatofotsy, Ravo watched the arrest video eleven times.
+
+Then he went down through the tunnels to the deepest room, the one that had been a French shell store, and closed the door, and did not come out for two hours, and when Fanja finally opened it he was sitting on the floor with his back against the granite and his hands over his face.
+
+"I did this," he said.
+
+"Yes," said Fanja.
+
+He looked up.
+
+"You want me to say no?" She sat down opposite him, an old soldier's careful sit, bad knee first. "You did this. She also did this. She published at five o'clock with her name on it and she is forty-three years old and she has been doing this since she was twenty-four and she did not require your permission. If you take her decision away from her and make it your fault, you are doing to her exactly what they do to everybody: you are turning a person into a consequence of a man."
+
+Ravo said nothing.
+
+"Now," said Fanja. "The daughter."
+
+@BREAK
+
+Miora Andrianasolo was seventeen years old and had, at that moment, been at Vatofotsy for six days, having been extracted from a boarding school in Tamatave on the second of April by four people she did not know in a way she considered melodramatic, unnecessary, and — this was the part that made her incandescent — *not discussed with her.*
+
+She had her mother's face and her father's terrible stillness, and she had spent six days refusing to speak to him in any language, which given that they shared three was a considerable undertaking.
+
+He found her on the eastern terrace at nine at night, which was the hour and the place his enemies had paid eleven million ariary to learn about, sitting on the wall with her legs over three hundred metres of nothing, eating a mango with a knife.
+
+He sat down two metres away and looked at the sea.
+
+After a while she said: "They took her because of you."
+
+"Yes."
+
+"You could have given it to a newspaper. Anonymously. Nobody would have known it was you and she'd be asleep in Ambohipo right now."
+
+"Yes."
+
+Miora turned. "Then why?"
+
+And Ravo Andrianasolo, who had lied for eleven years to bankers, regulators, four governments and himself, told his daughter the truth, which he had not intended to do and never quite forgave himself for.
+
+"Because an anonymous file is a rumour," he said. "This country has had four hundred anonymous files. They come out, and for two weeks everybody says *ah, you see, we knew*, and then a minister says *foreign fabrication*, and there is nobody to contradict him, because the file has no face and a rumour cannot be cross-examined, and in a month it is a joke in a taxi. I have watched it happen my whole life. Four hundred times."
+
+He turned his hands over.
+
+"A file with a name on it is different. A file with a name on it, attached to a man who cannot be arrested, cannot be disappeared, cannot be bought, cannot be starved and cannot be shot — that file cannot be turned into a rumour. Because every day I am alive and standing on this rock is a day the file is *still being asserted by somebody.* That is what this place is for, Miora. Not to keep me alive. To keep the file *speaking*."
+
+His daughter was quiet for a while.
+
+"That's a really cold thing to say about Mum."
+
+"Yes," he said. "It is."
+
+"Are you going to get her out?"
+
+"I am going to try, and I am going to fail, and then I am going to do the thing that actually works, which is to make her more expensive to hold than to release. She's already in eleven newspapers. On Friday she'll be in a European parliament. Next week she will have an award from an organisation nobody in Antananarivo has heard of and everybody in Brussels has, and a bank in Mauritius will get a letter, and a mining company will get a letter, and a man who does not care about Hanta at all will telephone a man who does not care about her either, and she'll be put on a road at four in the morning with no shoes and told to walk. That's how it works. It is disgusting and it works and I have four hundred lawyers."
+
+Miora cut a piece of mango and held it out to him, which was the first thing she had given him in six days.
+
+"You're a really weird dad," she said.
+
+"I know."
+
+"Teach me the drones."
+
+"No."
+
+"Teach me the drones or I'm going to learn them from Njiva, who is nineteen and who has already offered."
+
+Ravo looked at his daughter for a long moment, and then out at the dark water where the pirogue lights were, and something in his chest that had been clenched since the second of April let go by one notch.
+
+"Njiva," he said, "is a menace."
+
+"Njiva," said Miora, "is the best thing in this entire stupid castle, and if you had let me come here at Christmas like a normal father I'd already know how to fly them."
+
+@CH|9|Karakurt
+@EPI|We do not take contracts against states. We are frequently taken by them.|Marketing material, Karakurt Group, 2023
+
+The state's problem, by the tenth of April, was that it had run out of its own tools.
+
+The gendarmerie would not go up that road; three commanders had said so in writing, which was itself an event. The intervention group would go, but Rakotoson's number had not changed and had in fact gone up, because everything he had learned since had made him more pessimistic and because he had begun, dangerously, to admire the opposition. The air force had two serviceable Mi-17s and a fleet of aircraft that could not navigate within twenty kilometres of the peninsula. And the navy's patrol vessel had a defect in its port shaft that had been reported in 2022, funded in 2022, and stolen in 2022.
+
+So on the tenth of April a man named Iliya Marchev flew into Antananarivo on a Turkish Airlines flight with a Bulgarian passport and a business visa that said *agricultural consultancy*, and was met at the aircraft steps by a car with no plates.
+
+@BREAK
+
+Karakurt Group had one hundred and ninety employees, an office in Sofia, an office in Dubai, a helicopter maintenance facility in Uganda, and eleven years of contracts in places where the difference between a soldier and an employee is an invoice. It had put down a mutiny in one country, guarded a lithium concession in another, and had, in 2021, lost forty-one men in a single afternoon in a place its clients had assured it was permissive.
+
+Marchev was fifty-four, with a face like a closed door, and he had two rules, both learned expensively.
+
+The first was: *the client always lies about the enemy.*
+
+The second was: *the client always lies about the terrain.*
+
+He spent four days doing what nobody in the Malagasy state had done, which was to read all eleven of the man's patents, hire a naval architect in Piraeus to model the two coves, buy — at a cost of nineteen thousand dollars — three years of commercial satellite imagery of the peninsula, and sit in a hotel room in Antsiranana with a pair of binoculars and a Thermos, for eleven hours, watching a white balloon on a cable.
+
+On the fifteenth he came back to the ninth floor and gave a presentation that lasted six minutes.
+
+"You have three options," he said. "I will price all three, and then I will tell you which one I will accept, and it is not the same as the one you want."
+
+@BREAK
+
+"Option one. Deniable assault, night, sea, two coves, ninety men. Cost, eleven million euros. Probability of taking the site: below thirty per cent. Probability of my company being identified within forty-eight hours: one hundred per cent, because he has hydrophones and cameras and lawyers, and because he will film my dead and publish their tattoos. I decline option one."
+
+"Option two. Overt assault with your forces, my company providing air, electronic warfare and command. Cost, twenty-two million. Probability of taking the site: seventy per cent. Malagasy casualties: one hundred and fifty upward. My casualties: forty upward. Political outcome: the state kills two hundred people including cooks and nurses on live television. Gentlemen, I have been in this business a long time and I want to be very clear. There are countries where I would take that contract. If I take it here, I am not risking my men. I am risking my company, because a video of your soldiers shooting a schoolteacher in front of a nurse becomes, in eleven hours, a sanctions listing with my name on it. I price option two at twenty-two million and a fee schedule that will offend you, and I recommend against it."
+
+The Minister of Strategic Resources said, "And option three?"
+
+Marchev put a photograph on the table.
+
+It was the road. The eleven kilometres, and the three bridges, and at the bottom of it, where it met the coast road at the edge of the commune of Ramena, a village: four hundred houses, a market, a school, two churches, a mosque, and a beach with sixty pirogues drawn up on it.
+
+"Option three," said Marchev, "is that you do not attack the fortress at all. You cannot take the fortress. Anybody who tells you otherwise is selling you something. But the fortress is not the problem. The fortress is a rock with rich people in it and the world does not care about rich people in rocks."
+
+He tapped the village.
+
+"The problem is *this*. He has ninety days of food for two hundred people. He has four hundred and eleven people. Do you know why? Because they keep coming up the road. Every day, more. And his water is fine and his power is fine but he is running an entire commune out of his larder, and the commune knows it, and every family that sends a boy up that road with a sack of rice on his back is making him stronger, not weaker."
+
+"So?"
+
+"So you make it expensive to be his relative," said Iliya Marchev. "You do not besiege the fort. You besiege the *fihavanana*. Roadblocks at Ramena, at Sakaramy, at the Antsiranana junction. Every vehicle searched. Every boat inspected for 'fisheries compliance.' Every man who goes up that road has his identity card photographed and his employer telephoned. You do not arrest anyone. Arrests make martyrs. You simply make it take four hours instead of ten minutes, every single day, for eleven weeks, and you let people work out for themselves that having a cousin at Vatofotsy is bad for business."
+
+He sat down.
+
+"Cost: two million euros and forty of my men in advisory roles. Probability of collapsing the site within four months: I would say sixty per cent, and it rises every week. Probability of a video of a dead schoolteacher: near zero. This is the option I will accept."
+
+There was a long silence in the blue-carpeted room.
+
+Then Nirina Ravelojaona said, softly: "Four months."
+
+"Yes."
+
+"Mr Marchev. In four months there will be a commission of inquiry, an arrest warrant with my name on it in a European capital, and a president who has decided that I am the price of his own survival." He smiled; it was a terrible smile, the smile of a very clever man at the exact moment he stops being clever. "I do not have four months. I have eleven days."
+
+Marchev looked at him for a while with the expression of a man who has just identified, at last, the actual hazard in the room.
+
+"Then you do not have a security problem," he said, and stood up, and buttoned his jacket. "You have a personal one, and I don't take those."
+
+He flew out that night.
+
+He was, in the end, the only professional in the entire affair who correctly predicted the ending, and he did it in one sentence to his own second-in-command on the aircraft steps: *That man will burn a province to buy himself a week.*
+
+@CH|10|Three Helicopters
+@EPI|Fear does not make men cautious. It makes them punctual.|Fanja Rasoanaivo, deposition, p. 611
+
+They came at 02:40 on the sixteenth of April, and the fact that they came at all is the single strongest evidence that by the sixteenth of April the decision was no longer being made by anybody who had ever been shot at.
+
+Three helicopters: two Mi-17s of the air force with forty-eight men of the intervention group, and, leading, an Alouette with a general's staff aboard because somebody had insisted on a commander in the air.
+
+Two patrol boats out of Antsiranana with a further thirty men, timed to arrive at the coves eleven minutes after the air assault.
+
+And, at the bottom of the road, four armoured personnel carriers and two hundred and eleven gendarmes, whose orders — recovered later — were, in an almost touching admission of what everyone actually expected, *to secure the road for the recovery of casualties.*
+
+@BREAK
+
+Vatofotsy knew at 01:52.
+
+Not from radar. From a woman named Bakoly Razanamalala, aged sixty-six, who sold fried bread and coffee outside the gate of Arrachart aerodrome and who had been doing so since 1989, and who telephoned her sister's grandson at 01:51 to say that two big helicopters were turning their engines and that the soldiers had been sitting on the grass since midnight and that one of them, a boy from Diego with a bad tooth, had asked her if she knew any prayers.
+
+Mamy Solange took the call in the kitchen on the HF set.
+
+"They are lifting," she said, to a room full of people who had already begun, quietly, to move. "Bakoly says two of the big ones and one small. She says the boy with the tooth is crying."
+
+@BREAK
+
+At 02:11 the acoustic mesh confirmed it: three rotorcraft, forty-one kilometres, one hundred and sixty knots.
+
+At 02:14 the hydrophone necklace picked up the patrol boats at nineteen kilometres.
+
+At 02:19 Ravo Andrianasolo made the only decision of his life that he ever described, afterwards, as the correct one.
+
+"Everybody in this room listen to me," he said, standing behind Njiva's chair in the rock. "There will be no lethal engagement of the aircraft. None. Not one round. Fanja, that is an order and I want it acknowledged out loud."
+
+Fanja said, "Acknowledged," and then, "and it is the right order, and if you had given me the other one I would have refused it."
+
+"Njiva?"
+
+The boy from Andavamamba had his headphones half on and both hands open above the keyboard like a pianist.
+
+"Boss," he said, "I can put all three of them in the sea in ninety seconds."
+
+"I know you can. That is why they're going to lose."
+
+@BREAK
+
+Here is what happened, in the twenty-two minutes that the Antsiranana Commission's technical annexe describes with unusual dryness as *the aerial event*.
+
+At 02:31, at nineteen kilometres, all three aircraft lost satellite navigation. Not abruptly. Gently: a drift, a disagreement between the two receivers on the lead Mi-17, a caution message that the flight engineer acknowledged and moved on from because it happens.
+
+At 02:34, at fourteen kilometres, all three aircraft lost their radio altimeters to a low-power spoof that convinced the boxes they were four hundred metres higher than they were, over water, at night, on instruments — which is the single most frightening thing that can happen to a helicopter crew and which two of the three pilots handled correctly by climbing.
+
+At 02:36, at eleven kilometres, the Choir stopped being subtle.
+
+It reached into the tactical radios and did not jam them. It *delayed* them — every transmission, in both directions, arriving eleven hundred milliseconds late, which does not sound like much and which turns a formation of three aircraft into three aircraft that are shouting at each other from the past.
+
+And then it played them their own voices.
+
+Njiva had built the library in four days out of nineteen hours of intercepted air force traffic. It was crude. It did not need to be good. What came into the headsets of forty-eight men on a night infiltration, in their own language, in the voice of their own dispatcher, was:
+
+*Abort. Abort. Wave off, wave off, we have friendlies on the objective.*
+
+*Sabotage. There are civilians. Repeat, there are civilians on the objective.*
+
+*Where is Two? Two, where are you? Two has gone down. Two has gone in the water.*
+
+The lead pilot broke right. The second Mi-17 did not, because he had heard the abort call eleven hundred milliseconds later than the first pilot and had, therefore, seen his lead break away for no reason at all, at night, at ninety metres over water, with no satellite navigation and a radio altimeter that was lying to him.
+
+At 02:38 the mosquitoes came out of the cliff.
+
+Two hundred of them. Not at the helicopters: *around* them. Njiva put a shell of small aircraft into a cylinder of sky eleven hundred metres across and four hundred metres high, all of them with strobes, all of them with radar reflectors the size of a fist, all of them moving, and to the three flight crews inside that cylinder — on night vision, at ninety metres, on instruments that had been lying for seven minutes — it looked exactly, precisely, unmistakably like being inside a swarm of incoming missiles.
+
+Not one of the four hundred and eleven mosquitoes touched an aircraft. Njiva's cooperative logic enforced a hard exclusion sphere of two hundred metres around every rotorcraft and would not have permitted it if he had ordered it, because he had written it that way in 2023 and had never told anybody, including Ravo.
+
+The Alouette turned east and did not stop turning east until it was over the bay.
+
+The lead Mi-17 climbed to six hundred metres, declared an emergency in clear on the international distress frequency — which Vatofotsy did not touch, because Fanja had personally drawn a red line through 121.5 in the operational order — and went home.
+
+The second Mi-17 put itself on the beach.
+
+Not crashed: *put itself*, in a controlled, professional, absolutely terrified running landing on the sand at Ramena, in front of the village, in the dark, at 02:44, with forty-eight rounds unfired and twenty-four men aboard who got out and lay down on the beach and were, within eleven minutes, surrounded by roughly four hundred villagers in nightclothes holding telephones.
+
+The footage from Ramena beach is the most-viewed video ever recorded in Madagascar.
+
+It shows a Malagasy sergeant of the intervention group, aged thirty-one, standing on a beach in front of his own helicopter with his rifle held by the barrel in one hand, pointed at the sand, and an old woman in a *lamba* walking up to him and taking his face in both her hands like a grandmother, and asking him, on camera, in Malagasy, in a voice that carries:
+
+*Whose son are you?*
+
+And the sergeant saying, "Randriamalala, madame. From Sambava."
+
+And the old woman saying: *Then sit down, my child, and I will bring you coffee, because your mother is not here to be ashamed of you.*
+
+@BREAK
+
+The patrol boats never came in.
+
+They stood off the northern cove at four kilometres and at 02:51 they received, on the marine VHF, in Malagasy and French, from a shore station whose licence number and operator's name were included in the transmission:
+
+*Antsiranana patrol, Antsiranana patrol, this is Vatofotsy radio. Be advised, our seaward battery is manned, the range to your vessel is four thousand one hundred metres, and we hold you. Be advised further that we will not fire on you, that this transmission is being broadcast live, and that our position and yours are being displayed to four hundred thousand people. We wish you a good night and a safe return to harbour.*
+
+And then, because Ravo could not resist and because Fanja was in the tunnel and did not hear it in time to stop him:
+
+*Vatofotsy is a nature reserve. Please observe the no-wake zone.*
+
+@BREAK
+
+Total casualties on the night of the sixteenth of April: one broken ankle (a corporal, exiting the aircraft on the beach), one heart attack (a fifty-nine-year-old officer aboard the Alouette, who survived), and eleven million dollars of national dignity.
+
+At 04:00, in the blue-carpeted room on the ninth floor, Nirina Ravelojaona sat alone and watched the beach video for the fourth time.
+
+He watched the old woman take the soldier's face in her hands.
+
+He was a clever man. He was, by some distance, the cleverest man in the Republic, and he understood what he was looking at with a completeness that nobody else in the building could match, and it is the reason for everything he did afterwards.
+
+He was not watching a defeat.
+
+He was watching the moment when the army stopped belonging to him.
